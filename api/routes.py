@@ -4,6 +4,8 @@ from services.image_processing_service import ImageProcessingService
 from services.reminder_service import ReminderService
 from services.disease_recognition_service import DiseaseRecognitionService
 
+from utils.jwt_helper import validate_token
+
 # Create a Flask Blueprint – a modular collection of routes
 # This helps to keep your API organized
 api_blueprint = Blueprint("api", __name__)
@@ -16,18 +18,13 @@ reminder_service = ReminderService()
 disease_service = DiseaseRecognitionService()
 
 
-
-# ROUTE: /check-auth
 @api_blueprint.route("/check-auth", methods=["GET"])
 def check_auth():
-    """
-        Endpoint to verify user authentication.
-        Currently, this is just a placeholder returning `authenticated: true`.
-        In a real-world scenario, this route should:
-          - Read an Authorization header (e.g., JWT token)
-          - Validate it to confirm if the user session is still active
-        """
-    return jsonify({"authenticated": False})
+    token = request.headers.get("Authorization")
+    if not token or not validate_token(token):
+        return jsonify({"authenticated": False}), 401
+    return jsonify({"authenticated": True}), 200
+
 
 
 @api_blueprint.route("/plants", methods=["GET"])
