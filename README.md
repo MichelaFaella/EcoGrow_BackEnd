@@ -241,13 +241,13 @@ docker compose down
 docker compose down -v
 ```
 
-### Health Check
+### 🩺 Health Check
 ```bash
 curl -s http://localhost:8000/api/ping
 # {"ping":"pong"}
 ```
 
-### API Cheatsheet
+### ⚙️ API Cheatsheet
 
 **Families**
 ```bash
@@ -259,9 +259,9 @@ curl -s http://localhost:8000/api/families
 ```bash
 # Get ALL plants
 curl -s http://localhost:8000/api/plants/all | jq
+```
 
-
-### Inspect the Database
+### ⛁ Inspect the Database
 ```bash
 docker exec -it ecogrow-mysql bash
 mysql -u root -p
