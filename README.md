@@ -10,7 +10,7 @@ It provides RESTful APIs for the Flutter frontend, handles plant data, image ana
 ```bash
 backend/
 ├── app.py                         # Main entry point – initializes and runs the Flask app
-├── requirements.txt                # Python dependencies list
+├── requirements.txt.txt                # Python dependencies list
 │
 ├── api/                            # API layer: defines endpoints and request routing
 │   ├── __init__.py                 # Marks folder as a Python package
@@ -159,7 +159,7 @@ numpy==1.26.4
 
 Install dependencies:
 ```bash
-pip install -r requirements.txt
+pip install -r requirements.txt.txt
 ```
 
 ---
@@ -175,7 +175,7 @@ pip install -r requirements.txt
 
 2. **Install dependencies**
    ```bash
-   pip install -r requirements.txt
+   pip install -r requirements.txt.txt
    ```
 
 3. **Run the Flask server**
