@@ -223,3 +223,53 @@ final response = await http.get(
 | `tests/` | Contains all backend tests |
 
 ---
+
+
+### 🐋Start / Stop (Docker)
+```bash
+# Build and start (detached)
+docker compose up -d
+
+# Follow logs
+docker logs -f ecogrow-api
+docker logs -f ecogrow-mysql
+
+# Stop (DB data persists in the db_data volume)
+docker compose down
+
+# Stop and DELETE DB data (factory reset)
+docker compose down -v
+```
+
+### Health Check
+```bash
+curl -s http://localhost:8000/api/ping
+# {"ping":"pong"}
+```
+
+### API Cheatsheet
+
+**Families**
+```bash
+# Get all families (with plant counts)
+curl -s http://localhost:8000/api/families
+```
+
+**Plants**
+```bash
+# Get ALL plants
+curl -s http://localhost:8000/api/plants/all | jq
+
+
+### Inspect the Database
+```bash
+docker exec -it ecogrow-mysql bash
+mysql -u root -p
+passowrd to enter -> ecogrow
+
+# Inside MySQL
+SHOW DATABASES;
+USE ecogrow;
+SHOW TABLES;
+DESCRIBE plant;
+```
