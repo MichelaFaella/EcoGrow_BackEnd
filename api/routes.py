@@ -25,7 +25,6 @@ def check_auth():
     return jsonify({"authenticated": True}), 200
 
 
-
 @api_blueprint.route("/plants", methods=["GET"])
 def get_plants():
     """

@@ -21,7 +21,7 @@ services:
 
   api:
     build:
-      context: .           # <-- Dockerfile sta in root del progetto
+      context: .
       dockerfile: Dockerfile
     container_name: ecogrow-api
     env_file:
@@ -32,6 +32,7 @@ services:
       db:
         condition: service_healthy
     restart: unless-stopped
+    command: python app.py
 
 volumes:
   db_data:
