@@ -71,8 +71,8 @@ class Plant(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
 
     __table_args__ = (
-        CheckConstraint("water_level BETWEEN 1 AND 3", name="ck_plant_water_level"),
-        CheckConstraint("light_level BETWEEN 1 AND 3", name="ck_plant_light_level"),
+        CheckConstraint("water_level BETWEEN 1 AND 5", name="ck_plant_water_level"),
+        CheckConstraint("light_level BETWEEN 1 AND 5", name="ck_plant_light_level"),
         CheckConstraint("min_temp_c < max_temp_c", name="ck_plant_temp_range"),
         Index("ix_plant_category_climate", "category", "climate"),
         Index("ix_plant_updated_at", "updated_at"),
