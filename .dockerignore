@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.git
+.gitignore
+dist/
+build/
+AI/dataset/*
+AI/model/trained_model.pth
+.venv
