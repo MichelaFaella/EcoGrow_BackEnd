@@ -21,17 +21,23 @@ services:
 
   api:
     build:
-      context: .           # <-- Dockerfile sta in root del progetto
+      context: .
       dockerfile: Dockerfile
     container_name: ecogrow-api
     env_file:
       - .env
+    environment:
+      CHANGES_PATH: "/app/models/scripts/fixtures/changes.json"
+      PYTHONUNBUFFERED: "1"
     ports:
       - "8000:8000"
     depends_on:
       db:
         condition: service_healthy
     restart: unless-stopped
+    command: python app.py
+    volumes:
+      - ./models/scripts/fixtures/changes.json:/app/models/scripts/fixtures/changes.json
 
 volumes:
   db_data:
