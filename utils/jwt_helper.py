@@ -1,10 +1,10 @@
 import jwt
 from datetime import datetime, timedelta
 
-
 # To change the key use python -c "import secrets; print(secrets.token_hex(32))" from terminal
 SECRET_KEY = "efb91ddb118b36b986f0017acdc5805a7594bb3ff530a1a233cfa6dde931a3d2"
 ALGORITHM = "HS256"
+
 
 def generate_token(user_id: int) -> str:
     payload = {
@@ -13,6 +13,7 @@ def generate_token(user_id: int) -> str:
     }
     token = jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
     return token
+
 
 def validate_token(token: str):
     try:
