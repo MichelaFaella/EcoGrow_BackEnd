@@ -273,3 +273,443 @@ USE ecogrow;
 SHOW TABLES;
 DESCRIBE plant;
 ```
+
+# Endpoints usage
+
+Set a base URL for brevity:
+```bash
+BASE="http://localhost:8000/api"
+```
+
+All responses are JSON. IDs are UUIDs.
+
+---
+
+## 🌱 Plant
+
+**Create**
+```bash
+curl -s -X POST "$BASE/plant/add" \
+  -H "Content-Type: application/json" \
+  -d '{
+        "scientific_name":"Lavandula angustifolia",
+        "common_name":"Lavender",
+        "use":"ornamental",
+        "water_level":2,
+        "light_level":5,
+        "min_temp_c":-10,
+        "max_temp_c":40,
+        "category":"shrub",
+        "climate":"mediterranean",
+        "size":"medium"
+      }' | jq .
+```
+
+**Update**
+```bash
+PLANT_ID="<UUID>"
+curl -s -X PATCH "$BASE/plant/update/$PLANT_ID" \
+  -H "Content-Type: application/json" \
+  -d '{ "origin":"EU", "size":"large" }' | jq .
+```
+
+**Delete**
+```bash
+PLANT_ID="<UUID>"
+curl -s -o /dev/null -w "%{http_code}\n" -X DELETE "$BASE/plant/delete/$PLANT_ID"
+# expected: 204
+```
+
+**Filters**
+```bash
+# by size: small|medium|large|giant
+curl -s "$BASE/plants/by-size/medium" | jq .
+
+# by use (case-insensitive): e.g., ornamental, medicinal
+curl -s "$BASE/plants/by-use/ornamental" | jq .
+```
+
+**List all**
+```bash
+curl -s "$BASE/plants/all" | jq .
+```
+
+---
+
+## 🌿 Family
+
+**List**
+```bash
+curl -s "$BASE/family/all" | jq .
+```
+
+**Create**
+```bash
+curl -s -X POST "$BASE/family/add" \
+  -H "Content-Type: application/json" \
+  -d '{ "name":"Rosaceae" }' | jq .
+```
+
+**Update**
+```bash
+FAMILY_ID="<UUID>"
+curl -s -X PATCH "$BASE/family/update/$FAMILY_ID" \
+  -H "Content-Type: application/json" \
+  -d '{ "name":"Rosaceae (updated)" }' | jq .
+```
+
+**Delete**
+```bash
+FAMILY_ID="<UUID>"
+curl -s -o /dev/null -w "%{http_code}\n" -X DELETE "$BASE/family/delete/$FAMILY_ID"
+```
+
+---
+
+## 📸 PlantPhoto
+
+**List**
+```bash
+curl -s "$BASE/plant_photo/all" | jq .
+```
+
+**Create (for a plant)**
+```bash
+PLANT_ID="<UUID>"
+curl -s -X POST "$BASE/plant/photo/add/$PLANT_ID" \
+  -H "Content-Type: application/json" \
+  -d '{ "url":"https://example.com/p1.jpg", "caption":"leaves", "order_index":0 }' | jq .
+```
+
+**Update**
+```bash
+PHOTO_ID="<UUID>"
+curl -s -X PATCH "$BASE/plant/photo/update/$PHOTO_ID" \
+  -H "Content-Type: application/json" \
+  -d '{ "caption":"leaves (macro)" }' | jq .
+```
+
+**Delete**
+```bash
+PHOTO_ID="<UUID>"
+curl -s -o /dev/null -w "%{http_code}\n" -X DELETE "$BASE/plant/photo/delete/$PHOTO_ID"
+```
+
+---
+
+## 🧫 Disease
+
+**List**
+```bash
+curl -s "$BASE/disease/all" | jq .
+```
+
+**Create**
+```bash
+curl -s -X POST "$BASE/disease/add" \
+  -H "Content-Type: application/json" \
+  -d '{ "name":"Powdery mildew", "description":"Fungal disease", "treatment":"sulfur" }' | jq .
+```
+
+**Update**
+```bash
+DIS_ID="<UUID>"
+curl -s -X PATCH "$BASE/disease/update/$DIS_ID" \
+  -H "Content-Type: application/json" \
+  -d '{ "treatment":"combined treatment" }' | jq .
+```
+
+**Delete**
+```bash
+DIS_ID="<UUID>"
+curl -s -o /dev/null -w "%{http_code}\n" -X DELETE "$BASE/disease/delete/$DIS_ID"
+```
+
+---
+
+## 🌱🔗 PlantDisease (Plant–Disease relation)
+
+**List**
+```bash
+curl -s "$BASE/plant_disease/all" | jq .
+```
+
+**Create**
+```bash
+curl -s -X POST "$BASE/plant_disease/add" \
+  -H "Content-Type: application/json" \
+  -d '{ "plant_id":"<PLANT_ID>", "disease_id":"<DIS_ID>", "severity":2 }' | jq .
+```
+
+**Update**
+```bash
+PD_ID="<UUID>"
+curl -s -X PATCH "$BASE/plant_disease/update/$PD_ID" \
+  -H "Content-Type: application/json" \
+  -d '{ "notes":"monitor", "severity":3 }' | jq .
+```
+
+**Delete**
+```bash
+PD_ID="<UUID>"
+curl -s -o /dev/null -w "%{http_code}\n" -X DELETE "$BASE/plant_disease/delete/$PD_ID"
+```
+
+---
+
+## 👤 User
+
+**List**
+```bash
+curl -s "$BASE/user/all" | jq .
+```
+
+**Create**
+```bash
+curl -s -X POST "$BASE/user/add" \
+  -H "Content-Type: application/json" \
+  -d '{
+        "email":"alice@example.com",
+        "password_hash":"<hashed>",
+        "first_name":"Alice",
+        "last_name":"Green"
+      }' | jq .
+```
+
+**Update**
+```bash
+USER_ID="<UUID>"
+curl -s -X PATCH "$BASE/user/update/$USER_ID" \
+  -H "Content-Type: application/json" \
+  -d '{ "first_name":"Alicia" }' | jq .
+```
+
+**Delete**
+```bash
+USER_ID="<UUID>"
+curl -s -o /dev/null -w "%{http_code}\n" -X DELETE "$BASE/user/delete/$USER_ID"
+```
+
+---
+
+## 👤🌱 UserPlant (ownership) — composite PK
+
+**List**
+```bash
+curl -s "$BASE/user_plant/all" | jq .
+```
+
+**Create**
+```bash
+curl -s -X POST "$BASE/user_plant/add" \
+  -H "Content-Type: application/json" \
+  -d '{ "user_id":"<USER_ID>", "plant_id":"<PLANT_ID>", "nickname":"My Lavender" }' | jq .
+```
+
+**Delete**
+```bash
+curl -s -o /dev/null -w "%{http_code}\n" -X DELETE \
+  "$BASE/user_plant/delete?user_id=<USER_ID>&plant_id=<PLANT_ID>"
+```
+
+---
+
+## 🤝 Friendship
+
+**List**
+```bash
+curl -s "$BASE/friendship/all" | jq .
+```
+
+**Create**
+```bash
+curl -s -X POST "$BASE/friendship/add" \
+  -H "Content-Type: application/json" \
+  -d '{ "user_id_a":"<USER_A>", "user_id_b":"<USER_B>", "status":"pending" }' | jq .
+```
+
+**Update**
+```bash
+FRIEND_ID="<UUID>"
+curl -s -X PATCH "$BASE/friendship/update/$FRIEND_ID" \
+  -H "Content-Type: application/json" \
+  -d '{ "status":"accepted" }' | jq .
+```
+
+**Delete**
+```bash
+FRIEND_ID="<UUID>"
+curl -s -o /dev/null -w "%{http_code}\n" -X DELETE "$BASE/friendship/delete/$FRIEND_ID"
+```
+
+---
+
+## 🔁 SharedPlant (sharing)
+
+**List**
+```bash
+curl -s "$BASE/shared_plant/all" | jq .
+```
+
+**Create**
+```bash
+curl -s -X POST "$BASE/shared_plant/add" \
+  -H "Content-Type: application/json" \
+  -d '{ "owner_user_id":"<OWNER_ID>", "recipient_user_id":"<RECIP_ID>", "plant_id":"<PLANT_ID>", "can_edit":true }' | jq .
+```
+
+**Update**
+```bash
+SP_ID="<UUID>"
+curl -s -X PATCH "$BASE/shared_plant/update/$SP_ID" \
+  -H "Content-Type: application/json" \
+  -d '{ "can_edit":false }' | jq .
+```
+
+**Delete**
+```bash
+SP_ID="<UUID>"
+curl -s -o /dev/null -w "%{http_code}\n" -X DELETE "$BASE/shared_plant/delete/$SP_ID"
+```
+
+---
+
+## 💧 WateringPlan
+
+**List**
+```bash
+curl -s "$BASE/watering_plan/all" | jq .
+```
+
+**Create**
+```bash
+curl -s -X POST "$BASE/watering_plan/add" \
+  -H "Content-Type: application/json" \
+  -d '{
+        "user_id":"<USER_ID>",
+        "plant_id":"<PLANT_ID>",
+        "next_due_at":"2025-12-01T08:00:00",
+        "interval_days":7,
+        "check_soil_moisture":true
+      }' | jq .
+```
+
+**Update**
+```bash
+WP_ID="<UUID>"
+curl -s -X PATCH "$BASE/watering_plan/update/$WP_ID" \
+  -H "Content-Type: application/json" \
+  -d '{ "interval_days":10 }' | jq .
+```
+
+**Delete**
+```bash
+WP_ID="<UUID>"
+curl -s -o /dev/null -w "%{http_code}\n" -X DELETE "$BASE/watering_plan/delete/$WP_ID"
+```
+
+---
+
+## 🧾 WateringLog
+
+**List**
+```bash
+curl -s "$BASE/watering_log/all" | jq .
+```
+
+**Create**
+```bash
+curl -s -X POST "$BASE/watering_log/add" \
+  -H "Content-Type: application/json" \
+  -d '{
+        "user_id":"<USER_ID>",
+        "plant_id":"<PLANT_ID>",
+        "done_at":"2025-12-01T09:30:00",
+        "amount_ml":500,
+        "note":"plentiful watering"
+      }' | jq .
+```
+
+**Update**
+```bash
+WL_ID="<UUID>"
+curl -s -X PATCH "$BASE/watering_log/update/$WL_ID" \
+  -H "Content-Type: application/json" \
+  -d '{ "amount_ml":450 }' | jq .
+```
+
+**Delete**
+```bash
+WL_ID="<UUID>"
+curl -s -o /dev/null -w "%{http_code}\n" -X DELETE "$BASE/watering_log/delete/$WL_ID"
+```
+
+---
+
+## ❓ Question
+
+**List**
+```bash
+curl -s "$BASE/question/all" | jq .
+```
+
+**Create**
+```bash
+curl -s -X POST "$BASE/question/add" \
+  -H "Content-Type: application/json" \
+  -d '{
+        "user_id":"<USER_ID>",
+        "text":"How many hours of light does the plant get?",
+        "type":"text"
+      }' | jq .
+```
+
+**Update**
+```bash
+Q_ID="<UUID>"
+curl -s -X PATCH "$BASE/question/update/$Q_ID" \
+  -H "Content-Type: application/json" \
+  -d '{ "user_answer":"~5 hours", "answered_at":"2025-12-02T10:00:00" }' | jq .
+```
+
+**Delete**
+```bash
+Q_ID="<UUID>"
+curl -s -o /dev/null -w "%{http_code}\n" -X DELETE "$BASE/question/delete/$Q_ID"
+```
+
+---
+
+## ⏰ Reminder
+
+**List**
+```bash
+curl -s "$BASE/reminder/all" | jq .
+```
+
+**Create**
+```bash
+curl -s -X POST "$BASE/reminder/add" \
+  -H "Content-Type: application/json" \
+  -d '{
+        "user_id":"<USER_ID>",
+        "title":"Check Ficus soil",
+        "scheduled_at":"2025-12-01T18:00:00"
+      }' | jq .
+```
+
+**Update**
+```bash
+R_ID="<UUID>"
+curl -s -X PATCH "$BASE/reminder/update/$R_ID" \
+  -H "Content-Type: application/json" \
+  -d '{ "note":"use moisture meter" }' | jq .
+```
+
+**Delete**
+```bash
+R_ID="<UUID>"
+curl -s -o /dev/null -w "%{http_code}\n" -X DELETE "$BASE/reminder/delete/$R_ID"
+```
+
+---

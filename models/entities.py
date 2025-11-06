@@ -3,6 +3,8 @@ from __future__ import annotations
 from datetime import datetime, date
 from typing import List, Optional
 import uuid
+from enum import Enum
+from sqlalchemy import Enum as SAEnum
 
 from sqlalchemy import (
     Boolean,
@@ -40,10 +42,15 @@ class Family(Base):
 
     # 1:N  (una family ha molte piante)
     plants: Mapped[list["Plant"]] = relationship(back_populates="family", lazy="selectin")
-
+class SizeEnum(str, Enum):
+    PICCOLO = "piccolo"
+    MEDIO   = "medio"
+    GRANDE  = "grande"
+    GIGANTE = "gigante"
 
 class Plant(Base):
     __tablename__ = "plant"
+
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=gen_uuid)
     scientific_name: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
@@ -54,12 +61,17 @@ class Plant(Base):
     light_level: Mapped[int] = mapped_column(SmallInteger, nullable=False)
     min_temp_c: Mapped[int] = mapped_column(Integer, nullable=False)
     max_temp_c: Mapped[int] = mapped_column(Integer, nullable=False)
-
+    
     # ENUM/logici
     category: Mapped[str] = mapped_column(String(100), nullable=False)   # CategoryEnum logico
     climate:  Mapped[str] = mapped_column(String(100), nullable=False)   # ClimateEnum logico
     pests:    Mapped[Optional[dict]] = mapped_column(MySQLJSON)           # es. ["aphid","whitefly"]
 
+    size: Mapped[SizeEnum] = mapped_column(
+        SAEnum(SizeEnum, name="size_enum", native_enum=True),
+        nullable=False,
+        default=SizeEnum.MEDIO,
+    )
     # NEW: 1:N con Family
     family_id: Mapped[Optional[str]] = mapped_column(
         String(36),
