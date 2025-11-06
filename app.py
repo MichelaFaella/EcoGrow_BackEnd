@@ -6,23 +6,18 @@ from werkzeug.exceptions import HTTPException, BadRequest
 from flask import request
 from models.base import Base, engine
 import models.entities  # noqa: F401
-import models
-from sqlalchemy import text
 from models.scripts.replay_changes import seed_from_changes  # <-- NEW
 from api import api_blueprint
-
-
 
 
 def create_app() -> Flask:
     app = Flask(__name__)
     app.config.update(
-    DEBUG=False,                     # niente Werkzeug debugger HTML
-    TESTING=False,
-    PROPAGATE_EXCEPTIONS=False,      # lascia gestire agli handler
-    JSON_SORT_KEYS=False,
-)
-    
+        DEBUG=False,  # niente Werkzeug debugger HTML
+        TESTING=False,
+        PROPAGATE_EXCEPTIONS=False,  # lascia gestire agli handler
+        JSON_SORT_KEYS=False,
+    )
 
     # Aspetta il DB con retry esponenziale (max ~30s)
     backoff = 0.5
@@ -49,7 +44,6 @@ def create_app() -> Flask:
         # non bloccare l'avvio dell'API, logga l'errore
         app.logger.error("Replay changes failed: %s", e)
 
-
     @app.get("/health")
     def health():
         return jsonify(status="ok")
@@ -58,7 +52,7 @@ def create_app() -> Flask:
 
     @app.errorhandler(HTTPException)
     def handle_http_exc(e: HTTPException):
-    # errori 4xx/5xx di Flask/Werkzeug -> JSON
+        # errori 4xx/5xx di Flask/Werkzeug -> JSON
         payload = {
             "error": e.name,
             "message": e.description or e.name,
@@ -66,6 +60,7 @@ def create_app() -> Flask:
             "path": request.path,
         }
         return jsonify(payload), e.code
+
     @app.errorhandler(Exception)
     def handle_unexpected_exc(e: Exception):
         # errori non gestiti -> 500 JSON, log completo nei log del container
@@ -79,6 +74,7 @@ def create_app() -> Flask:
         return jsonify(payload), 500
 
     return app
+
 
 if __name__ == "__main__":
     app = create_app()
