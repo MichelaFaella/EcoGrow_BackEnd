@@ -39,6 +39,7 @@ class Family(Base):
 
     id:   Mapped[str] = mapped_column(String(36), primary_key=True, default=gen_uuid)
     name: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
+    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     # 1:N  (una family ha molte piante)
     plants: Mapped[list["Plant"]] = relationship(back_populates="family", lazy="selectin")
