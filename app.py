@@ -1,12 +1,12 @@
 from __future__ import annotations
 import os, time
-from flask import Flask, jsonify
+from flask import Flask, jsonify, send_from_directory 
 from sqlalchemy.exc import OperationalError
 from werkzeug.exceptions import HTTPException, BadRequest
 from flask import request
 from models.base import Base, engine
 import models.entities  # noqa: F401
-from models.scripts.replay_changes import seed_from_changes  # <-- NEW
+from models.scripts.replay_changes import seed_from_changes
 from api import api_blueprint
 
 
@@ -18,6 +18,10 @@ def create_app() -> Flask:
         PROPAGATE_EXCEPTIONS=False,  # lascia gestire agli handler
         JSON_SORT_KEYS=False,
     )
+
+    UPLOAD_DIR = os.getenv("UPLOAD_DIR", "/app/uploads")
+    os.makedirs(UPLOAD_DIR, exist_ok=True)
+    app.config["UPLOAD_DIR"] = UPLOAD_DIR
 
     # Aspetta il DB con retry esponenziale (max ~30s)
     backoff = 0.5
@@ -47,6 +51,10 @@ def create_app() -> Flask:
     @app.get("/health")
     def health():
         return jsonify(status="ok")
+
+    @app.get("/uploads/<path:relpath>")
+    def serve_upload(relpath: str):
+        return send_from_directory(app.config["UPLOAD_DIR"], relpath)
 
     app.register_blueprint(api_blueprint, url_prefix="/api")
 

@@ -1,21 +1,22 @@
 from __future__ import annotations
-import uuid
+import os, uuid
 from contextlib import contextmanager
 from datetime import datetime
 
 from sqlalchemy import func
 from models.entities import SizeEnum
 
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, jsonify, current_app,request
 from services.repository_service import RepositoryService
 from sqlalchemy.exc import IntegrityError, DataError
 from flask import abort
+from werkzeug.utils import secure_filename
 # from services.reminder_service import ReminderService
 # from services.disease_recognition_service import DiseaseRecognitionService
 
 from utils.jwt_helper import validate_token
 from models.entities import Disease, Family, Friendship, Plant, PlantDisease, PlantPhoto, Question, Reminder, \
-    SharedPlant, User, UserPlant, WateringLog, WateringPlan
+    SharedPlant, User, UserPlant, WateringLog, WateringPlan, PlantPhoto
 
 api_blueprint = Blueprint("api", __name__)
 repo = RepositoryService()
@@ -404,16 +405,45 @@ def plant_photo_update(photo_id: str):
         return jsonify({"ok": True, "id": ph.id}), 200
 
 
-@api_blueprint.route("/plant/photo/delete/<photo_id>", methods=["DELETE"])
+@api_blueprint.route("/plant-photo/delete/<photo_id>", methods=["DELETE"])
 def plant_photo_delete(photo_id: str):
-    _ensure_uuid(photo_id, "photo_id")
+    """
+    Cancella la foto della pianta:
+    - rimuove la riga da plant_photo
+    - prova a cancellare anche il file su disco (se esiste)
+    - aggiorna il changes.json con una delete
+    Ritorna: 204 (idempotente)
+    """
     with _session_ctx() as s:
-        ph = s.get(PlantPhoto, photo_id)
-        if ph:
-            s.delete(ph)
+        pp = s.get(PlantPhoto, photo_id)
+
+        # prova a cancellare anche il file su disco se conosciamo l'URL
+        if pp and pp.url and pp.url.startswith("/uploads/"):
+            try:
+                rel = pp.url[len("/uploads/"):]                   # es. "plant/<pid>/<uuid>.png"
+                base = os.path.realpath(current_app.config["UPLOAD_DIR"])
+                full = os.path.realpath(os.path.join(base, rel))  # path assoluto
+                # sicurezza: cancella solo dentro UPLOAD_DIR
+                if full.startswith(base) and os.path.exists(full):
+                    os.remove(full)
+                    # opzionale: rimuovi la dir se vuota
+                    dirpath = os.path.dirname(full)
+                    try:
+                        os.rmdir(dirpath)
+                    except OSError:
+                        pass
+            except Exception as e:
+                current_app.logger.warning(f"Impossibile rimuovere file per photo_id={photo_id}: {e}")
+
+        # cancella la riga dal DB
+        if pp:
+            s.delete(pp)
             _commit_or_409(s)
-        write_changes_delete("plant_photo", photo_id)
-        return ("", 204)
+
+    # aggiorna changes.json (idempotente come fai con family_delete)
+    write_changes_delete("plant_photo", photo_id)
+
+    return ("", 204)
 
 
 # ========= Disease =========
@@ -907,3 +937,92 @@ def reminder_delete(rid: str):
             _commit_or_409(s)
         write_changes_delete("reminder", rid)
         return ("", 204)
+
+
+# ========= Upload Plant Photo =========
+ALLOWED_EXT = {".jpg", ".jpeg", ".png", ".webp"}
+
+@api_blueprint.route("/upload/plant-photo", methods=["POST"])
+def upload_plant_photo():
+    """
+    multipart/form-data:
+      - file (obbligatorio)
+      - plant_id (obbligatorio)
+      - caption (opzionale)
+    Ritorna: { ok: true, photo_id, url }
+    """
+    f = request.files.get("file")
+    plant_id = request.form.get("plant_id")
+    caption = request.form.get("caption")
+
+    if not f or not f.filename:
+        return jsonify({"error": "file mancante"}), 400
+    if not plant_id:
+        return jsonify({"error": "plant_id mancante"}), 400
+
+    _, ext = os.path.splitext(secure_filename(f.filename))
+    ext = ext.lower()
+    if ext not in ALLOWED_EXT:
+        return jsonify({"error": f"Estensione non permessa: {ext}"}), 400
+
+    # Salva il file in /app/uploads/plant/<plant_id>/<uuid>.ext
+    dest_dir = os.path.join(current_app.config["UPLOAD_DIR"], "plant", plant_id)
+    os.makedirs(dest_dir, exist_ok=True)
+    fname = f"{uuid.uuid4().hex}{ext}"
+    dest_path = os.path.join(dest_dir, fname)
+    f.save(dest_path)
+
+    url = f"/uploads/plant/{plant_id}/{fname}"
+
+    with _session_ctx() as s:
+        plant = s.get(Plant, plant_id)
+        if not plant:
+            return jsonify({"error": "Plant non trovata"}), 404
+
+        photo = PlantPhoto(plant_id=plant_id, url=url, caption=caption, order_index=0)
+        s.add(photo)
+        _commit_or_409(s)
+
+        write_changes_upsert("plant_photo", [_serialize_instance(photo)])
+        return jsonify({"ok": True, "photo_id": photo.id, "url": url}), 201
+
+@api_blueprint.route("/plant/<pid>/photo", methods=["GET"])
+def plant_main_photo(pid: str):
+    """
+    Ritorna la 'foto principale' della pianta (prima per order_index, poi la più recente).
+    404 se pianta o foto non presenti.
+    """
+    with _session_ctx() as s:
+        p = s.get(Plant, pid)
+        if not p:
+            return jsonify({"error": "Plant non trovata"}), 404
+
+        photo = (
+            s.query(PlantPhoto)
+             .filter(PlantPhoto.plant_id == pid)
+             .order_by(PlantPhoto.order_index.asc(), PlantPhoto.created_at.desc())
+             .first()
+        )
+        if not photo:
+            return jsonify({"error": "Nessuna foto per questa pianta"}), 404
+
+        return jsonify(_serialize_instance(photo)), 200
+
+
+
+@api_blueprint.route("/plant/<pid>/photos", methods=["GET"])
+def plant_photos(pid: str):
+    """
+    Lista tutte le foto della pianta ordinate per order_index, poi created_at desc.
+    Query param: ?limit=K per limitarne il numero.
+    """
+    limit = request.args.get("limit", type=int)
+    with _session_ctx() as s:
+        q = (
+            s.query(PlantPhoto)
+             .filter(PlantPhoto.plant_id == pid)
+             .order_by(PlantPhoto.order_index.asc(), PlantPhoto.created_at.desc())
+        )
+        rows = q.limit(limit).all() if limit else q.all()
+        return jsonify([_serialize_instance(r) for r in rows]), 200
+    

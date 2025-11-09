@@ -713,3 +713,84 @@ curl -s -o /dev/null -w "%{http_code}\n" -X DELETE "$BASE/reminder/delete/$R_ID"
 ```
 
 ---
+
+# Images API — Examples  
+
+> Base URL: `http://localhost:8000`  
+> API prefix: `/api`
+
+
+## Variables (file and plant_id are examples, put yours)
+
+```bash
+API="http://localhost:8000/api"
+PLANT_ID="2bd7da1f-76d6-4bcb-8511-0716ce95bb43"
+FILE="./uploads/shrek.png"
+```
+
+
+## Upload a plant photo
+
+```bash
+RESP_UPLOAD=$(curl -s -X POST "$API/upload/plant-photo" \
+  -F "plant_id=$PLANT_ID" \
+  -F "file=@$FILE")
+
+echo "$RESP_UPLOAD" | jq
+PHOTO_ID=$(echo "$RESP_UPLOAD" | jq -r .photo_id)
+URL=$(echo "$RESP_UPLOAD" | jq -r .url)
+echo "PHOTO_ID=$PHOTO_ID"
+echo "URL=$URL"
+```
+
+
+
+## Get main photo for a plant
+
+```bash
+curl -s "$API/plant/$PLANT_ID/photo" | jq
+```
+
+
+
+## List photos for a plant
+
+```bash
+curl -s "$API/plant/$PLANT_ID/photos?limit=10" | jq
+```
+
+
+## Fetch file headers for the returned URL
+
+```bash
+curl -I "http://localhost:8000$URL"
+```
+
+
+
+## Delete a plant photo by id
+
+```bash
+curl -i -X DELETE "$API/plant-photo/delete/$PHOTO_ID"
+```
+
+
+
+## Verify list after deletion
+
+```bash
+curl -s "$API/plant/$PLANT_ID/photos" | jq
+```
+
+
+
+## Bulk delete all photos for a plant
+
+```bash
+curl -s "$API/plant/$PLANT_ID/photos" | jq -r '.[].id' \
+| while read -r PID; do
+  curl -s -X DELETE "$API/plant-photo/delete/$PID" > /dev/null
+done
+
+curl -s "$API/plant/$PLANT_ID/photos" | jq
+```
