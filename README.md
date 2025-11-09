@@ -297,6 +297,7 @@ curl -s -X POST "$BASE/plant/add" \
         "use":"ornamental",
         "water_level":2,
         "light_level":5,
+        "difficulty":5,
         "min_temp_c":-10,
         "max_temp_c":40,
         "category":"shrub",

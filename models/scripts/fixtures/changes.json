@@ -1,29 +1,23 @@
 {
   "plant": [
     {
+      "updated_at": "2025-11-09T20:44:20",
       "common_name": "Rosa canina",
-      "pests": null,
-      "origin": null,
-      "max_temp_c": 40,
+      "scientific_name": "Rosa canina demo",
       "light_level": 4,
-      "created_at": "2025-11-09T19:36:35",
+      "difficulty": 5,
+      "origin": null,
       "use": "ornamental",
-      "climate": "temperate",
-      "size": "medio",
-      "water_level": 3,
       "category": "shrub",
-      "updated_at": "2025-11-09T19:36:35",
-      "min_temp_c": -5,
-      "id": "a374df3e-9fd6-4726-bd34-e9c434a0005a",
+      "size": "medio",
       "family_id": null,
-      "scientific_name": "Rosa canina demo"
-    }
-  ],
-  "plant_photo": [
-    {
-      "id": "85d52cc5-a4fa-488a-a734-b05ee88d8217",
-      "_delete": true,
-      "created_at": "2025-11-09T19:41:21"
+      "max_temp_c": 40,
+      "climate": "temperate",
+      "id": "77308ed1-ba53-4caa-9aad-1f8ef546bf9d",
+      "pests": null,
+      "min_temp_c": -5,
+      "created_at": "2025-11-09T20:44:20",
+      "water_level": 3
     }
   ]
 }
