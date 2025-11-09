@@ -18,6 +18,49 @@
       "min_temp_c": -5,
       "created_at": "2025-11-09T20:44:20",
       "water_level": 3
+    },
+    {
+      "light_level": 4,
+      "created_at": "2025-11-09T22:03:22",
+      "scientific_name": "Testus difficilis 1762725691",
+      "category": "indoor",
+      "common_name": "Demo plant",
+      "max_temp_c": 30,
+      "size": "medio",
+      "family_id": null,
+      "id": "fb9555ad-f000-4371-9496-b18208273195",
+      "pests": null,
+      "updated_at": "2025-11-09T22:03:22",
+      "origin": null,
+      "water_level": 3,
+      "difficulty": 5,
+      "climate": "temperate",
+      "use": "ornamental",
+      "min_temp_c": 10
+    }
+  ],
+  "user": [
+    {
+      "created_at": "2025-11-09T22:01:53",
+      "updated_at": "2025-11-09T22:01:53",
+      "first_name": "Admin",
+      "id": "2e4fd5ac-de11-4979-8873-cc5a4d61568b",
+      "email": "admin+1762725691@example.com",
+      "password_hash": "scrypt:32768:8:1$LXmR5wR1cGMyKElg$b8575ff1f80fad2e5c89c2d3bc53cab6b043f03edb6ae256a08eef26703f67f29e168a3f0c7aff6242cdf4eb3f18c3930386fdc8b1fed33351078980028c61cf",
+      "last_name": "User"
+    }
+  ],
+  "family": [
+    {
+      "id": "c0a8db6d-f524-4382-befd-b2354374d0c8",
+      "_delete": true
+    }
+  ],
+  "plant_photo": [
+    {
+      "id": "48a16e1b-41bb-4871-bf71-62cf0ca71ed6",
+      "_delete": true,
+      "created_at": "2025-11-09T22:04:21"
     }
   ]
 }
