@@ -6547,5 +6547,103 @@
             "Potted plant",
             "Secondary"
         ]
-    }
-]
+    },
+    {
+        "id": 301,
+        "latin": "Chrysanthemum morifolium",
+        "family": "Asteraceae",
+        "common": [
+            "Chrysanthemum",
+            "Mum"
+        ],
+        "category": "Flowering",
+        "origin": "China",
+        "climate": "Temperate",
+        "tempmax": {
+            "celsius": 25,
+            "fahrenheit": 77
+        },
+        "tempmin": {
+            "celsius": 10,
+            "fahrenheit": 50
+        },
+        "ideallight": "4-6 hours of bright indirect light per day.",
+        "toleratedlight": "Partial shade to full sun.",
+        "watering": "Keep soil evenly moist, but avoid overwatering.",
+        "insects": "Aphids, Spider mites",
+        "diseases": "Powdery mildew, Leaf spot",
+        "use": [
+            "Potted plant",
+            "Ornamental"
+        ]
+    },
+    {
+
+        "id": 302,
+        "latin": "Hibiscus rosa-sinensis",
+        "family": "Malvaceae",
+        "common": ["Hibiscus", "Tropical hibiscus"],
+        "category": "Flowering",
+        "origin": "Asia",
+        "climate": "Tropical",
+        "tempmax": { "celsius": 32, "fahrenheit": 89.6 },
+        "tempmin": { "celsius": 15, "fahrenheit": 59 },
+        "ideallight": "6+ hours of bright sunlight per day.",
+        "toleratedlight": "Full sun.",
+        "watering": "Water frequently, keep soil moist but not soggy.",
+        "insects": "Whiteflies, Aphids, Mealybugs",
+        "diseases": "Root rot, Leaf spot",
+        "use": ["Garden plant", "Ornamental"]
+    },
+    {
+        "id": 303,
+        "latin": "Epipremnum aureum",
+        "family": "Araceae",
+        "common": ["Money plant", "Golden pothos", "Devil's ivy"],
+        "category": "Climber",
+        "origin": "French Polynesia",
+        "climate": "Tropical",
+        "tempmax": { "celsius": 30, "fahrenheit": 86 },
+        "tempmin": { "celsius": 15, "fahrenheit": 59 },
+        "ideallight": "Bright indirect light for best growth.",
+        "toleratedlight": "Low to bright indirect light.",
+        "watering": "Water when top 2-3 cm of soil is dry.",
+        "insects": "Mealybugs, Spider mites",
+        "diseases": "Root rot",
+        "use": ["Potted plant", "Indoor decor"]
+      },
+      {
+        "id": 304,
+        "latin": "Rosa",
+        "family": "Rosaceae",
+        "common": ["Rose"],
+        "category": "Flowering shrub",
+        "origin": "Asia",
+        "climate": "Temperate",
+        "tempmax": { "celsius": 28, "fahrenheit": 82.4 },
+        "tempmin": { "celsius": 5, "fahrenheit": 41 },
+        "ideallight": "6+ hours of direct sunlight per day.",
+        "toleratedlight": "Full sun preferred.",
+        "watering": "Water deeply 2-3 times per week.",
+        "insects": "Aphids, Thrips, Spider mites",
+        "diseases": "Black spot, Powdery mildew, Rust",
+        "use": ["Garden plant", "Cut flowers", "Ornamental"]
+      },
+      {
+        "id": 305,
+        "latin": "Curcuma longa",
+        "family": "Zingiberaceae",
+        "common": ["Turmeric", "Curcuma"],
+        "category": "Herb",
+        "origin": "India",
+        "climate": "Tropical",
+        "tempmax": { "celsius": 35, "fahrenheit": 95 },
+        "tempmin": { "celsius": 18, "fahrenheit": 64.4 },
+        "ideallight": "Bright light, avoid harsh midday sun.",
+        "toleratedlight": "Partial shade to bright light.",
+        "watering": "Keep consistently moist, but well drained.",
+        "insects": "Rhizome scale, Aphids",
+        "diseases": "Leaf blotch, Rhizome rot",
+        "use": ["Medicinal", "Culinary", "Ornamental"]
+      }
+    ]
