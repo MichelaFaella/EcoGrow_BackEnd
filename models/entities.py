@@ -39,6 +39,7 @@ class Family(Base):
 
     id:   Mapped[str] = mapped_column(String(36), primary_key=True, default=gen_uuid)
     name: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
+    description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     # 1:N  (una family ha molte piante)
     plants: Mapped[list["Plant"]] = relationship(back_populates="family", lazy="selectin")
@@ -59,6 +60,7 @@ class Plant(Base):
     origin: Mapped[Optional[str]] = mapped_column(String(255))
     water_level: Mapped[int] = mapped_column(SmallInteger, nullable=False)
     light_level: Mapped[int] = mapped_column(SmallInteger, nullable=False)
+    difficulty: Mapped[int] = mapped_column(SmallInteger, nullable=False, default=3)
     min_temp_c: Mapped[int] = mapped_column(Integer, nullable=False)
     max_temp_c: Mapped[int] = mapped_column(Integer, nullable=False)
     
@@ -85,6 +87,7 @@ class Plant(Base):
     __table_args__ = (
         CheckConstraint("water_level BETWEEN 1 AND 5", name="ck_plant_water_level"),
         CheckConstraint("light_level BETWEEN 1 AND 5", name="ck_plant_light_level"),
+        CheckConstraint("difficulty BETWEEN 1 AND 5", name="ck_plant_difficulty"),  
         CheckConstraint("min_temp_c < max_temp_c", name="ck_plant_temp_range"),
         Index("ix_plant_category_climate", "category", "climate"),
         Index("ix_plant_updated_at", "updated_at"),

@@ -1,21 +1,40 @@
 from __future__ import annotations
+
+# Standard library
+import os
 import uuid
 from contextlib import contextmanager
 from datetime import datetime
 
+
+# Third-party
+from flask import Blueprint, jsonify, current_app, request, abort, g
+from werkzeug.utils import secure_filename
+from werkzeug.security import check_password_hash
+from werkzeug.security import generate_password_hash  
 from sqlalchemy import func
-from models.entities import SizeEnum
-
-from flask import Blueprint, jsonify, request
-from services.repository_service import RepositoryService
 from sqlalchemy.exc import IntegrityError, DataError
-from flask import abort
-# from services.reminder_service import ReminderService
-# from services.disease_recognition_service import DiseaseRecognitionService
+from functools import wraps
 
-from utils.jwt_helper import validate_token
-from models.entities import Disease, Family, Friendship, Plant, PlantDisease, PlantPhoto, Question, Reminder, \
-    SharedPlant, User, UserPlant, WateringLog, WateringPlan
+# Local application
+from services.repository_service import RepositoryService
+from utils.jwt_helper import generate_token, validate_token
+from models.entities import SizeEnum
+from models.entities import (
+    Disease,
+    Family,
+    Friendship,
+    Plant,
+    PlantDisease,
+    PlantPhoto,
+    Question,
+    Reminder,
+    SharedPlant,
+    User,
+    UserPlant,
+    WateringLog,
+    WateringPlan,
+)
 
 api_blueprint = Blueprint("api", __name__)
 repo = RepositoryService()
@@ -28,9 +47,48 @@ from models.scripts.replay_changes import seed_from_changes, write_changes_delet
 from models.base import SessionLocal
 
 
+#======== AUTH =========
+@api_blueprint.route("/auth/login", methods=["POST"])
+def auth_login():
+    """
+    Body JSON: { "email": "...", "password": "..." }
+    Ritorna:    { "access_token": "..." , "user_id": "..." }
+    """
+    data = request.get_json(silent=True) or {}
+    email = (data.get("email") or "").strip().lower()
+    password = data.get("password") or ""
+    if not email or not password:
+        return jsonify({"error": "email/password mancanti"}), 400
+
+    with _session_ctx() as s:
+        u = s.query(User).filter(func.lower(User.email) == email).first()
+        if not u or not check_password_hash(u.password_hash, password):
+            return jsonify({"error": "Credenziali non valide"}), 401
+
+        token = generate_token(str(u.id))
+        return jsonify(access_token=token, user_id=u.id), 200
+
+def _extract_token() -> str | None:
+    auth = (request.headers.get("Authorization") or "").strip()
+    if not auth:
+        return None
+    if auth.lower().startswith("bearer "):
+        return auth.split(" ", 1)[1].strip()
+    return auth
+
+def require_jwt(fn):
+    @wraps(fn)
+    def wrapper(*args, **kwargs):
+        tok = _extract_token()
+        user_id = validate_token(tok) if tok else None
+        if not user_id:
+            return jsonify({"error": "Unauthorized"}), 401
+        g.user_id = user_id
+        return fn(*args, **kwargs)
+    return wrapper
+
+
 # ========= Helpers =========
-
-
 def _model_columns(Model) -> set[str]:
     """Ritorna i nomi colonna SQLAlchemy del Model."""
     return {c.name for c in Model.__table__.columns}
@@ -124,10 +182,11 @@ def _plant_to_dict(p: Plant) -> dict:
 # ========= Auth check =========
 @api_blueprint.route("/check-auth", methods=["GET"])
 def check_auth():
-    token = request.headers.get("Authorization")
-    if not token or not validate_token(token):
+    tok = _extract_token()
+    user_id = validate_token(tok) if tok else None
+    if not user_id:
         return jsonify({"authenticated": False}), 401
-    return jsonify({"authenticated": True}), 200
+    return jsonify({"authenticated": True, "user_id": user_id}), 200
 
 
 # ========= Ping =========
@@ -289,6 +348,7 @@ def family_all():
 
 
 @api_blueprint.route("/family/add", methods=["POST"])
+@require_jwt
 def family_add():
     payload = _parse_json_body()
     data = _filter_fields_for_model(payload, Family)
@@ -303,6 +363,7 @@ def family_add():
 
 
 @api_blueprint.route("/family/update/<fid>", methods=["PATCH", "PUT"])
+@require_jwt
 def family_update(fid: str):
     _ensure_uuid(fid, "family_id")
     payload = _parse_json_body()
@@ -317,6 +378,7 @@ def family_update(fid: str):
 
 
 @api_blueprint.route("/family/delete/<fid>", methods=["DELETE"])
+@require_jwt
 def family_delete(fid: str):
     _ensure_uuid(fid, "family_id")
     with _session_ctx() as s:
@@ -369,6 +431,7 @@ def plants_by_use(use: str):
 
 # ========= PlantPhoto =========
 @api_blueprint.route("/plant_photo/all", methods=["GET"])
+@require_jwt
 def plant_photo_all():
     with _session_ctx() as s:
         rows = s.query(PlantPhoto).order_by(PlantPhoto.created_at.desc()).all()
@@ -376,6 +439,7 @@ def plant_photo_all():
 
 
 @api_blueprint.route("/plant/photo/add/<plant_id>", methods=["POST"])
+@require_jwt
 def plant_photo_add(plant_id: str):
     _ensure_uuid(plant_id, "plant_id")
     payload = _parse_json_body()
@@ -391,6 +455,7 @@ def plant_photo_add(plant_id: str):
 
 
 @api_blueprint.route("/plant/photo/update/<photo_id>", methods=["PATCH", "PUT"])
+@require_jwt
 def plant_photo_update(photo_id: str):
     _ensure_uuid(photo_id, "photo_id")
     payload = _parse_json_body()
@@ -404,16 +469,46 @@ def plant_photo_update(photo_id: str):
         return jsonify({"ok": True, "id": ph.id}), 200
 
 
-@api_blueprint.route("/plant/photo/delete/<photo_id>", methods=["DELETE"])
+@api_blueprint.route("/plant-photo/delete/<photo_id>", methods=["DELETE"])
+@require_jwt
 def plant_photo_delete(photo_id: str):
-    _ensure_uuid(photo_id, "photo_id")
+    """
+    Cancella la foto della pianta:
+    - rimuove la riga da plant_photo
+    - prova a cancellare anche il file su disco (se esiste)
+    - aggiorna il changes.json con una delete
+    Ritorna: 204 (idempotente)
+    """
     with _session_ctx() as s:
-        ph = s.get(PlantPhoto, photo_id)
-        if ph:
-            s.delete(ph)
+        pp = s.get(PlantPhoto, photo_id)
+
+        # prova a cancellare anche il file su disco se conosciamo l'URL
+        if pp and pp.url and pp.url.startswith("/uploads/"):
+            try:
+                rel = pp.url[len("/uploads/"):]                   # es. "plant/<pid>/<uuid>.png"
+                base = os.path.realpath(current_app.config["UPLOAD_DIR"])
+                full = os.path.realpath(os.path.join(base, rel))  # path assoluto
+                # sicurezza: cancella solo dentro UPLOAD_DIR
+                if full.startswith(base) and os.path.exists(full):
+                    os.remove(full)
+                    # opzionale: rimuovi la dir se vuota
+                    dirpath = os.path.dirname(full)
+                    try:
+                        os.rmdir(dirpath)
+                    except OSError:
+                        pass
+            except Exception as e:
+                current_app.logger.warning(f"Impossibile rimuovere file per photo_id={photo_id}: {e}")
+
+        # cancella la riga dal DB
+        if pp:
+            s.delete(pp)
             _commit_or_409(s)
-        write_changes_delete("plant_photo", photo_id)
-        return ("", 204)
+
+    # aggiorna changes.json (idempotente come fai con family_delete)
+    write_changes_delete("plant_photo", photo_id)
+
+    return ("", 204)
 
 
 # ========= Disease =========
@@ -425,6 +520,7 @@ def disease_all():
 
 
 @api_blueprint.route("/disease/add", methods=["POST"])
+@require_jwt
 def disease_add():
     payload = _parse_json_body()
     data = _filter_fields_for_model(payload, Disease)
@@ -439,6 +535,7 @@ def disease_add():
 
 
 @api_blueprint.route("/disease/update/<did>", methods=["PATCH", "PUT"])
+@require_jwt
 def disease_update(did: str):
     _ensure_uuid(did, "disease_id")
     payload = _parse_json_body()
@@ -453,6 +550,7 @@ def disease_update(did: str):
 
 
 @api_blueprint.route("/disease/delete/<did>", methods=["DELETE"])
+@require_jwt
 def disease_delete(did: str):
     _ensure_uuid(did, "disease_id")
     with _session_ctx() as s:
@@ -466,6 +564,7 @@ def disease_delete(did: str):
 
 # ========= PlantDisease =========
 @api_blueprint.route("/plant_disease/all", methods=["GET"])
+@require_jwt
 def plant_disease_all():
     with _session_ctx() as s:
         rows = s.query(PlantDisease).order_by(PlantDisease.detected_at.desc().nulls_last()).all()
@@ -473,6 +572,7 @@ def plant_disease_all():
 
 
 @api_blueprint.route("/plant_disease/add", methods=["POST"])
+@require_jwt
 def plant_disease_add():
     payload = _parse_json_body()
     data = _filter_fields_for_model(payload, PlantDisease)
@@ -489,6 +589,7 @@ def plant_disease_add():
 
 
 @api_blueprint.route("/plant_disease/update/<pdid>", methods=["PATCH", "PUT"])
+@require_jwt
 def plant_disease_update(pdid: str):
     _ensure_uuid(pdid, "plant_disease_id")
     payload = _parse_json_body()
@@ -503,6 +604,7 @@ def plant_disease_update(pdid: str):
 
 
 @api_blueprint.route("/plant_disease/delete/<pdid>", methods=["DELETE"])
+@require_jwt
 def plant_disease_delete(pdid: str):
     _ensure_uuid(pdid, "plant_disease_id")
     with _session_ctx() as s:
@@ -516,6 +618,7 @@ def plant_disease_delete(pdid: str):
 
 # ========= User =========
 @api_blueprint.route("/user/all", methods=["GET"])
+@require_jwt
 def user_all():
     with _session_ctx() as s:
         rows = s.query(User).order_by(User.created_at.desc()).all()
@@ -525,6 +628,8 @@ def user_all():
 @api_blueprint.route("/user/add", methods=["POST"])
 def user_add():
     payload = _parse_json_body()
+    if "password" in payload:
+        payload["password_hash"] = generate_password_hash(payload.pop("password"))
     data = _filter_fields_for_model(payload, User)
     required = ["email", "password_hash", "first_name", "last_name"]
     missing = [k for k in required if not data.get(k)]
@@ -539,9 +644,12 @@ def user_add():
 
 
 @api_blueprint.route("/user/update/<uid>", methods=["PATCH", "PUT"])
+@require_jwt
 def user_update(uid: str):
     _ensure_uuid(uid, "user_id")
     payload = _parse_json_body()
+    if payload.get("password"):
+        payload["password_hash"] = generate_password_hash(payload.pop("password"))
     with _session_ctx() as s:
         u = s.get(User, uid)
         if not u: return jsonify({"error": "User non trovato"}), 404
@@ -554,6 +662,7 @@ def user_update(uid: str):
 
 
 @api_blueprint.route("/user/delete/<uid>", methods=["DELETE"])
+@require_jwt
 def user_delete(uid: str):
     _ensure_uuid(uid, "user_id")
     with _session_ctx() as s:
@@ -567,6 +676,7 @@ def user_delete(uid: str):
 
 # ========= UserPlant (PK composta: user_id + plant_id) =========
 @api_blueprint.route("/user_plant/all", methods=["GET"])
+@require_jwt
 def user_plant_all():
     with _session_ctx() as s:
         rows = s.query(UserPlant).all()
@@ -574,6 +684,7 @@ def user_plant_all():
 
 
 @api_blueprint.route("/user_plant/add", methods=["POST"])
+@require_jwt
 def user_plant_add():
     payload = _parse_json_body()
     data = _filter_fields_for_model(payload, UserPlant)
@@ -590,6 +701,7 @@ def user_plant_add():
 
 
 @api_blueprint.route("/user_plant/delete", methods=["DELETE"])
+@require_jwt
 def user_plant_delete():
     user_id = request.args.get("user_id");
     plant_id = request.args.get("plant_id")
@@ -608,6 +720,7 @@ def user_plant_delete():
 
 # ========= Friendship =========
 @api_blueprint.route("/friendship/all", methods=["GET"])
+@require_jwt
 def friendship_all():
     with _session_ctx() as s:
         rows = s.query(Friendship).order_by(Friendship.created_at.desc()).all()
@@ -615,6 +728,7 @@ def friendship_all():
 
 
 @api_blueprint.route("/friendship/add", methods=["POST"])
+@require_jwt
 def friendship_add():
     payload = _parse_json_body()
     data = _filter_fields_for_model(payload, Friendship)
@@ -631,6 +745,7 @@ def friendship_add():
 
 
 @api_blueprint.route("/friendship/update/<fid>", methods=["PATCH", "PUT"])
+@require_jwt
 def friendship_update(fid: str):
     _ensure_uuid(fid, "friendship_id")
     payload = _parse_json_body()
@@ -646,6 +761,7 @@ def friendship_update(fid: str):
 
 
 @api_blueprint.route("/friendship/delete/<fid>", methods=["DELETE"])
+@require_jwt
 def friendship_delete(fid: str):
     _ensure_uuid(fid, "friendship_id")
     with _session_ctx() as s:
@@ -659,6 +775,7 @@ def friendship_delete(fid: str):
 
 # ========= SharedPlant =========
 @api_blueprint.route("/shared_plant/all", methods=["GET"])
+@require_jwt
 def shared_plant_all():
     with _session_ctx() as s:
         rows = s.query(SharedPlant).order_by(SharedPlant.created_at.desc()).all()
@@ -666,6 +783,7 @@ def shared_plant_all():
 
 
 @api_blueprint.route("/shared_plant/add", methods=["POST"])
+@require_jwt
 def shared_plant_add():
     payload = _parse_json_body()
     data = _filter_fields_for_model(payload, SharedPlant)
@@ -682,6 +800,7 @@ def shared_plant_add():
 
 
 @api_blueprint.route("/shared_plant/update/<sid>", methods=["PATCH", "PUT"])
+@require_jwt
 def shared_plant_update(sid: str):
     _ensure_uuid(sid, "shared_plant_id")
     payload = _parse_json_body()
@@ -696,6 +815,7 @@ def shared_plant_update(sid: str):
 
 
 @api_blueprint.route("/shared_plant/delete/<sid>", methods=["DELETE"])
+@require_jwt
 def shared_plant_delete(sid: str):
     _ensure_uuid(sid, "shared_plant_id")
     with _session_ctx() as s:
@@ -709,6 +829,7 @@ def shared_plant_delete(sid: str):
 
 # ========= WateringPlan =========
 @api_blueprint.route("/watering_plan/all", methods=["GET"])
+@require_jwt
 def watering_plan_all():
     with _session_ctx() as s:
         rows = s.query(WateringPlan).order_by(WateringPlan.next_due_at.asc()).all()
@@ -716,6 +837,7 @@ def watering_plan_all():
 
 
 @api_blueprint.route("/watering_plan/add", methods=["POST"])
+@require_jwt
 def watering_plan_add():
     payload = _parse_json_body()
     data = _filter_fields_for_model(payload, WateringPlan)
@@ -732,6 +854,7 @@ def watering_plan_add():
 
 
 @api_blueprint.route("/watering_plan/update/<wid>", methods=["PATCH", "PUT"])
+@require_jwt
 def watering_plan_update(wid: str):
     _ensure_uuid(wid, "watering_plan_id")
     payload = _parse_json_body()
@@ -746,6 +869,7 @@ def watering_plan_update(wid: str):
 
 
 @api_blueprint.route("/watering_plan/delete/<wid>", methods=["DELETE"])
+@require_jwt
 def watering_plan_delete(wid: str):
     _ensure_uuid(wid, "watering_plan_id")
     with _session_ctx() as s:
@@ -759,6 +883,7 @@ def watering_plan_delete(wid: str):
 
 # ========= WateringLog =========
 @api_blueprint.route("/watering_log/all", methods=["GET"])
+@require_jwt
 def watering_log_all():
     with _session_ctx() as s:
         rows = s.query(WateringLog).order_by(WateringLog.done_at.desc()).all()
@@ -766,6 +891,7 @@ def watering_log_all():
 
 
 @api_blueprint.route("/watering_log/add", methods=["POST"])
+@require_jwt
 def watering_log_add():
     payload = _parse_json_body()
     data = _filter_fields_for_model(payload, WateringLog)
@@ -782,6 +908,7 @@ def watering_log_add():
 
 
 @api_blueprint.route("/watering_log/update/<lid>", methods=["PATCH", "PUT"])
+@require_jwt
 def watering_log_update(lid: str):
     _ensure_uuid(lid, "watering_log_id")
     payload = _parse_json_body()
@@ -796,6 +923,7 @@ def watering_log_update(lid: str):
 
 
 @api_blueprint.route("/watering_log/delete/<lid>", methods=["DELETE"])
+@require_jwt
 def watering_log_delete(lid: str):
     _ensure_uuid(lid, "watering_log_id")
     with _session_ctx() as s:
@@ -809,6 +937,7 @@ def watering_log_delete(lid: str):
 
 # ========= Question =========
 @api_blueprint.route("/question/all", methods=["GET"])
+@require_jwt
 def question_all():
     with _session_ctx() as s:
         # se non hai created_at su Question, ordino per id
@@ -818,6 +947,7 @@ def question_all():
 
 
 @api_blueprint.route("/question/add", methods=["POST"])
+@require_jwt
 def question_add():
     payload = _parse_json_body()
     data = _filter_fields_for_model(payload, Question)
@@ -834,6 +964,7 @@ def question_add():
 
 
 @api_blueprint.route("/question/update/<qid>", methods=["PATCH", "PUT"])
+@require_jwt
 def question_update(qid: str):
     _ensure_uuid(qid, "question_id")
     payload = _parse_json_body()
@@ -848,6 +979,7 @@ def question_update(qid: str):
 
 
 @api_blueprint.route("/question/delete/<qid>", methods=["DELETE"])
+@require_jwt
 def question_delete(qid: str):
     _ensure_uuid(qid, "question_id")
     with _session_ctx() as s:
@@ -861,6 +993,7 @@ def question_delete(qid: str):
 
 # ========= Reminder =========
 @api_blueprint.route("/reminder/all", methods=["GET"])
+@require_jwt
 def reminder_all():
     with _session_ctx() as s:
         rows = s.query(Reminder).order_by(Reminder.scheduled_at.asc()).all()
@@ -868,6 +1001,7 @@ def reminder_all():
 
 
 @api_blueprint.route("/reminder/add", methods=["POST"])
+@require_jwt
 def reminder_add():
     payload = _parse_json_body()
     data = _filter_fields_for_model(payload, Reminder)
@@ -884,6 +1018,7 @@ def reminder_add():
 
 
 @api_blueprint.route("/reminder/update/<rid>", methods=["PATCH", "PUT"])
+@require_jwt
 def reminder_update(rid: str):
     _ensure_uuid(rid, "reminder_id")
     payload = _parse_json_body()
@@ -898,6 +1033,7 @@ def reminder_update(rid: str):
 
 
 @api_blueprint.route("/reminder/delete/<rid>", methods=["DELETE"])
+@require_jwt
 def reminder_delete(rid: str):
     _ensure_uuid(rid, "reminder_id")
     with _session_ctx() as s:
@@ -907,3 +1043,93 @@ def reminder_delete(rid: str):
             _commit_or_409(s)
         write_changes_delete("reminder", rid)
         return ("", 204)
+
+
+# ========= Upload Plant Photo =========
+ALLOWED_EXT = {".jpg", ".jpeg", ".png", ".webp"}
+
+@api_blueprint.route("/upload/plant-photo", methods=["POST"])
+@require_jwt
+def upload_plant_photo():
+    """
+    multipart/form-data:
+      - file (obbligatorio)
+      - plant_id (obbligatorio)
+      - caption (opzionale)
+    Ritorna: { ok: true, photo_id, url }
+    """
+    f = request.files.get("file")
+    plant_id = request.form.get("plant_id")
+    caption = request.form.get("caption")
+
+    if not f or not f.filename:
+        return jsonify({"error": "file mancante"}), 400
+    if not plant_id:
+        return jsonify({"error": "plant_id mancante"}), 400
+
+    _, ext = os.path.splitext(secure_filename(f.filename))
+    ext = ext.lower()
+    if ext not in ALLOWED_EXT:
+        return jsonify({"error": f"Estensione non permessa: {ext}"}), 400
+
+    # Salva il file in /app/uploads/plant/<plant_id>/<uuid>.ext
+    dest_dir = os.path.join(current_app.config["UPLOAD_DIR"], "plant", plant_id)
+    os.makedirs(dest_dir, exist_ok=True)
+    fname = f"{uuid.uuid4().hex}{ext}"
+    dest_path = os.path.join(dest_dir, fname)
+    f.save(dest_path)
+
+    url = f"/uploads/plant/{plant_id}/{fname}"
+
+    with _session_ctx() as s:
+        plant = s.get(Plant, plant_id)
+        if not plant:
+            return jsonify({"error": "Plant non trovata"}), 404
+
+        photo = PlantPhoto(plant_id=plant_id, url=url, caption=caption, order_index=0)
+        s.add(photo)
+        _commit_or_409(s)
+
+        write_changes_upsert("plant_photo", [_serialize_instance(photo)])
+        return jsonify({"ok": True, "photo_id": photo.id, "url": url}), 201
+
+@api_blueprint.route("/plant/<pid>/photo", methods=["GET"])
+def plant_main_photo(pid: str):
+    """
+    Ritorna la 'foto principale' della pianta (prima per order_index, poi la più recente).
+    404 se pianta o foto non presenti.
+    """
+    with _session_ctx() as s:
+        p = s.get(Plant, pid)
+        if not p:
+            return jsonify({"error": "Plant non trovata"}), 404
+
+        photo = (
+            s.query(PlantPhoto)
+             .filter(PlantPhoto.plant_id == pid)
+             .order_by(PlantPhoto.order_index.asc(), PlantPhoto.created_at.desc())
+             .first()
+        )
+        if not photo:
+            return jsonify({"error": "Nessuna foto per questa pianta"}), 404
+
+        return jsonify(_serialize_instance(photo)), 200
+
+
+
+@api_blueprint.route("/plant/<pid>/photos", methods=["GET"])
+def plant_photos(pid: str):
+    """
+    Lista tutte le foto della pianta ordinate per order_index, poi created_at desc.
+    Query param: ?limit=K per limitarne il numero.
+    """
+    limit = request.args.get("limit", type=int)
+    with _session_ctx() as s:
+        q = (
+            s.query(PlantPhoto)
+             .filter(PlantPhoto.plant_id == pid)
+             .order_by(PlantPhoto.order_index.asc(), PlantPhoto.created_at.desc())
+        )
+        rows = q.limit(limit).all() if limit else q.all()
+        return jsonify([_serialize_instance(r) for r in rows]), 200
+    

@@ -37,6 +37,7 @@ services:
       DB_PORT: 3306
       DB_ECHO: "false"
       CHANGES_PATH: "/app/models/scripts/fixtures/changes.json"
+      UPLOAD_DIR: "/app/uploads"        
       PYTHONUNBUFFERED: "1"
     ports:
       - "8000:8000"
@@ -47,6 +48,7 @@ services:
     command: python app.py
     volumes:
       - ./models/scripts/fixtures/changes.json:/app/models/scripts/fixtures/changes.json
+      - ./uploads:/app/uploads          
 
 volumes:
   db_data:
