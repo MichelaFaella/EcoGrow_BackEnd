@@ -1,16 +1,52 @@
+import json, os, re
 from typing import List, Dict
 from sqlalchemy import select, func
 from models.base import SessionLocal
 from models.entities import Plant, UserPlant, Family, PlantPhoto
-from sqlalchemy.orm import selectinload
+
+
 class RepositoryService:
     def __init__(self):
         self.Session = SessionLocal
 
+    def get_family(self, scientific_name: str) -> str:
+        file_path = os.path.join(os.path.dirname(__file__), "..", "utils", "house_plants.json")
+
+        with open(file_path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+
+        def normalize(text: str) -> str:
+            return re.sub(r'[^a-z0-9\s]', '', text.lower()).strip()
+
+        sci_norm = normalize(scientific_name)
+
+        matched_family_name = None
+        for item in data:
+            latin = item.get("latin")
+            if not latin:
+                continue
+
+            latin_norm = normalize(latin)
+
+            # Match se uno contiene l’altro (bi-direzionale, anche parziale)
+            if latin_norm in sci_norm or sci_norm in latin_norm:
+                matched_family_name = item.get("family") or item.get("name")
+                break
+
+            # Match se tutte le parole del più corto sono nel più lungo
+            short, long = (sci_norm, latin_norm) if len(sci_norm) < len(latin_norm) else (latin_norm, sci_norm)
+            if all(word in long for word in short.split()):
+                matched_family_name = item.get("family") or item.get("name")
+                break
+
+        if not matched_family_name:
+            return None
+
+        with self.Session() as s:
+            fam = s.query(Family).filter(func.lower(Family.name) == matched_family_name.lower()).first()
+            return str(fam.id) if fam else None
+
     def get_plants_by_user(self, user_id: str) -> List[Dict]:
-        """
-        Ritorna le piante possedute dall'utente come lista di dict JSON-serializzabili.
-        """
         with self.Session() as s:
             stmt = (
                 select(Plant.id, Plant.scientific_name, Plant.common_name, UserPlant.nickname, UserPlant.location_note)
@@ -29,13 +65,9 @@ class RepositoryService:
                 }
                 for r in rows
             ]
-        
+
     def get_all_families(self) -> List[Dict]:
-        """
-        Ritorna tutte le Family con conteggio piante collegate.
-        """
-        with SessionLocal() as session:
-            # Conta quante Plant hanno quella family (1:N)
+        with self.Session() as s:
             q = (
                 select(Family.id, Family.name, func.count(Plant.id).label("plants_count"))
                 .select_from(Family)
@@ -43,7 +75,7 @@ class RepositoryService:
                 .group_by(Family.id, Family.name)
                 .order_by(Family.name.asc())
             )
-            rows = session.execute(q).all()
+            rows = s.execute(q).all()
             return [
                 {
                     "id": fid,
@@ -52,13 +84,9 @@ class RepositoryService:
                 }
                 for (fid, name, count) in rows
             ]
-        
 
     def get_all_plants_catalog(self) -> List[Dict]:
-        """
-        Ritorna tutte le piante con alcune info di base + family name e conteggio foto.
-        """
-        with SessionLocal() as s:
+        with self.Session() as s:
             q = (
                 select(
                     Plant.id,

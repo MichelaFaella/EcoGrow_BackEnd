@@ -1,66 +1,116 @@
 {
-  "plant": [
+  "family": [
     {
-      "updated_at": "2025-11-09T20:44:20",
-      "common_name": "Rosa canina",
-      "scientific_name": "Rosa canina demo",
-      "light_level": 4,
-      "difficulty": 5,
-      "origin": null,
-      "use": "ornamental",
-      "category": "shrub",
-      "size": "medio",
-      "family_id": null,
-      "max_temp_c": 40,
-      "climate": "temperate",
-      "id": "77308ed1-ba53-4caa-9aad-1f8ef546bf9d",
-      "pests": null,
-      "min_temp_c": -5,
-      "created_at": "2025-11-09T20:44:20",
-      "water_level": 3
+      "description": "Polypodiaceae, family (including Grammitidaceae) in the order Polypodiales, which contains 56 genera and about 1,200 species of diverse and widely distributed medium-sized and small ferns. Some earlier classification systems have recognized as many as 170 genera and 7,000 species in the family, most of which are now placed in other families. This entire larger group is still often referred to as polypodiaceous ferns, however, because all exhibit certain characteristics considered to be evolutionarily advanced—i.e., long-stalked, spore-producing structures (sporangia) characterized by the presence of an incomplete, vertically arranged band of thick-walled cells (annulus). In addition, members of the presently recognized family are mostly tropical and subtropical epiphytes (plants not rooted in soil but growing upon other plants) with a rootlike creeping stem (rhizome) covered with distinctive scales. The lower surfaces of the leaves bear round or oblong clusters of sporangia (sori) that usually lack the protective membranous covering (indusium) found in many other fern families. The genera are distinguished by numerous characteristics such as presence and type of plant hairs on stems and leaves, arrangement of sori, rhizome type, growth habit, and others. The limits of the family and many of its included genera are still in need of study.",
+      "name": "Polypodiaceae",
+      "id": "a52a8d14-62fa-4927-b385-76413f22b094"
     },
     {
-      "light_level": 4,
-      "created_at": "2025-11-09T22:03:22",
-      "scientific_name": "Testus difficilis 1762725691",
-      "category": "indoor",
-      "common_name": "Demo plant",
-      "max_temp_c": 30,
-      "size": "medio",
-      "family_id": null,
-      "id": "fb9555ad-f000-4371-9496-b18208273195",
-      "pests": null,
-      "updated_at": "2025-11-09T22:03:22",
-      "origin": null,
-      "water_level": 3,
-      "difficulty": 5,
-      "climate": "temperate",
-      "use": "ornamental",
-      "min_temp_c": 10
+      "description": "Gesneriaceae, one of 23 families in the flowering plant order Lamiales, consisting of 147 genera and about 3,200 species of mostly tropical and subtropical herbaceous or slightly woody plants. Many are of economic importance as horticultural ornamentals. Among these are the African violets (Saintpaulia) and gloxinias (Sinningia speciosa). The family is characterized by bilaterally symmetrical, bisexual flowers, each of which has a two-lipped corolla of five fused petals; five-lobed calyx (sepals); two or four, rarely five, anthers that are joined lightly together or in pairs; and a superior or partly inferior ovary (i.e., positioned above the attachment point of the other flower parts, or slightly below them) with a single chamber in which numerous small seeds are produced on the walls of the ovary (parietal placentation).",
+      "name": "Gesneriaceae",
+      "id": "bbb99bdf-3851-4185-a263-b54f9736437b"
+    },
+    {
+      "description": "Bromeliaceae, the pineapple family of the flowering plants (order Poales), with more than 3,000 species across 56 genera. All but one species are native to the tropical New World and the West Indies. Spanish moss (Tillandsia usneoides) and the edible fruit of the pineapple (Ananas comosus) are the major economic products of the family, though the fibrous leaves of some species (e.g., Aechmea magdalenae and Neoglaziovia variegata) are made into rope, fabric, and netting in some regions. Additionally, several species are cultivated indoors as ornamentals for their colourful flowers and foliage, and a number of epiphytic Tillandsia species, known as air plants, are sold as novelties. Members of Bromeliaceae are herbaceous evergreen perennials with simple spirally arranged leaves. Many bromeliads are short-stemmed epiphytes that live in trees or on cacti, though a number are terrestrial. The flowers have three parts, like lilies but with contrasting sepals and petals, and are often borne in long spikes with distinctive coloured bracts. Most have fleshy fruit, but some produce dry capsules.",
+      "name": "Bromeliaceae",
+      "id": "8947b2cf-d9bc-4e16-b5b1-d3f180c45d7a"
+    },
+    {
+      "description": "Amaryllidaceae, amaryllis family of perennial herbs in the flowering plant order Asparagales, containing 73 genera and at least 1,600 species, distributed primarily in tropical and subtropical areas of the world. Members of the family have bulbs or underground stems, several strap- or lance-shaped leaves grouped at the base of the stem or arranged alternately along the stem, flowers usually with three or six petals and three or six sepals, and fruits that are typically dry capsules or fleshy berries. The family is divided into three subfamilies: Amaryllidoideae, Agapanthoideae, and Allioideae. Amaryllidoideae is the largest of these and features many garden ornamentals, especially the belladonna lily (Amaryllis belladonna), snowdrop (Galanthus), snowflake (Leucojum), and daffodil (Narcissus). Many tropical lilylike plants also belong to the subfamily, such as the Cape tulip, or blood lily (Haemanthus), Cornish lily (Nerine), and Hippeastrum; the hippeastrums, grown for their large, showy flowers, are commonly known as amaryllis. An ornamental Eurasian plant known as winter daffodil (Sternbergia lutea) is often cultivated in borders or rock gardens. Natal lily, or Kaffir lily (Clivia miniata), a South African perennial, is cultivated as a houseplant for its orange flowers lined with yellow.",
+      "name": "Amaryllidaceae",
+      "id": "03640112-d37b-4a84-a467-a03aa956bbfc"
+    },
+    {
+      "description": "Araceae, large family of flowering plants (order Alismatales) comprising more than 4,000 species in over 140 genera. Members of Araceae occur worldwide but are most common in the tropics. The family includes many climbers and herbaceous plants as well as rooted or free-floating aquatics. Colloquially known as aroids, members of the family include a number of common houseplants and cut flowers used in the floral industry. Araceae species are monocotyledons, meaning that each of their seeds has a single cotyledon (embryonic seed leaf). Most members of the family have leaves with a distinct petiole and an expanded blade that is uncharacteristically reticulate among the monocots. The leaves typically contain calcium oxalate, which may form stinging needle-shaped crystals known as raphides.",
+      "name": "Araceae",
+      "id": "ddc38e06-6633-48eb-988e-af2579ef2b53"
+    },
+    {
+      "description": "Apocynaceae, the dogbane family (order Gentianales) of flowering plants, including about 400 genera and about 4,555 species of trees, shrubs, woody vines, and herbs. Members of the family are distributed primarily in tropical and subtropical areas of the world. Nearly all members of this family are poisonous, and many species are used medicinally because of the presence of cardiac glycosides and various alkaloids. A number are cultivated as ornamentals for their attractive flowers and foliage. Members of the family have milky, often poisonous, juice; smooth-margined leaves; and flowers in clusters (rarely solitary). Some species, notably those in the subfamily Asclepiadoideae, have pollen massed in bundles called pollinia. The fruit may be berry-like or fleshy but usually is a dry pod (follicle) that splits open at maturity, releasing many winged or tufted seeds.",
+      "name": "Apocynaceae",
+      "id": "ceaa1cae-a87a-4c80-82f1-bb41742d82fd"
+    },
+    {
+      "description": "Liliaceae, the lily family of the flowering plant order Liliales, with 16 genera and 635 species of herbs and shrubs, native primarily to temperate and subtropical regions. Members of the family usually have six-segmented flowers and three-chambered capsular fruits; occasionally the fruits are berries. The leaves usually have parallel veins and are clustered at the base of the plant but may alternate along the stem or be arranged in whorls. Most species have an underground storage structure, such as a bulb. Related Topics: tulip lily mariposa lily Erythronium fritillary. The family is important for its many garden ornamentals and houseplants, especially Erythronium, fritillary (Fritillaria), lily (Lilium), and tulip (Tulipa).",
+      "name": "Liliaceae",
+      "id": "52dc714d-2f28-4e42-87cc-f1cf0b12bbf3"
+    },
+    {
+      "description": "Arecales, order of flowering plants that contains only one family, Arecaceae (also known as Palmae), which comprises the palms. Nearly 2,400 species in 189 genera are known. The order includes some of the most important plants in terms of economic value. The members of the Arecales are distinctive in geography and habit; all but a very few species are restricted to the tropics and subtropics, where they make up a prominent part of the vegetation. Characteristically woody, they stand out within the largely herbaceous monocotyledons (monocots). The family is fourth among monocotyledonous families in size, after the Orchidaceae, Poaceae, and Cyperaceae. Palms have been difficult to study for several reasons. Their large size and extreme hardness deterred early collectors, which led Liberty Hyde Bailey, an eminent American horticulturist during the early 20th century, to call palms the big game of the plant world. Many genera are island endemics. Notwithstanding their importance, they remained poorly known until air travel to remote tropical areas became feasible. Increased botanical exploration of the tropics in the 1980s established the importance of palms, which resulted in measures for studying and conserving them.",
+      "name": "Arecales",
+      "id": "4dd8f800-f4b4-4267-b49e-94a14c3c9274"
+    },
+    {
+      "description": "Euphorbiaceae, spurge family of flowering plants (order Malpighiales), containing some 6,745 species in 218 genera. Many members are important food sources. Others are useful for their waxes and oils and as a source of medicinal drugs; dangerous for their poisonous fruits, leaves, or sap; or attractive for their colorful bracts (leaflike structures located just below flower clusters) or unusual forms. Although species of the family grow throughout the world, except in cold alpine or arctic regions, most of them are found in temperate or tropical regions. The family consists of annual and perennial herbs and woody shrubs or trees as well as a few climbers. Flowers are of one sex, and male and female flowers are usually borne on the same plant. Petals are rarely present. Flowers of the largest genus, Euphorbia, are in cup-shaped clusters called cyathia, each of which seems to be a single female flower but actually consists of a single pistil surrounded by several male flowers, each of which has a single stamen. These clusters of reduced flowers are enclosed by an involucre (whorl) of bracts (modified leaves) that resembles a corolla, or whorl of flower petals. Male flowers of the other genera have one to many stamens, free or joined. Female flowers have three-chambered ovaries that are superior (that is, above, not enclosed by, other flower parts). There are as many styles as there are ovary cavities. The fruit is a three-chambered capsule. Leaves are usually simple and are alternate (or, rarely, opposite or whorled) in arrangement along the stems. The stems of many species contain a milky latex.",
+      "name": "Euphorbiaceae",
+      "id": "66b47b0a-3e2e-4918-9997-c6a8f1793460"
+    },
+    {
+      "description": "The plant family Cactaceae (cacti) is a family of about 139 genera and nearly 2,000 species of flowering plants, native to the Americas. Most are adapted to arid environments, though some are found in tropical regions, and they are characterized by their thick stems that store water, and most lack true leaves, with the stem performing photosynthesis. Cacti have a wide range of appearances, from flattened pads to columns and globes, and are valued for their unique aesthetic, some for edible fruit, and a few have medicinal uses. Nearly all species are native to the Americas, with the highest diversity in Mexico, although a few species may be native to the Old World. Most are adapted to dry climates, but some live in rainforests and tropical areas.",
+      "name": "Cactaceae",
+      "id": "88d1cdfc-7f90-4d8a-b6cc-789bb2b511e0"
+    },
+    {
+      "description": "Marantaceae, the prayer plant or arrowroot family (order Zingiberales), composed of about 31 genera and about 550 species. Members of the family are native to moist or swampy tropical forests, particularly in the Americas but also in Africa and Asia. Several species are cultivated as ornamentals or as a source of edible starch. Marantaceae members are largely rhizomatous perennial herbs. They vary from plants with slender, reedlike stalks to leafy spreading or dense bushes nearly 2 metres (about 6.5 feet) high. The petioles (leaf stalks) have a sheathed base, and the simple leaves usually are arranged in two rows. The asymmetrical flowers are borne characteristically in mirror image pairs. The fruit commonly is a berry or a capsule.",
+      "name": "Marantaceae",
+      "id": "d58c67e6-5aee-4de7-9b30-48482760d96f"
+    },
+    {
+      "description": "Nyctaginaceae, the four-o’clock family of flowering plants in the carnation order (Caryophyllales) containing about 32 genera with close to 400 species of herbs, shrubs, lianas, and trees native to tropical and warm temperate areas of the world.Members of the family have smooth-edged leaves borne oppositely along the stems. The stem nodes are frequently swollen, especially in herbaceous species. The wood characteristically oxidizes when cut, quickly turning orange or red-brown when exposed to air. The petal-less flowers have a small tubular petal-like surrounding structure called the perianth—probably equivalent to the sepals in other plants—and coloured bracts (leaflike structures) that fuse and may resemble petals. In some species these bracts are like sepals and enclose a single brightly coloured perianth whorl. The small dry fruit is an achene with a single seed and bears grooves or is winged; it is often surrounded by the persistent perianth tube, which may be fleshy. The fruit can be covered in very sticky trichomes (plant hairs).",
+      "name": "Nyctaginaceae",
+      "id": "b6c39225-83ed-4602-960a-141c494f1f24"
+    },
+    {
+      "description": "Pteridaceae, the maidenhair fern family (order Polypodiales), containing about 50 genera and approximately 950 species. Members of Pteridaceae are distributed throughout the world, especially in tropical and warm-temperate regions. The plants are extremely diverse ecologically, ranging from floating aquatic plants to rock ferns in deserts and seasonally arid places. Some species are cultivated as ornamentals. The family is characterized by spore-producing structures (sporangia) located in lines along the veins or at the vein tips. As leptosporangiate ferns, members of Pteridaceae have sporangia that characteristically arise from a single cell. These structures may be unprotected (lacking indusium) in grooves or covered by the rolled leaf margin (false indusium). True indusia are seldom produced. The spores are commonly globose (tetrahedral). The leaves (fronds) are usually compound, and the plants bear creeping or upright rhizomes. The members of Pteridaceae have been variously subdivided by botanists and include five (or more) relatively well-marked groups (clades) of genera whose classification remains controversial. The five clades given here have been treated as one or more separate subfamilies by some pteridologists (botanists who study ferns).",
+      "name": "Pteridaceae",
+      "id": "13a6ceee-6f0a-4ab6-b530-12a049ad2317"
+    },
+    {
+      "description": "Araliaceae, the ginseng family of flowering plants, in the order Apiales, comprising approximately 700 species centred in Southeast Asia and tropical America. Most members are shrubs or trees, though there are a number of climbers and a few herbs. The family has large, usually alternate, compound leaves, five-parted flowers arranged in compound umbels (flat-topped clusters), and a berry or (rarely) a drupe (a one-seeded fruit). Several members of the family are economically important. Ivies (Hedera species) are grown as ornamental plants and houseplants. The rice-paper plant (Tetrapanax papyriferum) is the source of rice paper, and the wood of several species, especially that of Dendropanax arboreum and several members of the genus Didymopanax, provides timber. Wild sarsaparilla (Aralia nudicaulis) has an aromatic root that is used as a substitute for sarsaparilla. Ginseng root, from Panax ginseng, has long been used by the Chinese in the treatment of various diseases; its American relative, Panax quinquefolium (see photograph), is used in the United States as a stimulant. Hari-giri, or castor aralia (Acanthopanax ricinifolius), is used in Japan in building and in furniture making.",
+      "name": "Araliaceae",
+      "id": "c0c52ee8-054a-4b55-96ee-1b6b27c46ced"
+    },
+    {
+      "description": "Meliaceae, the mahogany family of flowering plants (order Sapindales), comprising 51 genera and about 575 species of trees and (rarely) shrubs, native to tropical and subtropical regions. Most members of the family have large compound leaves, with the leaflets arranged in the form of a feather, and branched flower clusters. The fruit is fleshy and coloured or a leathery capsule. Trees of the genera Swietenia, Entandrophragma, and Cedrela (especially the Spanish cedar, C. odorata) are economically important timber trees and are valued as a source of mahogany wood. The neem tree, also called the margosa tree (Azadirachta indica), is grown throughout the Old World tropics, notably in India and Southeast Asia, and is a source of timber and medicinal oils and resins. Langsat (Lansium domesticum) is native to western Southeast Asia and is cultivated for its edible fruit. The chinaberry (Melia azedarach), also called bead tree and Persian lilac, is an ornamental Asian tree with round yellow fruits, often cultivated in many tropical and warm temperate areas.",
+      "name": "Miliaceae",
+      "id": "3bb6a2a7-2d58-473c-94b8-8516ddeb2360"
+    },
+    {
+      "description": "Crassulaceae, the stonecrop family of about 30 genera and 1,400 species of perennial herbs or low shrubs, the largest family in the order Saxifragales. The family is widespread from tropical to boreal regions but is concentrated in arid regions of the world. Many species are succulents and are grown as pot plants or cultivated in rock gardens and borders. Members of the family Crassulaceae are characterized by very thick fleshy leaves and by water-storage tissues in the leaves and stems. A specialized system of photosynthesis (light capture) adaptive to these kinds of conditions has been named after the family—Crassulacean Acid Metabolism (CAM). Special hairs, aerial roots, and surface cells may enable some species to absorb water directly from the air. Members of the genus Kalanchoe produce clonal plantlets on the indentations of the leaf margins. Flowers in the family are bisexual, with the perianth parts (sepals and petals) in sets of four or five. A nectar-producing gland sits at the base of each of the 3–10 separate carpels.",
+      "name": "Crasssulaceae",
+      "id": "e25fa7db-55d0-4480-9e9b-35ae94fc0b02"
     }
   ],
   "user": [
     {
-      "created_at": "2025-11-09T22:01:53",
-      "updated_at": "2025-11-09T22:01:53",
-      "first_name": "Admin",
-      "id": "2e4fd5ac-de11-4979-8873-cc5a4d61568b",
       "email": "admin+1762725691@example.com",
+      "id": "e56b726e-fe9a-4b36-aac1-b06b39b8198c",
+      "updated_at": "2025-11-10T13:55:52",
+      "created_at": "2025-11-10T13:55:52",
+      "last_name": "User",
       "password_hash": "scrypt:32768:8:1$LXmR5wR1cGMyKElg$b8575ff1f80fad2e5c89c2d3bc53cab6b043f03edb6ae256a08eef26703f67f29e168a3f0c7aff6242cdf4eb3f18c3930386fdc8b1fed33351078980028c61cf",
-      "last_name": "User"
+      "first_name": "Admin"
     }
   ],
-  "family": [
+  "plant": [
     {
-      "id": "c0a8db6d-f524-4382-befd-b2354374d0c8",
-      "_delete": true
-    }
-  ],
-  "plant_photo": [
-    {
-      "id": "48a16e1b-41bb-4871-bf71-62cf0ca71ed6",
-      "_delete": true,
-      "created_at": "2025-11-09T22:04:21"
+      "id": "f7d51e3a-44f7-48ae-a9d2-8f7715151fea",
+      "updated_at": "2025-11-10T13:56:09",
+      "pests": null,
+      "light_level": 3,
+      "use": "indoor",
+      "max_temp_c": 30,
+      "scientific_name": "Epipremnum aureum",
+      "common_name": "Pothos",
+      "difficulty": 3,
+      "climate": "tropical",
+      "created_at": "2025-11-10T13:56:09",
+      "family_id": "ddc38e06-6633-48eb-988e-af2579ef2b53",
+      "origin": null,
+      "water_level": 3,
+      "min_temp_c": 10,
+      "size": "medium",
+      "category": "ornamental"
     }
   ]
 }

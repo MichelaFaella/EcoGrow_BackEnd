@@ -6,15 +6,18 @@ import uuid
 from contextlib import contextmanager
 from datetime import datetime
 
-
 # Third-party
 from flask import Blueprint, jsonify, current_app, request, abort, g
 from werkzeug.utils import secure_filename
 from werkzeug.security import check_password_hash
-from werkzeug.security import generate_password_hash  
+from werkzeug.security import generate_password_hash
 from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError, DataError
 from functools import wraps
+
+# Export/seed utilities
+from models.scripts.replay_changes import seed_from_changes, write_changes_delete, write_changes_upsert
+from models.base import SessionLocal
 
 # Local application
 from services.repository_service import RepositoryService
@@ -38,16 +41,18 @@ from models.entities import (
 
 api_blueprint = Blueprint("api", __name__)
 repo = RepositoryService()
+
+
 # image_service = ImageProcessingService()
 # reminder_service = ReminderService()
 # disease_service = DiseaseRecognitionService()
 
-# Export/seed utilities
-from models.scripts.replay_changes import seed_from_changes, write_changes_delete, write_changes_upsert
-from models.base import SessionLocal
+@api_blueprint.errorhandler(401)
+def auth_missing(e):
+    return jsonify({"error": "Missing or invalid JWT token"}), 401
 
 
-#======== AUTH =========
+# ======== AUTH =========
 @api_blueprint.route("/auth/login", methods=["POST"])
 def auth_login():
     """
@@ -68,6 +73,7 @@ def auth_login():
         token = generate_token(str(u.id))
         return jsonify(access_token=token, user_id=u.id), 200
 
+
 def _extract_token() -> str | None:
     auth = (request.headers.get("Authorization") or "").strip()
     if not auth:
@@ -75,6 +81,7 @@ def _extract_token() -> str | None:
     if auth.lower().startswith("bearer "):
         return auth.split(" ", 1)[1].strip()
     return auth
+
 
 def require_jwt(fn):
     @wraps(fn)
@@ -85,6 +92,7 @@ def require_jwt(fn):
             return jsonify({"error": "Unauthorized"}), 401
         g.user_id = user_id
         return fn(*args, **kwargs)
+
     return wrapper
 
 
@@ -232,6 +240,7 @@ def get_all_plants():
 
 # ========= CREATE Plant =========
 @api_blueprint.route("/plant/add", methods=["POST"])
+@require_jwt
 def create_plant():
     payload = _parse_json_body()
 
@@ -244,11 +253,10 @@ def create_plant():
     if "updated_at" in cols:
         payload["updated_at"] = now
 
-    # --- size: opzionale; se presente validiamo e convertiamo a Enum ---
     if "size" in payload and payload["size"] is not None:
         size_val = str(payload["size"])
         if size_val not in ALLOWED_SIZES:
-            return jsonify({"error": f"size deve essere in {sorted(ALLOWED_SIZES)}"}), 400
+            return jsonify({"error": f"size should be {sorted(ALLOWED_SIZES)}"}), 400
         payload["size"] = SizeEnum(size_val)
 
     data = _filter_fields_for_model(payload, Plant)
@@ -257,30 +265,41 @@ def create_plant():
                 "min_temp_c", "max_temp_c", "category", "climate"]
     missing = [k for k in required if k not in data or data[k] in (None, "")]
     if missing:
-        return jsonify({"error": f"Campi obbligatori mancanti: {', '.join(missing)}"}), 400
+        return jsonify({"error": f"Missing mandatory fields: {', '.join(missing)}"}), 400
 
     try:
-        wl = int(data["water_level"]);
+        wl = int(data["water_level"])
         ll = int(data["light_level"])
-        if not (1 <= wl <= 5): return jsonify({"error": "water_level deve essere tra 1 e 5"}), 400
-        if not (1 <= ll <= 5): return jsonify({"error": "light_level deve essere tra 1 e 5"}), 400
-    except Exception:
-        return jsonify({"error": "water_level/light_level devono essere interi"}), 400
+        if not (1 <= wl <= 5):
+            return jsonify({"error": "water_level must be between 1 and 5"}), 400
+        if not (1 <= ll <= 5):
+            return jsonify({"error": "light_level must be between 1 and 5"}), 400
+    except:
+        return jsonify({"error": "water_level/light_level must be integer"}), 400
 
     try:
-        tmin = int(data["min_temp_c"]);
+        tmin = int(data["min_temp_c"])
         tmax = int(data["max_temp_c"])
-        if not (tmin < tmax): return jsonify({"error": "min_temp_c deve essere < max_temp_c"}), 400
-    except Exception:
-        return jsonify({"error": "min_temp_c/max_temp_c devono essere interi"}), 400
+        if tmin >= tmax:
+            return jsonify({"error": "min_temp_c must be < max_temp_c"}), 400
+    except:
+        return jsonify({"error": "min_temp_c/max_temp_c must be integer"}), 400
 
     with _session_ctx() as s:
         try:
+            family_id = repo.get_family(data["scientific_name"])
+            if not family_id:
+                return jsonify({"error": "Family not found in JSON"}), 400
+
+            data["family_id"] = family_id
+
             p = Plant(**data)
             s.add(p)
+
             _commit_or_409(s)
             write_changes_upsert("plant", [_serialize_instance(p)])
-            return jsonify({"ok": True, "id": str(getattr(p, "id", ""))}), 201
+            return jsonify({"ok": True, "id": str(p.id)}), 201
+
         except Exception as e:
             s.rollback()
             return jsonify({"error": f"DB error: {e}"}), 500
@@ -355,7 +374,7 @@ def family_add():
     if not data.get("name"):
         return jsonify({"error": "Campo 'name' obbligatorio"}), 400
     with _session_ctx() as s:
-        f = Family(**data);
+        f = Family(**data)
         s.add(f)
         _commit_or_409(s)
         write_changes_upsert("family", [_serialize_instance(f)])
@@ -447,7 +466,7 @@ def plant_photo_add(plant_id: str):
     if not data.get("url"):
         return jsonify({"error": "url obbligatorio"}), 400
     with _session_ctx() as s:
-        ph = PlantPhoto(**data);
+        ph = PlantPhoto(**data)
         s.add(ph)
         _commit_or_409(s)
         write_changes_upsert("plant_photo", [_serialize_instance(ph)])
@@ -485,7 +504,7 @@ def plant_photo_delete(photo_id: str):
         # prova a cancellare anche il file su disco se conosciamo l'URL
         if pp and pp.url and pp.url.startswith("/uploads/"):
             try:
-                rel = pp.url[len("/uploads/"):]                   # es. "plant/<pid>/<uuid>.png"
+                rel = pp.url[len("/uploads/"):]  # es. "plant/<pid>/<uuid>.png"
                 base = os.path.realpath(current_app.config["UPLOAD_DIR"])
                 full = os.path.realpath(os.path.join(base, rel))  # path assoluto
                 # sicurezza: cancella solo dentro UPLOAD_DIR
@@ -527,7 +546,7 @@ def disease_add():
     if not data.get("name") or not data.get("description"):
         return jsonify({"error": "name e description obbligatori"}), 400
     with _session_ctx() as s:
-        d = Disease(**data);
+        d = Disease(**data)
         s.add(d)
         _commit_or_409(s)
         write_changes_upsert("disease", [_serialize_instance(d)])
@@ -581,7 +600,7 @@ def plant_disease_add():
     if missing:
         return jsonify({"error": f"Campi obbligatori: {', '.join(missing)}"}), 400
     with _session_ctx() as s:
-        pd = PlantDisease(**data);
+        pd = PlantDisease(**data)
         s.add(pd)
         _commit_or_409(s)
         write_changes_upsert("plant_disease", [_serialize_instance(pd)])
@@ -630,17 +649,27 @@ def user_add():
     payload = _parse_json_body()
     if "password" in payload:
         payload["password_hash"] = generate_password_hash(payload.pop("password"))
+
     data = _filter_fields_for_model(payload, User)
     required = ["email", "password_hash", "first_name", "last_name"]
     missing = [k for k in required if not data.get(k)]
     if missing:
-        return jsonify({"error": f"Campi obbligatori: {', '.join(missing)}"}), 400
+        return jsonify({"error": f"Mandatory fields: {', '.join(missing)}"}), 400
+
     with _session_ctx() as s:
-        u = User(**data);
+        u = User(**data)
         s.add(u)
         _commit_or_409(s)
         write_changes_upsert("user", [_serialize_instance(u)])
-        return jsonify({"ok": True, "id": u.id}), 201
+
+        # GENERA IL JWT
+        token = generate_token(u.id)
+
+        return jsonify({
+            "ok": True,
+            "id": u.id,
+            "token": token  # <--- JWT restituito al client
+        }), 201
 
 
 @api_blueprint.route("/user/update/<uid>", methods=["PATCH", "PUT"])
@@ -693,7 +722,7 @@ def user_plant_add():
     if missing:
         return jsonify({"error": f"Campi obbligatori: {', '.join(missing)}"}), 400
     with _session_ctx() as s:
-        up = UserPlant(**data);
+        up = UserPlant(**data)
         s.add(up)
         _commit_or_409(s)
         write_changes_upsert("user_plant", [_serialize_instance(up)])
@@ -703,11 +732,11 @@ def user_plant_add():
 @api_blueprint.route("/user_plant/delete", methods=["DELETE"])
 @require_jwt
 def user_plant_delete():
-    user_id = request.args.get("user_id");
+    user_id = request.args.get("user_id")
     plant_id = request.args.get("plant_id")
     if not user_id or not plant_id:
         return jsonify({"error": "user_id e plant_id sono richiesti"}), 400
-    _ensure_uuid(user_id, "user_id");
+    _ensure_uuid(user_id, "user_id")
     _ensure_uuid(plant_id, "plant_id")
     with _session_ctx() as s:
         row = s.get(UserPlant, (user_id, plant_id))
@@ -737,7 +766,7 @@ def friendship_add():
     if missing:
         return jsonify({"error": f"Campi obbligatori: {', '.join(missing)}"}), 400
     with _session_ctx() as s:
-        fr = Friendship(**data);
+        fr = Friendship(**data)
         s.add(fr)
         _commit_or_409(s)
         write_changes_upsert("friendship", [_serialize_instance(fr)])
@@ -792,7 +821,7 @@ def shared_plant_add():
     if missing:
         return jsonify({"error": f"Campi obbligatori: {', '.join(missing)}"}), 400
     with _session_ctx() as s:
-        sp = SharedPlant(**data);
+        sp = SharedPlant(**data)
         s.add(sp)
         _commit_or_409(s)
         write_changes_upsert("shared_plant", [_serialize_instance(sp)])
@@ -846,7 +875,7 @@ def watering_plan_add():
     if missing:
         return jsonify({"error": f"Campi obbligatori: {', '.join(missing)}"}), 400
     with _session_ctx() as s:
-        wp = WateringPlan(**data);
+        wp = WateringPlan(**data)
         s.add(wp)
         _commit_or_409(s)
         write_changes_upsert("watering_plan", [_serialize_instance(wp)])
@@ -900,7 +929,7 @@ def watering_log_add():
     if missing:
         return jsonify({"error": f"Campi obbligatori: {', '.join(missing)}"}), 400
     with _session_ctx() as s:
-        wl = WateringLog(**data);
+        wl = WateringLog(**data)
         s.add(wl)
         _commit_or_409(s)
         write_changes_upsert("watering_log", [_serialize_instance(wl)])
@@ -956,7 +985,7 @@ def question_add():
     if missing:
         return jsonify({"error": f"Campi obbligatori: {', '.join(missing)}"}), 400
     with _session_ctx() as s:
-        q = Question(**data);
+        q = Question(**data)
         s.add(q)
         _commit_or_409(s)
         write_changes_upsert("question", [_serialize_instance(q)])
@@ -1010,7 +1039,7 @@ def reminder_add():
     if missing:
         return jsonify({"error": f"Campi obbligatori: {', '.join(missing)}"}), 400
     with _session_ctx() as s:
-        r = Reminder(**data);
+        r = Reminder(**data)
         s.add(r)
         _commit_or_409(s)
         write_changes_upsert("reminder", [_serialize_instance(r)])
@@ -1047,6 +1076,7 @@ def reminder_delete(rid: str):
 
 # ========= Upload Plant Photo =========
 ALLOWED_EXT = {".jpg", ".jpeg", ".png", ".webp"}
+
 
 @api_blueprint.route("/upload/plant-photo", methods=["POST"])
 @require_jwt
@@ -1093,6 +1123,7 @@ def upload_plant_photo():
         write_changes_upsert("plant_photo", [_serialize_instance(photo)])
         return jsonify({"ok": True, "photo_id": photo.id, "url": url}), 201
 
+
 @api_blueprint.route("/plant/<pid>/photo", methods=["GET"])
 def plant_main_photo(pid: str):
     """
@@ -1106,15 +1137,14 @@ def plant_main_photo(pid: str):
 
         photo = (
             s.query(PlantPhoto)
-             .filter(PlantPhoto.plant_id == pid)
-             .order_by(PlantPhoto.order_index.asc(), PlantPhoto.created_at.desc())
-             .first()
+            .filter(PlantPhoto.plant_id == pid)
+            .order_by(PlantPhoto.order_index.asc(), PlantPhoto.created_at.desc())
+            .first()
         )
         if not photo:
             return jsonify({"error": "Nessuna foto per questa pianta"}), 404
 
         return jsonify(_serialize_instance(photo)), 200
-
 
 
 @api_blueprint.route("/plant/<pid>/photos", methods=["GET"])
@@ -1127,9 +1157,8 @@ def plant_photos(pid: str):
     with _session_ctx() as s:
         q = (
             s.query(PlantPhoto)
-             .filter(PlantPhoto.plant_id == pid)
-             .order_by(PlantPhoto.order_index.asc(), PlantPhoto.created_at.desc())
+            .filter(PlantPhoto.plant_id == pid)
+            .order_by(PlantPhoto.order_index.asc(), PlantPhoto.created_at.desc())
         )
         rows = q.limit(limit).all() if limit else q.all()
         return jsonify([_serialize_instance(r) for r in rows]), 200
-    

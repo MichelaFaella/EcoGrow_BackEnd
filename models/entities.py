@@ -34,24 +34,27 @@ from .base import Base  # usa la tua Base/engine/SessionLocal
 def gen_uuid() -> str:
     return str(uuid.uuid4())
 
+
 class Family(Base):
     __tablename__ = "family"
 
-    id:   Mapped[str] = mapped_column(String(36), primary_key=True, default=gen_uuid)
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=gen_uuid)
     name: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     # 1:N  (una family ha molte piante)
     plants: Mapped[list["Plant"]] = relationship(back_populates="family", lazy="selectin")
+
+
 class SizeEnum(str, Enum):
-    PICCOLO = "piccolo"
-    MEDIO   = "medio"
-    GRANDE  = "grande"
-    GIGANTE = "gigante"
+    SMALL = "small"
+    MEDIUM = "medium"
+    LARGE = "large"
+    GIANT = "giant"
+
 
 class Plant(Base):
     __tablename__ = "plant"
-
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=gen_uuid)
     scientific_name: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
@@ -63,17 +66,23 @@ class Plant(Base):
     difficulty: Mapped[int] = mapped_column(SmallInteger, nullable=False, default=3)
     min_temp_c: Mapped[int] = mapped_column(Integer, nullable=False)
     max_temp_c: Mapped[int] = mapped_column(Integer, nullable=False)
-    
+
     # ENUM/logici
-    category: Mapped[str] = mapped_column(String(100), nullable=False)   # CategoryEnum logico
-    climate:  Mapped[str] = mapped_column(String(100), nullable=False)   # ClimateEnum logico
-    pests:    Mapped[Optional[dict]] = mapped_column(MySQLJSON)           # es. ["aphid","whitefly"]
+    category: Mapped[str] = mapped_column(String(100), nullable=False)  # CategoryEnum logico
+    climate: Mapped[str] = mapped_column(String(100), nullable=False)  # ClimateEnum logico
+    pests: Mapped[Optional[dict]] = mapped_column(MySQLJSON)  # es. ["aphid","whitefly"]
 
     size: Mapped[SizeEnum] = mapped_column(
-        SAEnum(SizeEnum, name="size_enum", native_enum=True),
+        SAEnum(
+            SizeEnum,
+            name="size_enum",
+            native_enum=True,  # usa l'enum MySQL invece di VARCHAR
+            values_callable=lambda obj: [e.value for e in obj]  # <--- PRENDE I VALUE (lowercase)
+        ),
         nullable=False,
-        default=SizeEnum.MEDIO,
+        default=SizeEnum.MEDIUM,
     )
+
     # NEW: 1:N con Family
     family_id: Mapped[Optional[str]] = mapped_column(
         String(36),
@@ -82,12 +91,13 @@ class Plant(Base):
     )
 
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow,
+                                                 onupdate=datetime.utcnow)
 
     __table_args__ = (
         CheckConstraint("water_level BETWEEN 1 AND 5", name="ck_plant_water_level"),
         CheckConstraint("light_level BETWEEN 1 AND 5", name="ck_plant_light_level"),
-        CheckConstraint("difficulty BETWEEN 1 AND 5", name="ck_plant_difficulty"),  
+        CheckConstraint("difficulty BETWEEN 1 AND 5", name="ck_plant_difficulty"),
         CheckConstraint("min_temp_c < max_temp_c", name="ck_plant_temp_range"),
         Index("ix_plant_category_climate", "category", "climate"),
         Index("ix_plant_updated_at", "updated_at"),
@@ -143,7 +153,7 @@ class Plant(Base):
 class PlantPhoto(Base):
     __tablename__ = "plant_photo"
 
-    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=gen_uuid)    
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=gen_uuid)
     plant_id: Mapped[str] = mapped_column(
         String(36),
         ForeignKey("plant.id", ondelete="CASCADE", onupdate="CASCADE"),
@@ -156,8 +166,6 @@ class PlantPhoto(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
 
     plant: Mapped["Plant"] = relationship(back_populates="photos")
-
-
 
 
 # ======================================================================
@@ -218,7 +226,8 @@ class User(Base):
     first_name: Mapped[str] = mapped_column(String(100), nullable=False)
     last_name: Mapped[str] = mapped_column(String(100), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow,
+                                                 onupdate=datetime.utcnow)
 
     plants: Mapped[List["Plant"]] = relationship(
         secondary="user_plant",
@@ -309,7 +318,8 @@ class Friendship(Base):
     )
     status: Mapped[str] = mapped_column(String(50), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow,
+                                                 onupdate=datetime.utcnow)
 
     # Colonne generate per bloccare duplicati (a,b) == (b,a)
     user_min: Mapped[Optional[str]] = mapped_column(
