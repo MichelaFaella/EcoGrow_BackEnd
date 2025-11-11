@@ -79,6 +79,46 @@
       "description": "Crassulaceae, the stonecrop family of about 30 genera and 1,400 species of perennial herbs or low shrubs, the largest family in the order Saxifragales. The family is widespread from tropical to boreal regions but is concentrated in arid regions of the world. Many species are succulents and are grown as pot plants or cultivated in rock gardens and borders. Members of the family Crassulaceae are characterized by very thick fleshy leaves and by water-storage tissues in the leaves and stems. A specialized system of photosynthesis (light capture) adaptive to these kinds of conditions has been named after the family—Crassulacean Acid Metabolism (CAM). Special hairs, aerial roots, and surface cells may enable some species to absorb water directly from the air. Members of the genus Kalanchoe produce clonal plantlets on the indentations of the leaf margins. Flowers in the family are bisexual, with the perianth parts (sepals and petals) in sets of four or five. A nectar-producing gland sits at the base of each of the 3–10 separate carpels.",
       "name": "Crasssulaceae",
       "id": "e25fa7db-55d0-4480-9e9b-35ae94fc0b02"
+    },
+    {
+      "id": "3f91821e-4b75-4ba8-b8c1-e28ad7459bad",
+      "description": "Asteraceae, large angiosperm family (order Asterales) comprising more than 1,620 genera and 25,000 species of herbaceous plants, shrubs, and trees distributed throughout the world. Known as the aster, daisy, or composite family, Asteraceae is one of the largest plant families, second only to Orchidaceae. Paleobotanists suggest that the first members of this family may have evolved in Argentina some 50 million years ago, based on the discovery of well-preserved fossils that date to the Eocene Epoch (56 million to 33.9 million years ago). Asteraceae is important primarily for its many garden ornamentals, such as ageratums, asters, chrysanthemums, cosmos, dahlias, marigolds (Tagetes), and zinnias. Other well-known garden plants and wildflowers include Boltonia, Brachycome, burdock (Arctium), butterbur (Petasites), Calendula, cat’s ear (Hypochoeris), cudweed (Filago and Gnaphalium), Gerbera, hawksbeard (Crepis), Inula, Matricaria, and Piqueria. Some genera include noxious weeds, such as dandelion (Taraxacum), ragweed (Ambrosia), and thistle (Carduus, Cirsium, and others).",
+      "name": "Asteraceae"
+    },
+    {
+      "id": "e9082b4c-5538-4250-b747-4943d9a447ec",
+      "description": "Malvaceae, the hibiscus, or mallow, family (order Malvales) containing some 243 genera and at least 4,225 species of herbs, shrubs, and trees. Representatives occur in all except the coldest parts of the world but are most numerous in the tropics. A number of species are economically important, including cotton (various Gossypium species), cacao (Theobroma cacao), linden (Tilia species), durian (Durio species), Hibiscus, and okra (Abelmoschus esculentus). Genera now included in Malvaceae were long thought to be very closely related, but, until DNA studies were done at the end of the 20th century, they were placed in four different families: Malvaceae, Bombacaceae, Tiliaceae, and Sterculiaceae, that group of families alone constituting Malvales for some earlier botanists. DNA evidence has shown that many of the genera in those families form evolutionary lineages, leading the 2009 Angiosperm Phylogeny Group (APG III) to include them in a larger single family rather than maintain artificial lineages (ones that do not share a common ancestor).",
+      "name": "Malvaceae"
+    },
+    {
+      "id": "b9cbfcc6-ce18-47cd-ac15-3535712d8c45",
+      "description": "Rosaceae, the rose family of flowering plants (order Rosales), composed of some 2,500 species in more than 90 genera. The family is primarily found in the north temperate zone and occurs in a wide variety of habitats. A number of species are of economic importance as food crops, including apples, almonds, cherries, pears, raspberries, and strawberries; some, such as the rose, are grown as ornamentals. Members of Rosaceae are generally woody plants, mostly shrubs or small to medium-size trees, some of which are armed with thorns, spines, or prickles to discourage herbivores. The genus Rubus (e.g., blackberries and raspberries) chiefly contains arching shrubs or scramblers of irregular, often tangled appearance. Herbaceous perennials are found in several genera, most notably strawberries (Fragaria), cinquefoil (Potentilla), avens (Geum), and goatsbeard (Aruncus). Most species in the family have alternate leaves, and small leaflike structures called stipules are routinely present at the base of the leaf stalks.",
+      "name": "Rosaceae"
+    },
+    {
+      "id": "471e4906-8e4a-417b-a395-6bd42f117deb",
+      "description": "Zingiberaceae, the ginger family of flowering plants, the largest family of the order Zingiberales, containing about 56 genera and about 1,300 species. These aromatic herbs grow in moist areas of the tropics and subtropics, including some regions that are seasonably dry. Members of the family are perennials that frequently have sympodial (forked) fleshy rhizomes (underground stems). They may grow to 6 metres (20 feet) in height. A few species are epiphytic—i.e., supported by other plants and having aerial roots exposed to the humid atmosphere. The rolled-up sheathing bases of the leaves sometimes form an apparent short aerial stem.",
+      "name": "Zingiberaceae"
+    },
+    {
+      "id": "4fba4b56-94c3-41f3-91d2-84f1d612aa70",
+      "description": "Asparagaceae, family of flowering plants (order Asparagales) comprising more than 2,500 species in about 153 genera. Members of the family are nearly cosmopolitan and are especially diverse in tropical areas that experience seasonal aridity. Asparagaceae features a variety of culturally and economically important plants, including many iconic horticultural species. Although the plants in the family Asparagaceae are genetically related, the group is very diverse, and there are few defining physical characteristics across the entire family. Most members are herbaceous perennials, and many grow from bulbs or corms. A number of species are large and treelike, though their trunks are composed of fibrous rather than woody tissue, a distinction that clearly differentiates them from true (dicotyledonous) trees. Some species of Dracaena and Asparagus may be regarded as vines, as they scramble through the forest or bush canopy, but neither has tendril-like adaptations for climbing. Annual plants are particularly rare.",
+      "name": "Asparagaceae"
+    },
+    {
+      "id": "c29d86cc-7b82-4479-b279-ab7bc1b5e8de",
+      "description": "The orchid family (Orchidaceae) is the second largest family of flowering plants, with about 880 genera and some 26,000 species distributed nearly worldwide. Orchids are perennial herbs and feature unusual bilaterally symmetric flowers, with masses of pollen known as pollinia, and tiny, dustlike seeds. Many are grown as ornamentals for their showy flowers, and several are of economic importance as the source of the flavouring vanilla.",
+      "name": "Orchidaceae"
+    },
+    {
+      "id": "058df016-1a56-490e-bd0f-a466da9a7fa5",
+      "description": "Moraceae, the mulberry family of the rose order (Rosales), with about 40 genera and some 1,000 species of deciduous or evergreen trees and shrubs, distributed mostly in tropical and subtropical regions. Plants of the family contain a milky latex and have alternate or opposite leaves and small, petalless male or female flowers. The fruits of many species are multiple because fruits from different flowers become joined together. Some genera produce edible fruits, such as the mulberry (Morus), fig (Ficus carica), breadfruit and jackfruit (Artocarpus), and affon, or African breadfruit (Treculia). Others, such as Antiaris, Ficus, and Castilla, are important for their timber and latex. The latex of the upas tree (Antiaris toxicaria) of Java is used as an arrow poison; the latex of the cow tree (Brosimum utile) of tropical America is sweet and nutritious. Ficus, the largest genus in the mulberry family, contains the banyan and the India rubber tree. The bark of the paper mulberry (Broussonetia) has been used for the manufacture of cloth and paper products. Among the ornamentals in the family are paper mulberry and Osage orange.",
+      "name": "Moraceae"
+    },
+    {
+      "id": "4bdfe69f-ebdf-4424-b09e-4e2759677543",
+      "description": "Urticaceae, the nettle family (order Rosales) comprising about 54 genera and 2,625 species of herbs, shrubs, small trees, and a few vines, distributed primarily in tropical regions. The stems and leaves of many species have stinging trichomes (plant hairs) that cause a painful rash upon contact. The long fibres in the stems of some species, such as ramie (Boehmeria nivea), are used in the textile industry. Members of the family Urticaceae have varied leaves and sap that is usually watery. The small greenish flowers often form clusters in the leaf axils. Both male flowers and female flowers may be borne on the same plant, though some species are dioecious (producing male flowers on one individual and female on another). The curled stamens of the male flowers straighten quickly as the flowers open, releasing the pollen. The dry one-seeded fruit often is enclosed by the outer whorl of the flower cluster.",
+      "name": "Urticaceae"
     }
   ],
   "user": [
@@ -90,6 +130,15 @@
       "last_name": "User",
       "password_hash": "scrypt:32768:8:1$LXmR5wR1cGMyKElg$b8575ff1f80fad2e5c89c2d3bc53cab6b043f03edb6ae256a08eef26703f67f29e168a3f0c7aff6242cdf4eb3f18c3930386fdc8b1fed33351078980028c61cf",
       "first_name": "Admin"
+    },
+    {
+      "last_name": "User",
+      "updated_at": "2025-11-11T10:58:37",
+      "id": "f6a1f52f-d056-42e4-aa9f-fb27179fb96b",
+      "first_name": "Admin",
+      "created_at": "2025-11-11T10:58:37",
+      "email": "admin+1762725691@example.com",
+      "password_hash": "scrypt:32768:8:1$LXmR5wR1cGMyKElg$b8575ff1f80fad2e5c89c2d3bc53cab6b043f03edb6ae256a08eef26703f67f29e168a3f0c7aff6242cdf4eb3f18c3930386fdc8b1fed33351078980028c61cf"
     }
   ],
   "plant": [
