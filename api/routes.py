@@ -14,6 +14,8 @@ from werkzeug.security import generate_password_hash
 from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError, DataError
 from functools import wraps
+from datetime import datetime, timedelta   
+import secrets                              
 
 # Export/seed utilities
 from models.scripts.replay_changes import seed_from_changes, write_changes_delete, write_changes_upsert
@@ -37,11 +39,12 @@ from models.entities import (
     UserPlant,
     WateringLog,
     WateringPlan,
+    RefreshToken,
 )
 
 api_blueprint = Blueprint("api", __name__)
 repo = RepositoryService()
-
+REFRESH_TTL_DAYS = int(os.getenv("REFRESH_TTL_DAYS", "90"))
 
 # image_service = ImageProcessingService()
 # reminder_service = ReminderService()
@@ -56,22 +59,90 @@ def auth_missing(e):
 @api_blueprint.route("/auth/login", methods=["POST"])
 def auth_login():
     """
-    Body JSON: { "email": "...", "password": "..." }
-    Ritorna:    { "access_token": "..." , "user_id": "..." }
+    JSON body: { "email": "...", "password": "..." }
+    Returns:   { "access_token": "...", "user_id": "..." }
+    + sets an HttpOnly 'refresh_token' cookie (persistent)
     """
     data = request.get_json(silent=True) or {}
     email = (data.get("email") or "").strip().lower()
     password = data.get("password") or ""
     if not email or not password:
-        return jsonify({"error": "email/password mancanti"}), 400
+        return jsonify({"error": "email/password missing"}), 400
 
     with _session_ctx() as s:
         u = s.query(User).filter(func.lower(User.email) == email).first()
         if not u or not check_password_hash(u.password_hash, password):
-            return jsonify({"error": "Credenziali non valide"}), 401
+            return jsonify({"error": "Invalid credentials"}), 401
 
-        token = generate_token(str(u.id))
-        return jsonify(access_token=token, user_id=u.id), 200
+        # 1) Access JWT (short-lived, handled by jwt_helper)
+        access_token = generate_token(str(u.id))
+
+        # 2) Refresh token stored in DB  with sliding expiry
+        raw_refresh = secrets.token_urlsafe(48)
+        rt = RefreshToken(
+            user_id=str(u.id),
+            token=raw_refresh,
+            expires_at=datetime.utcnow() + timedelta(days=REFRESH_TTL_DAYS),
+        )
+        s.add(rt)
+        _commit_or_409(s)
+
+        # 3) Response + HttpOnly cookie
+        resp = jsonify({"access_token": access_token, "user_id": str(u.id)})
+        resp.set_cookie(
+            "refresh_token",
+            raw_refresh,
+            max_age=60 * 60 * 24 * REFRESH_TTL_DAYS,
+            httponly=True,
+            secure=False,      # True in production (HTTPS)
+            samesite="Lax",
+            path="/",          # backend reads the cookie on /auth/refresh and /auth/logout
+        )
+        return resp, 200
+    
+@api_blueprint.route("/auth/refresh", methods=["POST"])
+def auth_refresh():
+    # Il client NON manda nulla nel body: il refresh è nel cookie HttpOnly
+    raw = request.cookies.get("refresh_token")
+    if not raw:
+        return jsonify({"error": "refresh token mancante"}), 401
+
+    now = datetime.utcnow()
+    with _session_ctx() as s:
+        rt = s.query(RefreshToken).filter(RefreshToken.token == raw).first()
+        if not rt or rt.expires_at < now:
+            return jsonify({"error": "Refresh non valido o scaduto"}), 401
+
+        # 1) Nuovo access JWT
+        new_access = generate_token(rt.user_id)
+
+        # 2) Sliding: rinnova scadenza refresh e aggiorna cookie
+        rt.last_used_at = now
+        rt.expires_at = now + timedelta(days=REFRESH_TTL_DAYS)
+        _commit_or_409(s)
+
+        resp = jsonify({"access_token": new_access, "user_id": rt.user_id})
+        resp.set_cookie(
+            "refresh_token",
+            raw,  # in questo design non ruotiamo il valore, solo la scadenza
+            max_age=60 * 60 * 24 * REFRESH_TTL_DAYS,
+            httponly=True,
+            secure=False,      # True in produzione (HTTPS)
+            samesite="Lax",
+            path="/",
+        )
+        return resp, 200
+
+@api_blueprint.route("/auth/logout", methods=["POST"])
+def auth_logout():
+    raw = request.cookies.get("refresh_token")
+    with _session_ctx() as s:
+        if raw:
+            s.query(RefreshToken).filter(RefreshToken.token == raw).delete()
+            _commit_or_409(s)
+    resp = jsonify({"ok": True})
+    resp.delete_cookie("refresh_token", path="/")
+    return resp, 200
 
 
 def _extract_token() -> str | None:
@@ -98,12 +169,12 @@ def require_jwt(fn):
 
 # ========= Helpers =========
 def _model_columns(Model) -> set[str]:
-    """Ritorna i nomi colonna SQLAlchemy del Model."""
+    """Returns the SQLAlchemy column names of the Model."""
     return {c.name for c in Model.__table__.columns}
 
 
 def _filter_fields_for_model(payload: dict, Model, *, exclude: set[str] = None) -> dict:
-    """Filtra il payload tenendo solo i campi che esistono nel Model."""
+    """Filters the payload keeping only fields that exist on the Model."""
     cols = _model_columns(Model)
     if exclude:
         cols = cols - set(exclude)
@@ -112,15 +183,15 @@ def _filter_fields_for_model(payload: dict, Model, *, exclude: set[str] = None) 
 
 def _serialize_instance(instance) -> dict:
     """
-    Serializza l'istanza su base colonne reali del modello:
-    - converte UUID/DateTime in stringhe se necessario
-    - include solo colonne effettive (niente attributi extra)
+    Serializes the instance based on actual model columns:
+    - converts UUID/DateTime to strings if needed
+    - includes only actual columns (no extra attributes)
     """
     cols = _model_columns(type(instance))
     out = {}
     for c in cols:
         v = getattr(instance, c, None)
-        # UUID → stringa (se serve)
+        # UUID → string (if needed)
         if v is not None and hasattr(v, "hex"):
             v = str(v)
         # datetime → ISO8601
@@ -147,7 +218,7 @@ def _ensure_uuid(s: str, field: str = "id"):
 
 
 def _parse_json_body():
-    # Non usare force=True: se Content-Type non è JSON -> 400 standard
+    # Don't use force=True: if Content-Type is not JSON -> standard 400
     data = request.get_json(silent=True)
     if data is None or not isinstance(data, dict):
         abort(400, description="Invalid JSON body")
@@ -169,7 +240,7 @@ def _commit_or_409(session):
 
 
 def _plant_to_dict(p: Plant) -> dict:
-    """Serializza solo i campi persistenti che vuoi in changes.json."""
+    """Serialize only the persistent fields you want in changes.json."""
     return {
         "id": str(p.id),
         "scientific_name": p.scientific_name,
@@ -183,7 +254,7 @@ def _plant_to_dict(p: Plant) -> dict:
         "author_id": getattr(p, "author_id", None),
         "created_at": getattr(p, "created_at", None),
         "updated_at": getattr(p, "updated_at", None),
-        # aggiungi qui eventuali FK, es. "family_id": getattr(p, "family_id", None),
+        # add any FK here, e.g. "family_id": getattr(p, "family_id", None),
     }
 
 
@@ -228,7 +299,7 @@ def get_plants():
 ALLOWED_SIZES = {e.value for e in SizeEnum}
 
 
-# ========= Plants (catalogo completo) =========
+# ========= Plants (catalog) =========
 @api_blueprint.route("/plants/all", methods=["GET"])
 def get_all_plants():
     try:
@@ -244,6 +315,7 @@ def get_all_plants():
 def create_plant():
     payload = _parse_json_body()
 
+    # --- id & timestamps (conserva il comportamento esistente) ---
     cols = _model_columns(Plant)
     if "id" in cols and "id" not in payload:
         payload["id"] = str(uuid.uuid4())
@@ -255,81 +327,105 @@ def create_plant():
 
     if "size" in payload and payload["size"] is not None:
         size_val = str(payload["size"])
-        if size_val not in ALLOWED_SIZES:
-            return jsonify({"error": f"size should be {sorted(ALLOWED_SIZES)}"}), 400
+        allowed_sizes = {e.value for e in SizeEnum}
+        if size_val not in allowed_sizes:
+            return jsonify({"error": f"size must be one of {sorted(allowed_sizes)}"}), 400
         payload["size"] = SizeEnum(size_val)
 
-    data = _filter_fields_for_model(payload, Plant)
-
-    required = ["scientific_name", "use", "water_level", "light_level",
-                "min_temp_c", "max_temp_c", "category", "climate"]
-    missing = [k for k in required if k not in data or data[k] in (None, "")]
-    if missing:
-        return jsonify({"error": f"Missing mandatory fields: {', '.join(missing)}"}), 400
-
     try:
-        wl = int(data["water_level"])
-        ll = int(data["light_level"])
-        if not (1 <= wl <= 5):
-            return jsonify({"error": "water_level must be between 1 and 5"}), 400
-        if not (1 <= ll <= 5):
-            return jsonify({"error": "light_level must be between 1 and 5"}), 400
-    except:
+        wl = int(payload.get("water_level"))
+        ll = int(payload.get("light_level"))
+        if not (1 <= wl <= 5) or not (1 <= ll <= 5):
+            return jsonify({"error": "water_level/light_level must be in [1..5]"}), 400
+    except Exception:
         return jsonify({"error": "water_level/light_level must be integer"}), 400
 
     try:
-        tmin = int(data["min_temp_c"])
-        tmax = int(data["max_temp_c"])
+        tmin = int(payload.get("min_temp_c"))
+        tmax = int(payload.get("max_temp_c"))
         if tmin >= tmax:
             return jsonify({"error": "min_temp_c must be < max_temp_c"}), 400
-    except:
+    except Exception:
         return jsonify({"error": "min_temp_c/max_temp_c must be integer"}), 400
+
+    data = _filter_fields_for_model(payload, Plant)
 
     with _session_ctx() as s:
         try:
-            family_id = repo.get_family(data["scientific_name"])
-            if not family_id:
-                return jsonify({"error": "Family not found in JSON"}), 400
+            # 1) Se il client passa family_id, usalo (con validazione)
+            fam_id = (payload.get("family_id") or "").strip()
+            if fam_id:
+                _ensure_uuid(fam_id, "family_id")
+                if not s.get(Family, fam_id):
+                    return jsonify({"error": "Family not found"}), 400
+                data["family_id"] = fam_id
+            else:
+                # 2) Fallback: deduci family dal scientific_name (comportamento esistente)
+                fam_id = repo.get_family(data["scientific_name"])
+                if not fam_id:
+                    return jsonify({"error": "Family not found"}), 400
+                data["family_id"] = fam_id
 
-            data["family_id"] = family_id
-
+            # 3) Crea la pianta
             p = Plant(**data)
             s.add(p)
-
             _commit_or_409(s)
             write_changes_upsert("plant", [_serialize_instance(p)])
+
+            # 4) (Facoltativo) collega all'utente se payload include metadati user_plant
+            nickname = (payload.get("nickname") or "").strip() or None
+            location_note = (payload.get("location_note") or "").strip() or None
+            since_value = payload.get("since") or None  # YYYY-MM-DD o ISO
+
+            if any([nickname, location_note, since_value]) and not s.get(UserPlant, (g.user_id, p.id)):
+                up = UserPlant(
+                    user_id=g.user_id,
+                    plant_id=p.id,
+                    nickname=nickname,
+                    location_note=location_note,
+                    since=since_value,
+                )
+                s.add(up)
+                _commit_or_409(s)
+                write_changes_upsert("user_plant", [_serialize_instance(up)])
+
             return jsonify({"ok": True, "id": str(p.id)}), 201
 
+        except IntegrityError as e:
+            s.rollback()
+            return jsonify({"error": f"Conflict: {e.orig}"}), 409
+        except DataError as e:
+            s.rollback()
+            return jsonify({"error": f"Bad data: {e.orig}"}), 400
         except Exception as e:
             s.rollback()
             return jsonify({"error": f"DB error: {e}"}), 500
-
 
 # ========= UPDATE Plant =========
 @api_blueprint.route("/plant/update/<plant_id>", methods=["PATCH", "PUT"])
 def update_plant(plant_id: str):
     if not plant_id:
-        return jsonify({"error": "plant_id mancante"}), 400
+        return jsonify({"error": "missing plant_id"}), 400
     _ensure_uuid(plant_id, "plant_id")
     payload = _parse_json_body()
 
-    # --- size in update: se passato, valida e converti a Enum ---
+    # --- size in update: if provided, validate and convert to Enum ---
     if "size" in payload and payload["size"] is not None:
         size_val = str(payload["size"])
         if size_val not in ALLOWED_SIZES:
-            return jsonify({"error": f"size deve essere in {sorted(ALLOWED_SIZES)}"}), 400
+            return jsonify({"error": f"size must be one of {sorted(ALLOWED_SIZES)}"}), 400
         payload["size"] = SizeEnum(size_val)
 
     with _session_ctx() as s:
         p = s.get(Plant, plant_id)
         if p is None:
-            return jsonify({"error": "Plant non trovata"}), 404
+            return jsonify({"error": "Plant not found"}), 404
 
         allowed = [
             "scientific_name", "common_name", "use", "origin",
             "water_level", "light_level", "min_temp_c", "max_temp_c",
             "category", "climate", "pests", "family_id",
-            "size",  # <--- aggiunto
+            "size",  # <--- added
         ]
         for k, v in _filter_fields_for_model(payload, Plant).items():
             if k in allowed:
@@ -346,7 +442,7 @@ def update_plant(plant_id: str):
 @api_blueprint.route("/plant/delete/<plant_id>", methods=["DELETE"])
 def delete_plant(plant_id: str):
     if not plant_id:
-        return jsonify({"error": "plant_id mancante"}), 400
+        return jsonify({"error": "missing plant_id"}), 400
     _ensure_uuid(plant_id, "plant_id")
 
     with _session_ctx() as s:
@@ -372,7 +468,7 @@ def family_add():
     payload = _parse_json_body()
     data = _filter_fields_for_model(payload, Family)
     if not data.get("name"):
-        return jsonify({"error": "Campo 'name' obbligatorio"}), 400
+        return jsonify({"error": "Field 'name' is required"}), 400
     with _session_ctx() as s:
         f = Family(**data)
         s.add(f)
@@ -388,7 +484,7 @@ def family_update(fid: str):
     payload = _parse_json_body()
     with _session_ctx() as s:
         f = s.get(Family, fid)
-        if not f: return jsonify({"error": "Family non trovata"}), 404
+        if not f: return jsonify({"error": "Family not found"}), 404
         for k, v in _filter_fields_for_model(payload, Family).items():
             setattr(f, k, v)
         _commit_or_409(s)
@@ -412,11 +508,11 @@ def family_delete(fid: str):
 @api_blueprint.route("/plants/by-size/<size>", methods=["GET"])
 def plants_by_size(size: str):
     """
-    Ritorna tutte le piante con la size indicata.
-    size ∈ {piccolo, medio, grande, gigante}
+    Returns all plants with the specified size.
+    size ∈ {small, medium, large, giant}
     """
     if not size or size not in ALLOWED_SIZES:
-        return jsonify({"error": f"size deve essere in {sorted(ALLOWED_SIZES)}"}), 400
+        return jsonify({"error": f"size must be one of {sorted(ALLOWED_SIZES)}"}), 400
 
     with _session_ctx() as s:
         rows = (
@@ -431,11 +527,11 @@ def plants_by_size(size: str):
 @api_blueprint.route("/plants/by-use/<use>", methods=["GET"])
 def plants_by_use(use: str):
     """
-    Ritorna tutte le piante con 'use' corrispondente (match case-insensitive).
-    Esempi di use: 'ornamental', 'medicinal', ecc.
+    Returns all plants with the given 'use' (case-insensitive match).
+    Examples of use: 'ornamental', 'medicinal', etc.
     """
     if not use:
-        return jsonify({"error": "Parametro 'use' mancante"}), 400
+        return jsonify({"error": "Missing 'use' parameter"}), 400
 
     use_norm = use.strip().lower()
     with _session_ctx() as s:
@@ -464,7 +560,7 @@ def plant_photo_add(plant_id: str):
     payload = _parse_json_body()
     data = _filter_fields_for_model({**payload, "plant_id": plant_id}, PlantPhoto)
     if not data.get("url"):
-        return jsonify({"error": "url obbligatorio"}), 400
+        return jsonify({"error": "url required"}), 400
     with _session_ctx() as s:
         ph = PlantPhoto(**data)
         s.add(ph)
@@ -480,7 +576,7 @@ def plant_photo_update(photo_id: str):
     payload = _parse_json_body()
     with _session_ctx() as s:
         ph = s.get(PlantPhoto, photo_id)
-        if not ph: return jsonify({"error": "PlantPhoto non trovata"}), 404
+        if not ph: return jsonify({"error": "PlantPhoto not found"}), 404
         for k, v in _filter_fields_for_model(payload, PlantPhoto).items():
             setattr(ph, k, v)
         _commit_or_409(s)
@@ -492,39 +588,39 @@ def plant_photo_update(photo_id: str):
 @require_jwt
 def plant_photo_delete(photo_id: str):
     """
-    Cancella la foto della pianta:
-    - rimuove la riga da plant_photo
-    - prova a cancellare anche il file su disco (se esiste)
-    - aggiorna il changes.json con una delete
-    Ritorna: 204 (idempotente)
+    Deletes the plant photo:
+    - removes the row from plant_photo
+    - attempts to delete the file on disk (if exists)
+    - updates changes.json with a delete
+    Returns: 204 (idempotent)
     """
     with _session_ctx() as s:
         pp = s.get(PlantPhoto, photo_id)
 
-        # prova a cancellare anche il file su disco se conosciamo l'URL
+        # try to delete the file on disk if we know the URL
         if pp and pp.url and pp.url.startswith("/uploads/"):
             try:
-                rel = pp.url[len("/uploads/"):]  # es. "plant/<pid>/<uuid>.png"
+                rel = pp.url[len("/uploads/"):]  # e.g. "plant/<pid>/<uuid>.png"
                 base = os.path.realpath(current_app.config["UPLOAD_DIR"])
-                full = os.path.realpath(os.path.join(base, rel))  # path assoluto
-                # sicurezza: cancella solo dentro UPLOAD_DIR
+                full = os.path.realpath(os.path.join(base, rel))  # absolute path
+                # safety: delete only inside UPLOAD_DIR
                 if full.startswith(base) and os.path.exists(full):
                     os.remove(full)
-                    # opzionale: rimuovi la dir se vuota
+                    # optional: remove dir if empty
                     dirpath = os.path.dirname(full)
                     try:
                         os.rmdir(dirpath)
                     except OSError:
                         pass
             except Exception as e:
-                current_app.logger.warning(f"Impossibile rimuovere file per photo_id={photo_id}: {e}")
+                current_app.logger.warning(f"Unable to remove file for photo_id={photo_id}: {e}")
 
-        # cancella la riga dal DB
+        # delete the row from the DB
         if pp:
             s.delete(pp)
             _commit_or_409(s)
 
-    # aggiorna changes.json (idempotente come fai con family_delete)
+    # update changes.json (idempotent as you do with family_delete)
     write_changes_delete("plant_photo", photo_id)
 
     return ("", 204)
@@ -544,7 +640,7 @@ def disease_add():
     payload = _parse_json_body()
     data = _filter_fields_for_model(payload, Disease)
     if not data.get("name") or not data.get("description"):
-        return jsonify({"error": "name e description obbligatori"}), 400
+        return jsonify({"error": "name and description required"}), 400
     with _session_ctx() as s:
         d = Disease(**data)
         s.add(d)
@@ -560,7 +656,7 @@ def disease_update(did: str):
     payload = _parse_json_body()
     with _session_ctx() as s:
         d = s.get(Disease, did)
-        if not d: return jsonify({"error": "Disease non trovata"}), 404
+        if not d: return jsonify({"error": "Disease not found"}), 404
         for k, v in _filter_fields_for_model(payload, Disease).items():
             setattr(d, k, v)
         _commit_or_409(s)
@@ -595,11 +691,16 @@ def plant_disease_all():
 def plant_disease_add():
     payload = _parse_json_body()
     data = _filter_fields_for_model(payload, PlantDisease)
+
     required = ["plant_id", "disease_id"]
     missing = [k for k in required if not data.get(k)]
     if missing:
         return jsonify({"error": f"Campi obbligatori: {', '.join(missing)}"}), 400
+
     with _session_ctx() as s:
+        if not s.get(UserPlant, (g.user_id, data["plant_id"])):
+            return jsonify({"error": "Forbidden: non possiedi questa pianta"}), 403
+
         pd = PlantDisease(**data)
         s.add(pd)
         _commit_or_409(s)
@@ -614,7 +715,7 @@ def plant_disease_update(pdid: str):
     payload = _parse_json_body()
     with _session_ctx() as s:
         pd = s.get(PlantDisease, pdid)
-        if not pd: return jsonify({"error": "PlantDisease non trovata"}), 404
+        if not pd: return jsonify({"error": "PlantDisease not found"}), 404
         for k, v in _filter_fields_for_model(payload, PlantDisease).items():
             setattr(pd, k, v)
         _commit_or_409(s)
@@ -662,13 +763,13 @@ def user_add():
         _commit_or_409(s)
         write_changes_upsert("user", [_serialize_instance(u)])
 
-        # GENERA IL JWT
+        # GENERATE JWT
         token = generate_token(u.id)
 
         return jsonify({
             "ok": True,
             "id": u.id,
-            "token": token  # <--- JWT restituito al client
+            "token": token  # <--- JWT returned to client
         }), 201
 
 
@@ -681,7 +782,7 @@ def user_update(uid: str):
         payload["password_hash"] = generate_password_hash(payload.pop("password"))
     with _session_ctx() as s:
         u = s.get(User, uid)
-        if not u: return jsonify({"error": "User non trovato"}), 404
+        if not u: return jsonify({"error": "User not found"}), 404
         for k, v in _filter_fields_for_model(payload, User).items():
             setattr(u, k, v)
         u.updated_at = datetime.utcnow()
@@ -703,7 +804,7 @@ def user_delete(uid: str):
         return ("", 204)
 
 
-# ========= UserPlant (PK composta: user_id + plant_id) =========
+# ========= UserPlant (composite PK: user_id + plant_id) =========
 @api_blueprint.route("/user_plant/all", methods=["GET"])
 @require_jwt
 def user_plant_all():
@@ -716,13 +817,22 @@ def user_plant_all():
 @require_jwt
 def user_plant_add():
     payload = _parse_json_body()
-    data = _filter_fields_for_model(payload, UserPlant)
-    required = ["user_id", "plant_id"]
-    missing = [k for k in required if not data.get(k)]
-    if missing:
-        return jsonify({"error": f"Campi obbligatori: {', '.join(missing)}"}), 400
+    plant_id = (payload.get("plant_id") or "").strip()
+    if not plant_id:
+        return jsonify({"error": "Required field: plant_id"}), 400
+    _ensure_uuid(plant_id, "plant_id")
+
     with _session_ctx() as s:
-        up = UserPlant(**data)
+        if s.get(UserPlant, (g.user_id, plant_id)):
+            return jsonify({"ok": True}), 200
+
+        up = UserPlant(
+            user_id=g.user_id,
+            plant_id=plant_id,
+            nickname=payload.get("nickname"),
+            location_note=payload.get("location_note"),
+            since=payload.get("since"),
+        )
         s.add(up)
         _commit_or_409(s)
         write_changes_upsert("user_plant", [_serialize_instance(up)])
@@ -735,7 +845,7 @@ def user_plant_delete():
     user_id = request.args.get("user_id")
     plant_id = request.args.get("plant_id")
     if not user_id or not plant_id:
-        return jsonify({"error": "user_id e plant_id sono richiesti"}), 400
+        return jsonify({"error": "user_id and plant_id are required"}), 400
     _ensure_uuid(user_id, "user_id")
     _ensure_uuid(plant_id, "plant_id")
     with _session_ctx() as s:
@@ -764,7 +874,7 @@ def friendship_add():
     required = ["user_id_a", "user_id_b", "status"]
     missing = [k for k in required if not data.get(k)]
     if missing:
-        return jsonify({"error": f"Campi obbligatori: {', '.join(missing)}"}), 400
+        return jsonify({"error": f"Required fields: {', '.join(missing)}"}), 400
     with _session_ctx() as s:
         fr = Friendship(**data)
         s.add(fr)
@@ -780,7 +890,7 @@ def friendship_update(fid: str):
     payload = _parse_json_body()
     with _session_ctx() as s:
         fr = s.get(Friendship, fid)
-        if not fr: return jsonify({"error": "Friendship non trovata"}), 404
+        if not fr: return jsonify({"error": "Friendship not found"}), 404
         for k, v in _filter_fields_for_model(payload, Friendship).items():
             setattr(fr, k, v)
         fr.updated_at = datetime.utcnow()
@@ -819,7 +929,7 @@ def shared_plant_add():
     required = ["owner_user_id", "recipient_user_id", "plant_id"]
     missing = [k for k in required if not data.get(k)]
     if missing:
-        return jsonify({"error": f"Campi obbligatori: {', '.join(missing)}"}), 400
+        return jsonify({"error": f"Required fields: {', '.join(missing)}"}), 400
     with _session_ctx() as s:
         sp = SharedPlant(**data)
         s.add(sp)
@@ -835,7 +945,7 @@ def shared_plant_update(sid: str):
     payload = _parse_json_body()
     with _session_ctx() as s:
         sp = s.get(SharedPlant, sid)
-        if not sp: return jsonify({"error": "SharedPlant non trovata"}), 404
+        if not sp: return jsonify({"error": "SharedPlant not found"}), 404
         for k, v in _filter_fields_for_model(payload, SharedPlant).items():
             setattr(sp, k, v)
         _commit_or_409(s)
@@ -870,11 +980,17 @@ def watering_plan_all():
 def watering_plan_add():
     payload = _parse_json_body()
     data = _filter_fields_for_model(payload, WateringPlan)
-    required = ["user_id", "plant_id", "next_due_at", "interval_days"]
+
+    required = ["plant_id", "next_due_at", "interval_days"]  # user_id rimosso
     missing = [k for k in required if not data.get(k)]
     if missing:
         return jsonify({"error": f"Campi obbligatori: {', '.join(missing)}"}), 400
+
     with _session_ctx() as s:
+        if not s.get(UserPlant, (g.user_id, data["plant_id"])):
+            return jsonify({"error": "Forbidden: non possiedi questa pianta"}), 403
+
+        data["user_id"] = g.user_id
         wp = WateringPlan(**data)
         s.add(wp)
         _commit_or_409(s)
@@ -889,7 +1005,7 @@ def watering_plan_update(wid: str):
     payload = _parse_json_body()
     with _session_ctx() as s:
         wp = s.get(WateringPlan, wid)
-        if not wp: return jsonify({"error": "WateringPlan non trovato"}), 404
+        if not wp: return jsonify({"error": "WateringPlan not found"}), 404
         for k, v in _filter_fields_for_model(payload, WateringPlan).items():
             setattr(wp, k, v)
         _commit_or_409(s)
@@ -924,11 +1040,17 @@ def watering_log_all():
 def watering_log_add():
     payload = _parse_json_body()
     data = _filter_fields_for_model(payload, WateringLog)
-    required = ["user_id", "plant_id", "done_at", "amount_ml"]
+
+    required = ["plant_id", "done_at", "amount_ml"]  # user_id rimosso
     missing = [k for k in required if not data.get(k)]
     if missing:
         return jsonify({"error": f"Campi obbligatori: {', '.join(missing)}"}), 400
+
     with _session_ctx() as s:
+        if not s.get(UserPlant, (g.user_id, data["plant_id"])):
+            return jsonify({"error": "Forbidden: non possiedi questa pianta"}), 403
+
+        data["user_id"] = g.user_id
         wl = WateringLog(**data)
         s.add(wl)
         _commit_or_409(s)
@@ -943,7 +1065,7 @@ def watering_log_update(lid: str):
     payload = _parse_json_body()
     with _session_ctx() as s:
         wl = s.get(WateringLog, lid)
-        if not wl: return jsonify({"error": "WateringLog non trovato"}), 404
+        if not wl: return jsonify({"error": "WateringLog not found"}), 404
         for k, v in _filter_fields_for_model(payload, WateringLog).items():
             setattr(wl, k, v)
         _commit_or_409(s)
@@ -969,7 +1091,7 @@ def watering_log_delete(lid: str):
 @require_jwt
 def question_all():
     with _session_ctx() as s:
-        # se non hai created_at su Question, ordino per id
+        # if Question has no created_at, order by id
         order_col = getattr(Question, "created_at", Question.id)
         rows = s.query(Question).order_by(order_col.desc()).all()
         return jsonify([_serialize_instance(r) for r in rows]), 200
@@ -980,10 +1102,13 @@ def question_all():
 def question_add():
     payload = _parse_json_body()
     data = _filter_fields_for_model(payload, Question)
-    required = ["user_id", "text", "type"]
+
+    required = ["text", "type"]  # user_id rimosso
     missing = [k for k in required if not data.get(k)]
     if missing:
         return jsonify({"error": f"Campi obbligatori: {', '.join(missing)}"}), 400
+
+    data["user_id"] = g.user_id
     with _session_ctx() as s:
         q = Question(**data)
         s.add(q)
@@ -999,7 +1124,7 @@ def question_update(qid: str):
     payload = _parse_json_body()
     with _session_ctx() as s:
         q = s.get(Question, qid)
-        if not q: return jsonify({"error": "Question non trovata"}), 404
+        if not q: return jsonify({"error": "Question not found"}), 404
         for k, v in _filter_fields_for_model(payload, Question).items():
             setattr(q, k, v)
         _commit_or_409(s)
@@ -1034,10 +1159,13 @@ def reminder_all():
 def reminder_add():
     payload = _parse_json_body()
     data = _filter_fields_for_model(payload, Reminder)
-    required = ["user_id", "title", "scheduled_at"]
+
+    required = ["title", "scheduled_at"]  # user_id rimosso
     missing = [k for k in required if not data.get(k)]
     if missing:
         return jsonify({"error": f"Campi obbligatori: {', '.join(missing)}"}), 400
+
+    data["user_id"] = g.user_id
     with _session_ctx() as s:
         r = Reminder(**data)
         s.add(r)
@@ -1053,7 +1181,7 @@ def reminder_update(rid: str):
     payload = _parse_json_body()
     with _session_ctx() as s:
         r = s.get(Reminder, rid)
-        if not r: return jsonify({"error": "Reminder non trovato"}), 404
+        if not r: return jsonify({"error": "Reminder not found"}), 404
         for k, v in _filter_fields_for_model(payload, Reminder).items():
             setattr(r, k, v)
         _commit_or_409(s)
@@ -1083,26 +1211,26 @@ ALLOWED_EXT = {".jpg", ".jpeg", ".png", ".webp"}
 def upload_plant_photo():
     """
     multipart/form-data:
-      - file (obbligatorio)
-      - plant_id (obbligatorio)
-      - caption (opzionale)
-    Ritorna: { ok: true, photo_id, url }
+      - file (required)
+      - plant_id (required)
+      - caption (optional)
+    Returns: { ok: true, photo_id, url }
     """
     f = request.files.get("file")
     plant_id = request.form.get("plant_id")
     caption = request.form.get("caption")
 
     if not f or not f.filename:
-        return jsonify({"error": "file mancante"}), 400
+        return jsonify({"error": "file missing"}), 400
     if not plant_id:
-        return jsonify({"error": "plant_id mancante"}), 400
+        return jsonify({"error": "plant_id missing"}), 400
 
     _, ext = os.path.splitext(secure_filename(f.filename))
     ext = ext.lower()
     if ext not in ALLOWED_EXT:
-        return jsonify({"error": f"Estensione non permessa: {ext}"}), 400
+        return jsonify({"error": f"Extension not allowed: {ext}"}), 400
 
-    # Salva il file in /app/uploads/plant/<plant_id>/<uuid>.ext
+    # Save the file in /app/uploads/plant/<plant_id>/<uuid>.ext
     dest_dir = os.path.join(current_app.config["UPLOAD_DIR"], "plant", plant_id)
     os.makedirs(dest_dir, exist_ok=True)
     fname = f"{uuid.uuid4().hex}{ext}"
@@ -1114,7 +1242,7 @@ def upload_plant_photo():
     with _session_ctx() as s:
         plant = s.get(Plant, plant_id)
         if not plant:
-            return jsonify({"error": "Plant non trovata"}), 404
+            return jsonify({"error": "Plant not found"}), 404
 
         photo = PlantPhoto(plant_id=plant_id, url=url, caption=caption, order_index=0)
         s.add(photo)
@@ -1127,13 +1255,13 @@ def upload_plant_photo():
 @api_blueprint.route("/plant/<pid>/photo", methods=["GET"])
 def plant_main_photo(pid: str):
     """
-    Ritorna la 'foto principale' della pianta (prima per order_index, poi la più recente).
-    404 se pianta o foto non presenti.
+    Returns the 'main photo' of the plant (first by order_index, then the most recent).
+    404 if plant or photo not present.
     """
     with _session_ctx() as s:
         p = s.get(Plant, pid)
         if not p:
-            return jsonify({"error": "Plant non trovata"}), 404
+            return jsonify({"error": "Plant not found"}), 404
 
         photo = (
             s.query(PlantPhoto)
@@ -1142,7 +1270,7 @@ def plant_main_photo(pid: str):
             .first()
         )
         if not photo:
-            return jsonify({"error": "Nessuna foto per questa pianta"}), 404
+            return jsonify({"error": "No photo for this plant"}), 404
 
         return jsonify(_serialize_instance(photo)), 200
 
@@ -1150,8 +1278,8 @@ def plant_main_photo(pid: str):
 @api_blueprint.route("/plant/<pid>/photos", methods=["GET"])
 def plant_photos(pid: str):
     """
-    Lista tutte le foto della pianta ordinate per order_index, poi created_at desc.
-    Query param: ?limit=K per limitarne il numero.
+    Lists all photos of the plant ordered by order_index, then created_at desc.
+    Query param: ?limit=K to limit the number.
     """
     limit = request.args.get("limit", type=int)
     with _session_ctx() as s:
