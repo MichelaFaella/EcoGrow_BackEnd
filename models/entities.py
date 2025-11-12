@@ -5,6 +5,9 @@ from typing import List, Optional
 import uuid
 from enum import Enum
 from sqlalchemy import Enum as SAEnum
+from datetime import datetime
+from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy import String, DateTime, ForeignKey
 
 from sqlalchemy import (
     Boolean,
@@ -47,6 +50,7 @@ class Family(Base):
 
 
 class SizeEnum(str, Enum):
+    MINUSCULE = "minuscule"
     SMALL = "small"
     MEDIUM = "medium"
     LARGE = "large"
@@ -483,3 +487,23 @@ class Reminder(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
 
     user: Mapped["User"] = relationship(back_populates="reminders")
+
+# ==============================
+# Refresh token (sessione utente)
+# ==============================
+
+
+class RefreshToken(Base):
+    __tablename__ = "refresh_token"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=gen_uuid)
+    user_id: Mapped[str] = mapped_column(
+        String(36),
+        ForeignKey("user.id", ondelete="CASCADE", onupdate="CASCADE"),
+        index=True,
+        nullable=False,
+    )
+    token: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)  # plaintext, minimo indispensabile
+    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
+    last_used_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
+    expires_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)

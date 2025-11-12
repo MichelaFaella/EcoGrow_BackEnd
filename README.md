@@ -232,509 +232,311 @@ curl -s http://localhost:8000/health
 
 ---
 
-# Endpoints usage
+## 🔗 Endpoints – updated usage (EcoGrow API)
 
-Set base URL (and reuse `TOKEN` from the auth section):
-```bash
-BASE="http://localhost:8000/api"
-```
-
-All responses are JSON. IDs are UUIDs.
+> Base URL for the examples:
+>
+> ```bash
+> BASE="http://localhost:8000/api"
+> ```
+>
+> All responses are JSON. IDs are UUIDs. **Protected** endpoints require `Authorization: Bearer <ACCESS_JWT>`.
 
 ---
 
-## 🌱 Plant
-
-**Create** (requires JWT)
+### 🔐 Authentication (JWT + Refresh cookie)
+**Create user**  
 ```bash
-curl -s -X POST "$BASE/plant/add" \
-  -H "Authorization: Bearer $TOKEN" \
+EMAIL="you@example.com"; PASS="Abc!2345"
+curl -s -X POST "$BASE/user/add" -H "Content-Type: application/json" \
+  -d "{\"email\":\"$EMAIL\",\"password\":\"$PASS\",\"first_name\":\"You\",\"last_name\":\"Dev\"}" | jq .
+```
+
+**Login → ACCESS_JWT (+ save HttpOnly cookie for refresh)**  
+```bash
+TOKEN=$(curl -s -X POST "$BASE/auth/login" \
   -H "Content-Type: application/json" \
+  -d "{\"email\":\"$EMAIL\",\"password\":\"$PASS\"}" \
+  -c cookies.txt | jq -r .access_token)
+echo "${TOKEN:0:20}..."
+```
+
+**Check-auth (with Authorization header)**  
+```bash
+curl -s "$BASE/check-auth" -H "Authorization: Bearer $TOKEN" | jq .
+# If headers/cookies are missing → 401 {"authenticated": false}
+```
+
+**Refresh ACCESS_JWT (requires `refresh_token` cookie)**  
+```bash
+NEW_TOKEN=$(curl -s -X POST "$BASE/auth/refresh" -b cookies.txt -c cookies.txt | jq -r .access_token)
+echo "${NEW_TOKEN:0:20}..."
+```
+
+**Logout (invalidates refresh + removes cookie)**  
+```bash
+curl -s -X POST "$BASE/auth/logout" -b cookies.txt -c cookies.txt | jq .
+```
+
+> Note: **Refresh** is valid for `REFRESH_TTL_DAYS` (default **90 days**) and is **sliding**—it is renewed on each successful `/auth/refresh` call.
+
+---
+
+### 🌿 Family
+**List (public)**  
+```bash
+curl -s "$BASE/family/all" | jq .
+curl -s "$BASE/families"    | jq .   # public alias
+```
+
+**Create / Update / Delete (protected)**  
+```bash
+FAM_ID=$(curl -s -X POST "$BASE/family/add" \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"name":"example1"}' | jq -r .id)
+
+curl -s -X PATCH "$BASE/family/update/$FAM_ID" \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"description":"Tropical family"}' | jq .
+
+curl -s -o /dev/null -w "%{http_code}\n" -X DELETE "$BASE/family/delete/$FAM_ID" \
+  -H "Authorization: Bearer $TOKEN"
+```
+
+> **Important (constraint for `Plant`)**: creating a **Plant** automatically derives `family_id` from the **scientific name** using the `utils/house_plants.json` mapping, but the **Family must already exist in the DB** with the **same name**. If the mapping cannot find the family → `400 {"error":"Family not found"}`.
+
+---
+
+### 🌱 Plant
+**List (public)**  
+```bash
+curl -s "$BASE/plants/all" | jq .
+curl -s "$BASE/plants"     | jq .   # public alias
+```
+
+**Filters (public)**  
+```bash
+curl -s "$BASE/plants/by-use/ornamental" | jq .
+curl -s "$BASE/plants/by-size/medium"    | jq .   # invalid size → 400
+```
+
+**Create (protected)** — *requires the species to exist in the mapping and the same-named Family to be present in the DB*  
+```bash
+# 1) ensure the Family consistent with the mapping
+ensure_family_id=$(curl -s -X POST "$BASE/family/add" \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"name":"example1"}' | jq -r .id)
+
+# 2) create the Plant (family_id is derived on the backend from scientific_name)
+curl -s -X POST "$BASE/plant/add" \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
   -d '{
-        "scientific_name":"Lavandula angustifolia",
-        "common_name":"Lavender",
+        "scientific_name":"Aeschynanthus lobianus",
+        "common_name":"Lipstick plant",
         "use":"ornamental",
         "water_level":2,
         "light_level":5,
-        "difficulty":5,
-        "min_temp_c":-10,
-        "max_temp_c":40,
-        "category":"shrub",
-        "climate":"mediterranean",
-        "size":"medio"
+        "difficulty":3,
+        "min_temp_c":12,
+        "max_temp_c":30,
+        "category":"hanging",
+        "climate":"tropical",
+        "size":"medium"
       }' | jq .
+# If the species is not in the mapping or the Family does not exist in the DB → 400 "Family not found"
 ```
 
-**Update** (requires JWT)
+**Update / Delete (protected)**  
 ```bash
 PLANT_ID="<UUID>"
 curl -s -X PATCH "$BASE/plant/update/$PLANT_ID" \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{ "origin":"EU", "size":"grande" }' | jq .
-```
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"size":"small"}' | jq .
 
-**Delete** (requires JWT)
-```bash
-PLANT_ID="<UUID>"
 curl -s -o /dev/null -w "%{http_code}\n" -X DELETE "$BASE/plant/delete/$PLANT_ID" \
   -H "Authorization: Bearer $TOKEN"
-# expected: 204
 ```
-
-**Filters**
-```bash
-# by size: piccolo|medio|grande|gigante
-curl -s "$BASE/plants/by-size/medio" | jq .
-
-# by use (case-insensitive): e.g., ornamental, medicinal
-curl -s "$BASE/plants/by-use/ornamental" | jq .
-```
-
-**List all**
-```bash
-curl -s "$BASE/plants/all" | jq .
-```
+> **Note**: on creation, if a user↔plant link does not exist, the backend automatically creates a **UserPlant** (with a default `nickname` if missing).
 
 ---
 
-## 🌿 Family
-
-**List**
+### 👤↔️🌱 UserPlant (ownership)
+**List / Add / Delete (protected)**  
 ```bash
-curl -s "$BASE/family/all" | jq .
-```
+# list
+curl -s "$BASE/user_plant/all" -H "Authorization: Bearer $TOKEN" | jq .
 
-**Create** (requires JWT)
-```bash
-curl -s -X POST "$BASE/family/add" \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{ "name":"Rosaceae", "description":"Rose family" }' | jq .
-```
-
-**Update** (requires JWT)
-```bash
-FAMILY_ID="<UUID>"
-curl -s -X PATCH "$BASE/family/update/$FAMILY_ID" \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{ "name":"Rosaceae (updated)" }' | jq .
-```
-
-**Delete** (requires JWT)
-```bash
-FAMILY_ID="<UUID>"
-curl -s -o /dev/null -w "%{http_code}\n" -X DELETE "$BASE/family/delete/$FAMILY_ID" \
-  -H "Authorization: Bearer $TOKEN"
-```
-
----
-
-## 📸 PlantPhoto
-
-> If you manage photos by **URL** (DB only), keep the `/plant/photo/*` routes below.  
-> If you **upload files**, use the **Images API** section at the bottom.
-
-**List (global)** (may require JWT)
-```bash
-curl -s "$BASE/plant_photo/all" | jq .
-```
-
-**Create by URL (requires JWT)**
-```bash
-PLANT_ID="<UUID>"
-curl -s -X POST "$BASE/plant/photo/add/$PLANT_ID" \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{ "url":"https://example.com/p1.jpg", "caption":"leaves", "order_index":0 }' | jq .
-```
-
-**Update (requires JWT)**
-```bash
-PHOTO_ID="<UUID>"
-curl -s -X PATCH "$BASE/plant/photo/update/$PHOTO_ID" \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{ "caption":"leaves (macro)" }' | jq .
-```
-
-**Delete (requires JWT)**
-```bash
-PHOTO_ID="<UUID>"
-curl -s -o /dev/null -w "%{http_code}\n" -X DELETE "$BASE/plant/photo/delete/$PHOTO_ID" \
-  -H "Authorization: Bearer $TOKEN"
-```
-
----
-
-## 🧫 Disease
-
-**List**
-```bash
-curl -s "$BASE/disease/all" | jq .
-```
-
-**Create** (requires JWT)
-```bash
-curl -s -X POST "$BASE/disease/add" \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{ "name":"Powdery mildew", "description":"Fungal disease", "treatment":"sulfur" }' | jq .
-```
-
-**Update** (requires JWT)
-```bash
-DIS_ID="<UUID>"
-curl -s -X PATCH "$BASE/disease/update/$DIS_ID" \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{ "treatment":"combined treatment" }' | jq .
-```
-
-**Delete** (requires JWT)
-```bash
-DIS_ID="<UUID>"
-curl -s -o /dev/null -w "%{http_code}\n" -X DELETE "$BASE/disease/delete/$DIS_ID" \
-  -H "Authorization: Bearer $TOKEN"
-```
-
----
-
-## 🌱🔗 PlantDisease (Plant–Disease relation)
-
-**List**
-```bash
-curl -s "$BASE/plant_disease/all" | jq .
-```
-
-**Create** (requires JWT)
-```bash
-curl -s -X POST "$BASE/plant_disease/add" \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{ "plant_id":"<PLANT_ID>", "disease_id":"<DIS_ID>", "severity":2 }' | jq .
-```
-
-**Update** (requires JWT)
-```bash
-PD_ID="<UUID>"
-curl -s -X PATCH "$BASE/plant_disease/update/$PD_ID" \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{ "notes":"monitor", "severity":3 }' | jq .
-```
-
-**Delete** (requires JWT)
-```bash
-PD_ID="<UUID>"
-curl -s -o /dev/null -w "%{http_code}\n" -X DELETE "$BASE/plant_disease/delete/$PD_ID" \
-  -H "Authorization: Bearer $TOKEN"
-```
-
----
-
-## 👤 User
-
-**List** (may require JWT)
-```bash
-curl -s "$BASE/user/all" | jq .
-```
-
-**Create** (server hashes `password`)  
-```bash
-curl -s -X POST "$BASE/user/add" \
-  -H "Content-Type: application/json" \
-  -d '{
-        "email":"alice@example.com",
-        "password":"MyPass123",
-        "first_name":"Alice",
-        "last_name":"Green"
-      }' | jq .
-```
-
-**Update** (requires JWT)
-```bash
-USER_ID="<UUID>"
-curl -s -X PATCH "$BASE/user/update/$USER_ID" \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{ "first_name":"Alicia" }' | jq .
-```
-
-**Delete** (requires JWT)
-```bash
-USER_ID="<UUID>"
-curl -s -o /dev/null -w "%{http_code}\n" -X DELETE "$BASE/user/delete/$USER_ID" \
-  -H "Authorization: Bearer $TOKEN"
-```
-
----
-
-## 👤🌱 UserPlant (ownership) — composite PK
-
-**List** (may require JWT)
-```bash
-curl -s "$BASE/user_plant/all" | jq .
-```
-
-**Create** (requires JWT)
-```bash
+# link ownership
 curl -s -X POST "$BASE/user_plant/add" \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{ "user_id":"<USER_ID>", "plant_id":"<PLANT_ID>", "nickname":"My Lavender" }' | jq .
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d "{\"plant_id\":\"$PLANT_ID\"}" | jq .
+
+# unlink (querystring)
+UID=$(curl -s "$BASE/check-auth" -H "Authorization: Bearer $TOKEN" | jq -r .user_id)
+URL="$BASE/user_plant/delete?user_id=$UID&plant_id=$PLANT_ID"
+
+curl -sS -i --fail-with-body -X DELETE "$URL" -H "Authorization: Bearer $TOKEN"
 ```
 
-**Delete** (requires JWT)
-```bash
-curl -s -o /dev/null -w "%{http_code}\n" -X DELETE \
-  "$BASE/user_plant/delete?user_id=<USER_ID>&plant_id=<PLANT_ID>" \
-  -H "Authorization: Bearer $TOKEN"
-```
+> **Ownership required** for: `watering_plan/*`, `watering_log/*`, `plant_disease/*`.
 
 ---
 
-## 🤝 Friendship
-
-**List** (may require JWT)
+### 💧 WateringPlan (protected)
 ```bash
-curl -s "$BASE/friendship/all" | jq .
-```
+# Create (requires plant ownership)
+curl -s -X POST "$BASE/user_plant/add" \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d "{\"plant_id\":\"$PLANT_ID\"}" | jq .
+#remember to create another plant if you already deleted it
 
-**Create** (requires JWT)
-```bash
-curl -s -X POST "$BASE/friendship/add" \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{ "user_id_a":"<USER_A>", "user_id_b":"<USER_B>", "status":"pending" }' | jq .
-```
-
-**Update** (requires JWT)
-```bash
-FRIEND_ID="<UUID>"
-curl -s -X PATCH "$BASE/friendship/update/$FRIEND_ID" \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{ "status":"accepted" }' | jq .
-```
-
-**Delete** (requires JWT)
-```bash
-FRIEND_ID="<UUID>"
-curl -s -o /dev/null -w "%{http_code}\n" -X DELETE "$BASE/friendship/delete/$FRIEND_ID" \
-  -H "Authorization: Bearer $TOKEN"
-```
-
----
-
-## 🔁 SharedPlant (sharing)
-
-**List** (may require JWT)
-```bash
-curl -s "$BASE/shared_plant/all" | jq .
-```
-
-**Create** (requires JWT)
-```bash
-curl -s -X POST "$BASE/shared_plant/add" \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{ "owner_user_id":"<OWNER_ID>", "recipient_user_id":"<RECIP_ID>", "plant_id":"<PLANT_ID>", "can_edit":true }' | jq .
-```
-
-**Update** (requires JWT)
-```bash
-SP_ID="<UUID>"
-curl -s -X PATCH "$BASE/shared_plant/update/$SP_ID" \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{ "can_edit":false }' | jq .
-```
-
-**Delete** (requires JWT)
-```bash
-SP_ID="<UUID>"
-curl -s -o /dev/null -w "%{http_code}\n" -X DELETE "$BASE/shared_plant/delete/$SP_ID" \
-  -H "Authorization: Bearer $TOKEN"
-```
-
----
-
-## 💧 WateringPlan
-
-**List** (may require JWT)
-```bash
-curl -s "$BASE/watering_plan/all" | jq .
-```
-
-**Create** (requires JWT)
-```bash
 curl -s -X POST "$BASE/watering_plan/add" \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-        "user_id":"<USER_ID>",
-        "plant_id":"<PLANT_ID>",
-        "next_due_at":"2025-12-01T08:00:00",
-        "interval_days":7,
-        "check_soil_moisture":true
-      }' | jq .
-```
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d "{\"plant_id\":\"$PLANT_ID\",\"next_due_at\":\"2030-01-01 08:00:00\",\"interval_days\":5}" | jq .
 
-**Update** (requires JWT)
-```bash
+# List / Update / Delete
+curl -s "$BASE/watering_plan/all" -H "Authorization: Bearer $TOKEN" | jq .
+
 WP_ID="<UUID>"
 curl -s -X PATCH "$BASE/watering_plan/update/$WP_ID" \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{ "interval_days":10 }' | jq .
-```
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"interval_days":7}' | jq .
 
-**Delete** (requires JWT)
-```bash
-WP_ID="<UUID>"
 curl -s -o /dev/null -w "%{http_code}\n" -X DELETE "$BASE/watering_plan/delete/$WP_ID" \
   -H "Authorization: Bearer $TOKEN"
 ```
 
----
-
-## 🧾 WateringLog
-
-**List** (may require JWT)
+### 🪣 WateringLog (protected)
 ```bash
-curl -s "$BASE/watering_log/all" | jq .
-```
-
-**Create** (requires JWT)
-```bash
+# Create (requires plant ownership)
 curl -s -X POST "$BASE/watering_log/add" \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-        "user_id":"<USER_ID>",
-        "plant_id":"<PLANT_ID>",
-        "done_at":"2025-12-01T09:30:00",
-        "amount_ml":500,
-        "note":"plentiful watering"
-      }' | jq .
-```
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d "{\"plant_id\":\"$PLANT_ID\",\"done_at\":\"2030-01-01 09:00:00\",\"amount_ml\":150}" | jq .
 
-**Update** (requires JWT)
-```bash
-WL_ID="<UUID>"
-curl -s -X PATCH "$BASE/watering_log/update/$WL_ID" \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{ "amount_ml":450 }' | jq .
-```
+# List / Update / Delete
+curl -s "$BASE/watering_log/all" -H "Authorization: Bearer $TOKEN" | jq .
 
-**Delete** (requires JWT)
-```bash
-WL_ID="<UUID>"
-curl -s -o /dev/null -w "%{http_code}\n" -X DELETE "$BASE/watering_log/delete/$WL_ID" \
+LOG_ID="<UUID>"
+curl -s -X PATCH "$BASE/watering_log/update/$LOG_ID" \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"amount_ml":200}' | jq .
+
+curl -s -o /dev/null -w "%{http_code}\n" -X DELETE "$BASE/watering_log/delete/$LOG_ID" \
   -H "Authorization: Bearer $TOKEN"
 ```
 
 ---
 
-## ❓ Question
-
-**List** (may require JWT)
+### 🧫 Disease & PlantDisease (protected)
 ```bash
-curl -s "$BASE/question/all" | jq .
-```
+# Disease CRUD
+DIS_ID=$(curl -s -X POST "$BASE/disease/add" \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"name":"Rust","description":"fungal"}' | jq -r .id)
 
-**Create** (requires JWT)
-```bash
-curl -s -X POST "$BASE/question/add" \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-        "user_id":"<USER_ID>",
-        "text":"How many hours of light does the plant get?",
-        "type":"text"
-      }' | jq .
-```
+curl -s -X PATCH "$BASE/disease/update/$DIS_ID" \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"treatment":"sulfur"}' | jq .
 
-**Update** (requires JWT)
-```bash
-Q_ID="<UUID>"
-curl -s -X PATCH "$BASE/question/update/$Q_ID" \
-  -H "Authorization: Bearer $TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{ "user_answer":"~5 hours", "answered_at":"2025-12-02T10:00:00" }' | jq .
-```
-
-**Delete** (requires JWT)
-```bash
-Q_ID="<UUID>"
-curl -s -o /dev/null -w "%{http_code}\n" -X DELETE "$BASE/question/delete/$Q_ID" \
-  -H "Authorization: Bearer $TOKEN"
+# Link disease ↔ plant (requires plant ownership)
+curl -s -X POST "$BASE/plant_disease/add" \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d "{\"plant_id\":\"$PLANT_ID\",\"disease_id\":\"$DIS_ID\",\"severity\":2,\"notes\":\"leaf spots\"}" | jq .
 ```
 
 ---
 
-# Images API — Examples  (file uploads)
-
-> Base URL: `http://localhost:8000`  
-> API prefix: `/api`
-
-## Variables (file and plant_id are examples, put yours)
+### 👥 Friendship & 🔁 SharedPlant (protected)
+**Friendship** (fields required by the backend: `user_id_a`, `user_id_b`, `status`)  
 ```bash
-API="http://localhost:8000/api"
-PLANT_ID="2bd7da1f-76d6-4bcb-8511-0716ce95bb43"
-FILE="./uploads/shrek.png"
+ME=$(curl -s "$BASE/check-auth" -H "Authorization: Bearer $TOKEN" | jq -r .user_id)
+UID2=$(curl -s -X POST "$BASE/user/add" -H "Content-Type: application/json" \
+  -d "{\"email\":\"friend_$(date +%s)@test.local\",\"password\":\"Abc2345\",\"first_name\":\"Friend\",\"last_name\":\"User\"}" | jq -r .id)
+
+FID=$(curl -s -X POST "$BASE/friendship/add" \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d "{\"user_id_a\":\"$ME\",\"user_id_b\":\"$UID2\",\"status\":\"pending\"}" | jq -r .id)
+
+curl -s -X PATCH "$BASE/friendship/update/$FID" \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"status":"accepted"}' | jq .
 ```
 
-## Upload a plant photo (requires JWT)
+**SharedPlant** (prefer `owner_user_id` / `recipient_user_id`; fallback `user_id_a` / `user_id_b`)  
 ```bash
-RESP_UPLOAD=$(curl -s -X POST "$API/upload/plant-photo" \
+SP=$(curl -s -X POST "$BASE/shared_plant/add" \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d "{\"owner_user_id\":\"$ME\",\"recipient_user_id\":\"$UID2\",\"plant_id\":\"$PLANT_ID\"}" | jq -r .id)
+
+curl -s -X PATCH "$BASE/shared_plant/update/$SP" \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"note":"handle with care"}' | jq .
+```
+
+---
+
+### 📝 Question & ⏰ Reminder (protected)
+```bash
+QID=$(curl -s -X POST "$BASE/question/add" \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"text":"Direct light?","type":"note"}' | jq -r .id)
+
+curl -s -X PATCH "$BASE/question/update/$QID" \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"text":"Better indirect light"}' | jq .
+
+RID=$(curl -s -X POST "$BASE/reminder/add" \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"title":"Check pests","scheduled_at":"2030-01-02 09:00:00"}' | jq -r .id)
+
+curl -s -X PATCH "$BASE/reminder/update/$RID" \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"title":"Check aphids"}' | jq .
+```
+
+---
+
+### 📸 PlantPhoto & Upload (protected)
+```bash
+# via URL
+PID="$PLANT_ID"
+PHOTO_ID=$(curl -s -X POST "$BASE/plant/photo/add/$PID" \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"url":"https://example.com/one.jpg","caption":"one","order_index":0}' | jq -r .id)
+
+curl -s -X PATCH "$BASE/plant/photo/update/$PHOTO_ID" \
+  -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
+  -d '{"caption":"main"}' | jq .
+
+# binary upload (multipart)
+curl -s -X POST "$BASE/upload/plant-photo" \
   -H "Authorization: Bearer $TOKEN" \
-  -F "plant_id=$PLANT_ID" \
-  -F "file=@$FILE")
+  -F "plant_id=$PID" -F "caption=bin-file" -F "file=@/path/to/local.jpg" | jq .
 
-echo "$RESP_UPLOAD" | jq
-PHOTO_ID=$(echo "$RESP_UPLOAD" | jq -r .photo_id)
-URL=$(echo "$RESP_UPLOAD" | jq -r .url)
-echo "PHOTO_ID=$PHOTO_ID"
-echo "URL=$URL"
-```
+# list / main photo
+curl -s "$BASE/plant/$PID/photos?limit=1" | jq .
+curl -s "$BASE/plant/$PID/photo"          | jq .
 
-## Get main photo for a plant
-```bash
-curl -s "$API/plant/$PLANT_ID/photo" | jq
-```
-
-## List photos for a plant
-```bash
-curl -s "$API/plant/$PLANT_ID/photos?limit=10" | jq
-```
-
-## Fetch file headers for the returned URL
-```bash
-curl -I "http://localhost:8000$URL"
-```
-
-## Delete a plant photo by id (requires JWT)
-```bash
-curl -i -X DELETE "$API/plant-photo/delete/$PHOTO_ID" \
+# delete (DB + file under /uploads)
+curl -s -o /dev/null -w "%{http_code}\n" -X DELETE "$BASE/plant-photo/delete/$PHOTO_ID" \
   -H "Authorization: Bearer $TOKEN"
 ```
 
-## Verify list after deletion
+> Uploaded files are served from `GET /uploads/<path>` (at the app **root**). If you delete files manually from the filesystem, you may leave orphan DB records: always use the delete endpoint.
+
+---
+
+### 🩺 Health & Ping (public)
 ```bash
-curl -s "$API/plant/$PLANT_ID/photos" | jq
+curl -s "http://localhost:8000/health" | jq .   # {"status":"ok"}
+curl -s "$BASE/ping"                   | jq .   # {"ping":"pong"}
 ```
 
-## Bulk delete all photos for a plant (requires JWT)
-```bash
-curl -s "$API/plant/$PLANT_ID/photos" | jq -r '.[].id' \
-| while read -r PID; do
-  curl -s -X DELETE "$API/plant-photo/delete/$PID" \
-    -H "Authorization: Bearer $TOKEN" > /dev/null
-done
+---
 
-curl -s "$API/plant/$PLANT_ID/photos" | jq
-```
+### 🧭 Common error codes
+- **401**: missing/invalid JWT; refresh without cookie.
+- **400**: validation failed (e.g., invalid size; `"Family not found"` when mapping doesn’t resolve).
+- **403**: acting on resources without ownership (Watering*/PlantDisease).
+- **404**: resource not found / invalid ID / missing upload path.
+- **409/500**: uniqueness conflicts (duplicates).
