@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import base64
+import io
 # Standard library
 import os
 import uuid
@@ -14,12 +16,13 @@ from werkzeug.security import generate_password_hash
 from sqlalchemy import func
 from sqlalchemy.exc import IntegrityError, DataError
 from functools import wraps
-from datetime import datetime, timedelta   
-import secrets                              
+from datetime import datetime, timedelta
+import secrets
 
 # Export/seed utilities
 from models.scripts.replay_changes import seed_from_changes, write_changes_delete, write_changes_upsert
 from models.base import SessionLocal
+from services.image_processing_service import ImageProcessingService
 
 # Local application
 from services.repository_service import RepositoryService
@@ -46,7 +49,9 @@ api_blueprint = Blueprint("api", __name__)
 repo = RepositoryService()
 REFRESH_TTL_DAYS = int(os.getenv("REFRESH_TTL_DAYS", "90"))
 
-# image_service = ImageProcessingService()
+image_service = ImageProcessingService()
+
+
 # reminder_service = ReminderService()
 # disease_service = DiseaseRecognitionService()
 
@@ -94,12 +99,13 @@ def auth_login():
             raw_refresh,
             max_age=60 * 60 * 24 * REFRESH_TTL_DAYS,
             httponly=True,
-            secure=False,      # True in production (HTTPS)
+            secure=False,  # True in production (HTTPS)
             samesite="Lax",
-            path="/",          # backend reads the cookie on /auth/refresh and /auth/logout
+            path="/",  # backend reads the cookie on /auth/refresh and /auth/logout
         )
         return resp, 200
-    
+
+
 @api_blueprint.route("/auth/refresh", methods=["POST"])
 def auth_refresh():
     # Il client NON manda nulla nel body: il refresh è nel cookie HttpOnly
@@ -127,11 +133,12 @@ def auth_refresh():
             raw,  # in questo design non ruotiamo il valore, solo la scadenza
             max_age=60 * 60 * 24 * REFRESH_TTL_DAYS,
             httponly=True,
-            secure=False,      # True in produzione (HTTPS)
+            secure=False,  # True in produzione (HTTPS)
             samesite="Lax",
             path="/",
         )
         return resp, 200
+
 
 @api_blueprint.route("/auth/logout", methods=["POST"])
 def auth_logout():
@@ -313,9 +320,59 @@ def get_all_plants():
 @api_blueprint.route("/plant/add", methods=["POST"])
 @require_jwt
 def create_plant():
-    payload = _parse_json_body()
+    """
+    JSON body:
+    {
+      "image": "<base64-encoded-image>"
+    }
 
-    # --- id & timestamps (conserva il comportamento esistente) ---
+    - Decodifica l'immagine da base64
+    - La passa a ImageProcessingService.process_image(...) (PlantNet)
+    - Usa lo scientificNameWithoutAuthor come scientific_name
+    - Usa RepositoryService per ricavare tutti i campi di default
+    - Crea la Plant con quei dati e la collega all'utente
+    """
+    # 1) Leggo il body (solo immagine)
+    body = _parse_json_body()
+    image_b64 = body.get("image")
+    if not image_b64:
+        return jsonify({"error": "Field 'image' is required"}), 400
+
+    # 2) base64 -> bytes
+    try:
+        image_bytes = base64.b64decode(image_b64)
+    except Exception:
+        return jsonify({"error": "Invalid base64 image data"}), 400
+
+    # 3) adattatore per file.stream che si aspetta il service
+    class _FileWrapper:
+        def __init__(self, b: bytes):
+            self.stream = io.BytesIO(b)
+
+    fake_file = _FileWrapper(image_bytes)
+
+    # 4) PlantNet → scientific_name
+    try:
+        scientific_name = image_service.process_image(fake_file)
+    except Exception as e:
+        current_app.logger.exception(f"PlantNet error: {e}")
+        return jsonify({"error": "Image processing failed"}), 500
+
+    if not scientific_name:
+        return jsonify({"error": "No plant match found from PlantNet"}), 422
+
+    # 5) Recupero TUTTI i default dal Repository
+    defaults = repo.get_plant_defaults(scientific_name) or {}
+    # defaults ha: common_name, category, climate, origin, use,
+    # water_level, light_level, min_temp_c, max_temp_c, size
+
+    # 6) Costruisco il payload SOLO a partire dal scientific_name + defaults
+    payload = {
+        "scientific_name": scientific_name,
+        **{k: v for k, v in defaults.items() if v is not None},
+    }
+
+    # --- id & timestamps ---
     cols = _model_columns(Plant)
     if "id" in cols and "id" not in payload:
         payload["id"] = str(uuid.uuid4())
@@ -325,69 +382,69 @@ def create_plant():
     if "updated_at" in cols:
         payload["updated_at"] = now
 
+    # --- size enum (se presente nei defaults) ---
     if "size" in payload and payload["size"] is not None:
         size_val = str(payload["size"])
         allowed_sizes = {e.value for e in SizeEnum}
         if size_val not in allowed_sizes:
-            return jsonify({"error": f"size must be one of {sorted(allowed_sizes)}"}), 400
-        payload["size"] = SizeEnum(size_val)
+            # se il JSON ha una size non valida, la scarto
+            payload.pop("size", None)
+        else:
+            payload["size"] = SizeEnum(size_val)
 
-    try:
-        wl = int(payload.get("water_level"))
-        ll = int(payload.get("light_level"))
-        if not (1 <= wl <= 5) or not (1 <= ll <= 5):
-            return jsonify({"error": "water_level/light_level must be in [1..5]"}), 400
-    except Exception:
-        return jsonify({"error": "water_level/light_level must be integer"}), 400
+    # --- water/light level (solo se presenti) ---
+    wl = payload.get("water_level")
+    ll = payload.get("light_level")
+    if wl is not None and ll is not None:
+        try:
+            wl = int(wl)
+            ll = int(ll)
+            if not (1 <= wl <= 5) or not (1 <= ll <= 5):
+                return jsonify({"error": "water_level/light_level must be in [1..5]"}), 400
+            payload["water_level"] = wl
+            payload["light_level"] = ll
+        except Exception:
+            return jsonify({"error": "water_level/light_level must be integer"}), 400
 
-    try:
-        tmin = int(payload.get("min_temp_c"))
-        tmax = int(payload.get("max_temp_c"))
-        if tmin >= tmax:
-            return jsonify({"error": "min_temp_c must be < max_temp_c"}), 400
-    except Exception:
-        return jsonify({"error": "min_temp_c/max_temp_c must be integer"}), 400
+    # --- temp bounds (solo se presenti) ---
+    tmin = payload.get("min_temp_c")
+    tmax = payload.get("max_temp_c")
+    if tmin is not None and tmax is not None:
+        try:
+            tmin = int(tmin)
+            tmax = int(tmax)
+            if tmin >= tmax:
+                return jsonify({"error": "min_temp_c must be < max_temp_c"}), 400
+            payload["min_temp_c"] = tmin
+            payload["max_temp_c"] = tmax
+        except Exception:
+            return jsonify({"error": "min_temp_c/max_temp_c must be integer"}), 400
 
     data = _filter_fields_for_model(payload, Plant)
 
     with _session_ctx() as s:
         try:
-            # 1) Se il client passa family_id, usalo (con validazione)
-            fam_id = (payload.get("family_id") or "").strip()
-            if fam_id:
-                _ensure_uuid(fam_id, "family_id")
-                if not s.get(Family, fam_id):
-                    return jsonify({"error": "Family not found"}), 400
-                data["family_id"] = fam_id
-            else:
-                # 2) Fallback: deduci family dal scientific_name (comportamento esistente)
-                fam_id = repo.get_family(data["scientific_name"])
-                if not fam_id:
-                    return jsonify({"error": "Family not found"}), 400
-                data["family_id"] = fam_id
+            # 7) family_id dal Repository (usando scientific_name)
+            fam_id = repo.get_family(data["scientific_name"])
+            if not fam_id:
+                return jsonify({"error": "Family not found"}), 400
+            data["family_id"] = fam_id
 
-            # 3) Crea la pianta
+            # 8) crea pianta
             p = Plant(**data)
             s.add(p)
             _commit_or_409(s)
             write_changes_upsert("plant", [_serialize_instance(p)])
 
-            # 4) (Facoltativo) collega all'utente se payload include metadati user_plant
-            nickname = (payload.get("nickname") or "").strip() or None
-            location_note = (payload.get("location_note") or "").strip() or None
-            since_value = payload.get("since") or None  # YYYY-MM-DD o ISO
-
-            if any([nickname, location_note, since_value]) and not s.get(UserPlant, (g.user_id, p.id)):
-                up = UserPlant(
-                    user_id=g.user_id,
-                    plant_id=p.id,
-                    nickname=nickname,
-                    location_note=location_note,
-                    since=since_value,
-                )
-                s.add(up)
-                _commit_or_409(s)
-                write_changes_upsert("user_plant", [_serialize_instance(up)])
+            # 9) collega SEMPRE la pianta all'utente (metadati vuoti)
+            repo.ensure_user_plant_link(
+                user_id=g.user_id,
+                plant_id=str(p.id),
+                nickname=None,
+                location_note=None,
+                since=None,
+                overwrite=False,
+            )
 
             return jsonify({"ok": True, "id": str(p.id)}), 201
 
@@ -400,6 +457,7 @@ def create_plant():
         except Exception as e:
             s.rollback()
             return jsonify({"error": f"DB error: {e}"}), 500
+
 
 # ========= UPDATE Plant =========
 @api_blueprint.route("/plant/update/<plant_id>", methods=["PATCH", "PUT"])
