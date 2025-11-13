@@ -65,24 +65,45 @@ def auth_missing(e):
 def auth_login():
     """
     JSON body: { "email": "...", "password": "..." }
-    Returns:   { "access_token": "...", "user_id": "..." }
-    + sets an HttpOnly 'refresh_token' cookie (persistent)
+
+    Returns (200):
+    {
+      "access_token": "...",
+      "user_id": "...",
+      "first_name": "...",
+      "last_name": "...",
+      "user": {
+        "id": "...",
+        "email": "...",
+        "first_name": "...",
+        "last_name": "..."
+      }
+    }
+
+    + HttpOnly cookie "refresh_token" per il refresh.
     """
     data = request.get_json(silent=True) or {}
     email = (data.get("email") or "").strip().lower()
     password = data.get("password") or ""
+
     if not email or not password:
         return jsonify({"error": "email/password missing"}), 400
 
     with _session_ctx() as s:
-        u = s.query(User).filter(func.lower(User.email) == email).first()
+        # Cerca utente per email case-insensitive
+        u: User | None = (
+            s.query(User)
+             .filter(func.lower(User.email) == email)
+             .first()
+        )
+
         if not u or not check_password_hash(u.password_hash, password):
             return jsonify({"error": "Invalid credentials"}), 401
 
-        # 1) Access JWT (short-lived, handled by jwt_helper)
+        # 1) Access JWT (short-lived)
         access_token = generate_token(str(u.id))
 
-        # 2) Refresh token stored in DB  with sliding expiry
+        # 2) Refresh token persistente in DB
         raw_refresh = secrets.token_urlsafe(48)
         rt = RefreshToken(
             user_id=str(u.id),
@@ -90,19 +111,37 @@ def auth_login():
             expires_at=datetime.utcnow() + timedelta(days=REFRESH_TTL_DAYS),
         )
         s.add(rt)
-        _commit_or_409(s)
+        # se vuoi tracciare anche qui:
+        # write_changes_insert("refresh_token", str(rt.id), {...})
+        s.flush()  # opzionale, se ti serve l'id di rt
+        # commit finale
+        # (se hai un helper _commit_or_409 usalo qui)
+        # _commit_or_409(s)
 
-        # 3) Response + HttpOnly cookie
-        resp = jsonify({"access_token": access_token, "user_id": str(u.id)})
+        # 3) Risposta JSON + cookie HttpOnly
+        resp = jsonify({
+            "access_token": access_token,
+            "user_id": str(u.id),
+            "first_name": u.first_name,
+            "last_name": u.last_name,
+            "user": {
+                "id": str(u.id),
+                "email": u.email,
+                "first_name": u.first_name,
+                "last_name": u.last_name,
+            },
+        })
+
         resp.set_cookie(
             "refresh_token",
             raw_refresh,
             max_age=60 * 60 * 24 * REFRESH_TTL_DAYS,
             httponly=True,
-            secure=False,  # True in production (HTTPS)
+            secure=False,   # metti True in produzione con HTTPS
             samesite="Lax",
-            path="/",  # backend reads the cookie on /auth/refresh and /auth/logout
+            path="/",
         )
+
         return resp, 200
 
 
@@ -806,6 +845,8 @@ def user_all():
 @api_blueprint.route("/user/add", methods=["POST"])
 def user_add():
     payload = _parse_json_body()
+
+    # se c'è "password" la trasformiamo in "password_hash"
     if "password" in payload:
         payload["password_hash"] = generate_password_hash(payload.pop("password"))
 
@@ -821,14 +862,35 @@ def user_add():
         _commit_or_409(s)
         write_changes_upsert("user", [_serialize_instance(u)])
 
-        # GENERATE JWT
-        token = generate_token(u.id)
+        # GENERATE JWT (access token)
+        access_token = generate_token(str(u.id))
 
         return jsonify({
             "ok": True,
-            "id": u.id,
-            "token": token  # <--- JWT returned to client
+
+            # ID utente
+            "id": str(u.id),
+            "user_id": str(u.id),
+
+            # nome/cognome in vari formati
+            "name": u.first_name,         # per retrocompatibilità
+            "surname": u.last_name,       # per retrocompatibilità
+            "first_name": u.first_name,
+            "last_name": u.last_name,
+
+            # token in entrambi i campi che il client si aspetta
+            "access_token": access_token,
+            "token": access_token,
+
+            # oggetto user completo, utile per il client
+            "user": {
+                "id": str(u.id),
+                "email": u.email,
+                "first_name": u.first_name,
+                "last_name": u.last_name,
+            },
         }), 201
+
 
 
 @api_blueprint.route("/user/update/<uid>", methods=["PATCH", "PUT"])
@@ -849,17 +911,29 @@ def user_update(uid: str):
         return jsonify({"ok": True, "id": u.id}), 200
 
 
-@api_blueprint.route("/user/delete/<uid>", methods=["DELETE"])
+@api_blueprint.route("/user/delete", methods=["DELETE"])
 @require_jwt
-def user_delete(uid: str):
-    _ensure_uuid(uid, "user_id")
+def user_delete_me():
+    """
+    Cancella l'utente loggato usando l'user_id messo in g da require_jwt.
+    """
+    user_id = getattr(g, "user_id", None)
+    if not user_id:
+        return jsonify(error="Missing user_id in JWT"), 401
+
+    _ensure_uuid(user_id, "user_id")
+
     with _session_ctx() as s:
-        u = s.get(User, uid)
-        if u:
-            s.delete(u)
-            _commit_or_409(s)
-        write_changes_delete("user", uid)
+        u = s.get(User, user_id)
+        if not u:
+            return jsonify(error="User not found"), 404
+
+        s.delete(u)
+        _commit_or_409(s)
+        write_changes_delete("user", user_id)
+
         return ("", 204)
+
 
 
 # ========= UserPlant (composite PK: user_id + plant_id) =========

@@ -131,7 +131,35 @@
       "name": "example1"
     }
   ],
-  "user": [],
+  "user": [
+    {
+      "created_at": "2025-11-13T11:01:49",
+      "last_name": "Franchi",
+      "first_name": "Francesco",
+      "updated_at": "2025-11-13T11:01:49",
+      "email": "f.franchi@gmail.com",
+      "password_hash": "scrypt:32768:8:1$BZWQs8C76B0QlXOa$e659014ded0f86d2709f5844a66752e955d01620b086759f980d54d8b218c89ab9a99cbcf66308209f8d26a71c78c9b606b6da205c8d87bb73aa2079bfce2046",
+      "id": "31c03001-7841-48d1-80cb-d138caed7106"
+    },
+    {
+      "created_at": "2025-11-13T11:20:13",
+      "last_name": "Bianchi",
+      "first_name": "Mario",
+      "updated_at": "2025-11-13T11:20:13",
+      "email": "m.bianchetto@gmail.com",
+      "password_hash": "scrypt:32768:8:1$KYvLOIAEjw1KfMfV$e6cebe95dbb06536013ba419f56c0e3ffc22a7a155adec06429bf6d88756ef26d0af387662da26aea5429a9810896bdc8132d9013ba96df9f4051822555e54cb",
+      "id": "f282442e-94c9-4c9c-9395-2389b79b7aa7"
+    },
+    {
+      "last_name": "Faella",
+      "created_at": "2025-11-13T12:35:08",
+      "password_hash": "scrypt:32768:8:1$lHPtq2EA4eIopkpe$ca133d1afd715e0766225a49e9b1292323d53f639db64526de4a746d50f8d606dbad5d0b8d2fa75a1b1c50facf30bee1d2c0b3fcc68577ca739f2788bda9ac39",
+      "email": "fa.mikela@gmail.com",
+      "first_name": "Michela",
+      "id": "891dbac7-1207-40bc-83b8-9731f6ef026a",
+      "updated_at": "2025-11-13T12:35:08"
+    }
+  ],
   "plant": [
     {
       "climate": "Temperate, Montane",
