@@ -10,6 +10,7 @@ from datetime import datetime
 
 # Third-party
 from flask import Blueprint, jsonify, current_app, request, abort, g
+from flask import current_app
 from werkzeug.utils import secure_filename
 from werkzeug.security import check_password_hash
 from werkzeug.security import generate_password_hash
@@ -331,16 +332,16 @@ def get_families():
 
 # ========= Plants (by user) =========
 @api_blueprint.route("/plants", methods=["GET"])
+@require_jwt
 def get_plants():
-    user_id = request.args.get("user_id")
-    if not user_id:
-        return jsonify({"error": "Missing user identifier"}), 400
+    user_id = g.user_id
+
     try:
         plants = repo.get_plants_by_user(user_id)
         return jsonify(plants), 200
-    except Exception:
+    except Exception as e:
+        current_app.logger.exception(f"Error fetching plants for user {user_id}: {e}")
         return jsonify({"error": "Database error"}), 500
-
 
 ALLOWED_SIZES = {e.value for e in SizeEnum}
 
@@ -356,6 +357,7 @@ def get_all_plants():
 
 
 # ========= CREATE Plant =========
+# ========= CREATE Plant (PlantNet + defaults + watering plan) =========
 @api_blueprint.route("/plant/add", methods=["POST"])
 @require_jwt
 def create_plant():
@@ -365,117 +367,231 @@ def create_plant():
       "image": "<base64-encoded-image>"
     }
 
+    Flusso:
     - Decodifica l'immagine da base64
     - La passa a ImageProcessingService.process_image(...) (PlantNet)
-    - Usa lo scientificNameWithoutAuthor come scientific_name
-    - Usa RepositoryService per ricavare tutti i campi di default
-    - Crea la Plant con quei dati e la collega all'utente
+      → ottiene scientific_name + family_name (da PlantNet)
+    - Usa RepositoryService per ricavare i campi di default (house_plants.json)
+    - Risolve la family:
+        1) prima dal nome di famiglia di PlantNet (get_family_by_name)
+        2) poi in fallback dal JSON (get_family(scientific_name))
+    - Crea la Plant e la collega all'utente
+    - Crea un WateringPlan di default in base alle preferenze del questionario
     """
-    # 1) Leggo il body (solo immagine)
     body = _parse_json_body()
     image_b64 = body.get("image")
     if not image_b64:
         return jsonify({"error": "Field 'image' is required"}), 400
 
-    # 2) base64 -> bytes
+    # base64 -> bytes
     try:
         image_bytes = base64.b64decode(image_b64)
     except Exception:
         return jsonify({"error": "Invalid base64 image data"}), 400
 
-    # 3) adattatore per file.stream che si aspetta il service
+    # adattatore per file.stream
     class _FileWrapper:
         def __init__(self, b: bytes):
             self.stream = io.BytesIO(b)
 
     fake_file = _FileWrapper(image_bytes)
 
-    # 4) PlantNet → scientific_name
+    # PlantNet → info pianta (scientific + family)
     try:
-        scientific_name = image_service.process_image(fake_file)
+        plant_info = image_service.process_image(fake_file)
     except Exception as e:
-        current_app.logger.exception(f"PlantNet error: {e}")
+        current_app.logger.exception(f"[create_plant] PlantNet error: {e}")
         return jsonify({"error": "Image processing failed"}), 500
 
-    if not scientific_name:
+    if not plant_info or not plant_info.get("scientific_name"):
+        current_app.logger.warning("[create_plant] No plant match found from PlantNet")
         return jsonify({"error": "No plant match found from PlantNet"}), 422
 
-    # 5) Recupero TUTTI i default dal Repository
-    defaults = repo.get_plant_defaults(scientific_name) or {}
-    # defaults ha: common_name, category, climate, origin, use,
-    # water_level, light_level, min_temp_c, max_temp_c, size
+    scientific_name = plant_info["scientific_name"]
+    family_name = plant_info.get("family_name")
 
-    # 6) Costruisco il payload SOLO a partire dal scientific_name + defaults
-    payload = {
+    current_app.logger.info(
+        f"[create_plant] scientific_name={scientific_name!r}, "
+        f"family_name_from_plantnet={family_name!r}"
+    )
+
+    # 5) Recupero TUTTI i default dal Repository (house_plants.json)
+    defaults = repo.get_plant_defaults(scientific_name) or {}
+    current_app.logger.info(f"[create_plant] defaults from house_plants.json={defaults}")
+
+    # 6) Costruisco il payload SOLO a partire da scientific_name + defaults
+    payload: dict = {
         "scientific_name": scientific_name,
         **{k: v for k, v in defaults.items() if v is not None},
     }
 
     # --- id & timestamps ---
     cols = _model_columns(Plant)
+    now = datetime.utcnow()
+
     if "id" in cols and "id" not in payload:
         payload["id"] = str(uuid.uuid4())
-    now = datetime.utcnow()
     if "created_at" in cols and "created_at" not in payload:
         payload["created_at"] = now
     if "updated_at" in cols:
         payload["updated_at"] = now
+
+    # ===========================
+    #  DEFAULT per NOT NULL
+    # ===========================
+
+    # use: String NOT NULL
+    if "use" in cols:
+        raw_use = payload.get("use", defaults.get("use"))
+        # se arriva come lista dal JSON, la riduco a stringa
+        if isinstance(raw_use, list):
+            raw_use = ", ".join(str(u) for u in raw_use if u)
+        if raw_use is None:
+            raw_use = ""
+        payload["use"] = str(raw_use)
+
+    # category: String NOT NULL
+    if "category" in cols:
+        raw_cat = payload.get("category", defaults.get("category"))
+        if raw_cat is None:
+            raw_cat = ""
+        payload["category"] = str(raw_cat)
+
+    # climate: String NOT NULL
+    if "climate" in cols:
+        raw_clim = payload.get("climate", defaults.get("climate"))
+        if raw_clim is None:
+            raw_clim = ""
+        payload["climate"] = str(raw_clim)
+
+    # water_level / light_level: SmallInt NOT NULL
+    if "water_level" in cols and payload.get("water_level") is None:
+        payload["water_level"] = defaults.get("water_level", 3)  # default medio 3
+    if "light_level" in cols and payload.get("light_level") is None:
+        payload["light_level"] = defaults.get("light_level", 3)  # default medio 3
+
+    # difficulty: SmallInt NOT NULL (ha già default=3 nel modello, ma se arriva None lo forzo)
+    if "difficulty" in cols and payload.get("difficulty") is None:
+        payload["difficulty"] = defaults.get("difficulty", 3)
+
+    # temp bounds: Integer NOT NULL
+    if "min_temp_c" in cols and payload.get("min_temp_c") is None:
+        # nei JSON spesso è "tempmin": {"celsius": ...}
+        tmin = None
+        tempmin = defaults.get("tempmin") or {}
+        if isinstance(tempmin, dict):
+            tmin = tempmin.get("celsius")
+        payload["min_temp_c"] = tmin if tmin is not None else 15
+
+    if "max_temp_c" in cols and payload.get("max_temp_c") is None:
+        tempmax = defaults.get("tempmax") or {}
+        tmax = None
+        if isinstance(tempmax, dict):
+            tmax = tempmax.get("celsius")
+        payload["max_temp_c"] = tmax if tmax is not None else 25
+
+    # pests: se vogliamo popolarlo da "insects" del JSON
+    if "pests" in cols and payload.get("pests") is None:
+        insects = defaults.get("insects")
+        if insects is not None:
+            payload["pests"] = insects  # viene mappato su JSON in MySQL
 
     # --- size enum (se presente nei defaults) ---
     if "size" in payload and payload["size"] is not None:
         size_val = str(payload["size"])
         allowed_sizes = {e.value for e in SizeEnum}
         if size_val not in allowed_sizes:
-            # se il JSON ha una size non valida, la scarto
+            current_app.logger.warning(
+                f"[create_plant] Invalid size in defaults: {size_val!r}, dropping it"
+            )
             payload.pop("size", None)
         else:
             payload["size"] = SizeEnum(size_val)
+    # se size manca del tutto, il modello ha default SizeEnum.MEDIUM
 
-    # --- water/light level (solo se presenti) ---
+    # ===========================
+    #  VALIDAZIONE numerica
+    # ===========================
     wl = payload.get("water_level")
     ll = payload.get("light_level")
     if wl is not None and ll is not None:
         try:
-            wl = int(wl)
-            ll = int(ll)
-            if not (1 <= wl <= 5) or not (1 <= ll <= 5):
+            wl_i = int(wl)
+            ll_i = int(ll)
+            if not (1 <= wl_i <= 5) or not (1 <= ll_i <= 5):
+                current_app.logger.warning(
+                    f"[create_plant] Invalid water/light level wl={wl_i}, ll={ll_i}"
+                )
                 return jsonify({"error": "water_level/light_level must be in [1..5]"}), 400
-            payload["water_level"] = wl
-            payload["light_level"] = ll
+            payload["water_level"] = wl_i
+            payload["light_level"] = ll_i
         except Exception:
+            current_app.logger.exception("[create_plant] Error parsing water/light level")
             return jsonify({"error": "water_level/light_level must be integer"}), 400
 
-    # --- temp bounds (solo se presenti) ---
     tmin = payload.get("min_temp_c")
     tmax = payload.get("max_temp_c")
     if tmin is not None and tmax is not None:
         try:
-            tmin = int(tmin)
-            tmax = int(tmax)
-            if tmin >= tmax:
+            tmin_i = int(tmin)
+            tmax_i = int(tmax)
+            if tmin_i >= tmax_i:
+                current_app.logger.warning(
+                    f"[create_plant] Invalid temp bounds tmin={tmin_i}, tmax={tmax_i}"
+                )
                 return jsonify({"error": "min_temp_c must be < max_temp_c"}), 400
-            payload["min_temp_c"] = tmin
-            payload["max_temp_c"] = tmax
+            payload["min_temp_c"] = tmin_i
+            payload["max_temp_c"] = tmax_i
         except Exception:
+            current_app.logger.exception("[create_plant] Error parsing temp bounds")
             return jsonify({"error": "min_temp_c/max_temp_c must be integer"}), 400
 
+    # Filtro i campi per il modello Plant
     data = _filter_fields_for_model(payload, Plant)
+    current_app.logger.info(f"[create_plant] payload before DB insert={data}")
 
+    # 7) DB: crea Plant, link all'utente, crea WateringPlan
     with _session_ctx() as s:
         try:
-            # 7) family_id dal Repository (usando scientific_name)
-            fam_id = repo.get_family(data["scientific_name"])
+            # 7a) family_id: prima dal nome di PlantNet, poi fallback su JSON
+            fam_id = None
+            if family_name:
+                fam_id = repo.get_family_by_name(family_name)
+                current_app.logger.info(
+                    f"[create_plant] fam_id from PlantNet family_name={fam_id!r}"
+                )
+
             if not fam_id:
-                return jsonify({"error": "Family not found"}), 400
+                current_app.logger.info(
+                    "[create_plant] falling back to repo.get_family(scientific_name)"
+                )
+                fam_id = repo.get_family(data["scientific_name"])
+                current_app.logger.info(
+                    f"[create_plant] fam_id from JSON match={fam_id!r}"
+                )
+
+            if not fam_id:
+                current_app.logger.warning(
+                    f"[create_plant] Family not found for "
+                    f"scientific_name={data['scientific_name']!r}, "
+                    f"family_name_from_plantnet={family_name!r}"
+                )
+                return jsonify({
+                    "error": "Family not found",
+                    "scientific_name": data["scientific_name"],
+                    "family_name_from_plantnet": family_name,
+                    "defaults_used": defaults,
+                }), 400
+
             data["family_id"] = fam_id
 
-            # 8) crea pianta
+            # 7b) crea pianta
             p = Plant(**data)
             s.add(p)
             _commit_or_409(s)
             write_changes_upsert("plant", [_serialize_instance(p)])
 
-            # 9) collega SEMPRE la pianta all'utente (metadati vuoti)
+            # 7c) collega SEMPRE la pianta all'utente (metadati vuoti)
             repo.ensure_user_plant_link(
                 user_id=g.user_id,
                 plant_id=str(p.id),
@@ -485,16 +601,37 @@ def create_plant():
                 overwrite=False,
             )
 
+            # 7d) crea un WateringPlan di default per questa pianta
+            try:
+                repo.create_default_watering_plan_for_plant(
+                    session=s,
+                    user_id=g.user_id,
+                    plant_id=str(p.id),
+                )
+                s.commit()
+                current_app.logger.info(
+                    f"[create_plant] Default WateringPlan created for plant_id={p.id}"
+                )
+            except Exception as e:
+                s.rollback()
+                current_app.logger.exception(
+                    f"[create_plant] Failed to create default WateringPlan for plant_id={p.id}: {e}"
+                )
+                # NON blocchiamo la creazione della pianta se il piano fallisce
+
             return jsonify({"ok": True, "id": str(p.id)}), 201
 
         except IntegrityError as e:
             s.rollback()
+            current_app.logger.exception(f"[create_plant] IntegrityError: {e}")
             return jsonify({"error": f"Conflict: {e.orig}"}), 409
         except DataError as e:
             s.rollback()
+            current_app.logger.exception(f"[create_plant] DataError: {e}")
             return jsonify({"error": f"Bad data: {e.orig}"}), 400
         except Exception as e:
             s.rollback()
+            current_app.logger.exception(f"[create_plant] DB error: {e}")
             return jsonify({"error": f"DB error: {e}"}), 500
 
 
@@ -694,16 +831,13 @@ def plant_photo_delete(photo_id: str):
     with _session_ctx() as s:
         pp = s.get(PlantPhoto, photo_id)
 
-        # try to delete the file on disk if we know the URL
         if pp and pp.url and pp.url.startswith("/uploads/"):
             try:
-                rel = pp.url[len("/uploads/"):]  # e.g. "plant/<pid>/<uuid>.png"
+                rel = pp.url[len("/uploads/"):]
                 base = os.path.realpath(current_app.config["UPLOAD_DIR"])
-                full = os.path.realpath(os.path.join(base, rel))  # absolute path
-                # safety: delete only inside UPLOAD_DIR
+                full = os.path.realpath(os.path.join(base, rel))
                 if full.startswith(base) and os.path.exists(full):
                     os.remove(full)
-                    # optional: remove dir if empty
                     dirpath = os.path.dirname(full)
                     try:
                         os.rmdir(dirpath)
@@ -712,15 +846,13 @@ def plant_photo_delete(photo_id: str):
             except Exception as e:
                 current_app.logger.warning(f"Unable to remove file for photo_id={photo_id}: {e}")
 
-        # delete the row from the DB
         if pp:
             s.delete(pp)
             _commit_or_409(s)
 
-    # update changes.json (idempotent as you do with family_delete)
     write_changes_delete("plant_photo", photo_id)
-
     return ("", 204)
+
 
 
 # ========= Disease =========
@@ -846,7 +978,6 @@ def user_all():
 def user_add():
     payload = _parse_json_body()
 
-    # se c'è "password" la trasformiamo in "password_hash"
     if "password" in payload:
         payload["password_hash"] = generate_password_hash(payload.pop("password"))
 
@@ -859,37 +990,31 @@ def user_add():
     with _session_ctx() as s:
         u = User(**data)
         s.add(u)
-        _commit_or_409(s)
-        write_changes_upsert("user", [_serialize_instance(u)])
+        s.flush()
 
-        # GENERATE JWT (access token)
-        access_token = generate_token(str(u.id))
+        # crea le domande di default per il nuovo utente
+        questions = repo.create_default_questions_for_user(user_id=str(u.id), session=s)
+
+        # commit unico (user + domande)
+        _commit_or_409(s)
+
+        # changes.json
+        write_changes_upsert("user", [_serialize_instance(u)])
+        if questions:
+            write_changes_upsert(
+                "question",
+                [_serialize_instance(q) for q in questions],
+            )
+
+        # JWT per il client
+        token = generate_token(str(u.id))
 
         return jsonify({
             "ok": True,
-
-            # ID utente
-            "id": str(u.id),
-            "user_id": str(u.id),
-
-            # nome/cognome in vari formati
-            "name": u.first_name,         # per retrocompatibilità
-            "surname": u.last_name,       # per retrocompatibilità
-            "first_name": u.first_name,
-            "last_name": u.last_name,
-
-            # token in entrambi i campi che il client si aspetta
-            "access_token": access_token,
-            "token": access_token,
-
-            # oggetto user completo, utile per il client
-            "user": {
-                "id": str(u.id),
-                "email": u.email,
-                "first_name": u.first_name,
-                "last_name": u.last_name,
-            },
+            "id": u.id,
+            "token": token,
         }), 201
+
 
 
 
@@ -911,28 +1036,95 @@ def user_update(uid: str):
         return jsonify({"ok": True, "id": u.id}), 200
 
 
-@api_blueprint.route("/user/delete", methods=["DELETE"])
+@api_blueprint.route("/user/delete-me", methods=["DELETE"])
 @require_jwt
 def user_delete_me():
     """
-    Cancella l'utente loggato usando l'user_id messo in g da require_jwt.
+    Cancella l'account dell'utente loggato (g.user_id) e tutti i dati collegati.
+    Logga inoltre le delete in changes.json.
     """
-    user_id = getattr(g, "user_id", None)
-    if not user_id:
-        return jsonify(error="Missing user_id in JWT"), 401
+    current_user_id = getattr(g, "user_id", None)
+    if not current_user_id:
+        return jsonify({"error": "Unauthorized"}), 401
 
-    _ensure_uuid(user_id, "user_id")
+    orphan_plant_ids: list[str] = []
+    orphan_photo_ids: list[str] = []
+    user_plant_pairs: list[dict] = []
 
     with _session_ctx() as s:
-        u = s.get(User, user_id)
+        u = s.get(User, current_user_id)
         if not u:
-            return jsonify(error="User not found"), 404
+            return jsonify({"error": "User non trovato"}), 404
+
+        up_rows = (
+            s.query(UserPlant)
+             .filter(UserPlant.user_id == current_user_id)
+             .all()
+        )
+        for up in up_rows:
+            user_plant_pairs.append({
+                "user_id": up.user_id,
+                "plant_id": up.plant_id,
+                "_delete": True,
+            })
+        plant_ids = [up.plant_id for up in up_rows]
+
+        if plant_ids:
+            counts = (
+                s.query(UserPlant.plant_id, func.count(UserPlant.user_id))
+                 .filter(UserPlant.plant_id.in_(plant_ids))
+                 .group_by(UserPlant.plant_id)
+                 .all()
+            )
+            orphan_plant_ids = [pid for (pid, cnt) in counts if cnt == 1]
+
+        if orphan_plant_ids:
+            photos = (
+                s.query(PlantPhoto)
+                 .filter(PlantPhoto.plant_id.in_(orphan_plant_ids))
+                 .all()
+            )
+
+            base = os.path.realpath(current_app.config["UPLOAD_DIR"])
+            for pp in photos:
+                orphan_photo_ids.append(pp.id)
+                if pp.url and pp.url.startswith("/uploads/"):
+                    try:
+                        rel = pp.url[len("/uploads/"):]
+                        full = os.path.realpath(os.path.join(base, rel))
+                        if full.startswith(base) and os.path.exists(full):
+                            os.remove(full)
+                            dirpath = os.path.dirname(full)
+                            try:
+                                os.rmdir(dirpath)
+                            except OSError:
+                                pass
+                    except Exception as e:
+                        current_app.logger.warning(
+                            f"Impossibile rimuovere file per photo_id={pp.id}: {e}"
+                        )
+
+            for pid in orphan_plant_ids:
+                plant = s.get(Plant, pid)
+                if plant:
+                    s.delete(plant)
 
         s.delete(u)
         _commit_or_409(s)
-        write_changes_delete("user", user_id)
 
-        return ("", 204)
+    write_changes_delete("user", current_user_id)
+
+    if user_plant_pairs:
+        write_changes_upsert("user_plant", user_plant_pairs)
+
+    for pid in orphan_plant_ids:
+        write_changes_delete("plant", pid)
+
+    for photo_id in orphan_photo_ids:
+        write_changes_delete("plant_photo", photo_id)
+
+    return ("", 204)
+
 
 
 
@@ -1099,6 +1291,25 @@ def shared_plant_delete(sid: str):
 
 
 # ========= WateringPlan =========
+@api_blueprint.route("/plant/<plant_id>/watering-plan", methods=["GET"])
+@require_jwt
+def get_watering_plan_for_plant(plant_id: str):
+    _ensure_uuid(plant_id, "plant_id")
+    with _session_ctx() as s:
+        wp = (
+            s.query(WateringPlan)
+            .filter(
+                WateringPlan.user_id == g.user_id,
+                WateringPlan.plant_id == plant_id,
+            )
+            .one_or_none()
+        )
+        if not wp:
+            return jsonify({"error": "WateringPlan not found"}), 404
+
+        return jsonify(_serialize_instance(wp)), 200
+
+
 @api_blueprint.route("/watering_plan/all", methods=["GET"])
 @require_jwt
 def watering_plan_all():
@@ -1276,6 +1487,51 @@ def question_delete(qid: str):
         write_changes_delete("question", qid)
         return ("", 204)
 
+@api_blueprint.route("/questionnaire/questions", methods=["GET"])
+@require_jwt
+def questionnaire_get_questions():
+    """
+    Restituisce le domande del questionario per l'utente loggato.
+    """
+    user_id = g.user_id
+
+    try:
+        questions = repo.get_questions_for_user(user_id)
+        return jsonify(questions), 200
+    except Exception as e:
+        current_app.logger.exception(f"Error fetching questionnaire for user {user_id}: {e}")
+        return jsonify({"error": "Database error"}), 500
+
+
+@api_blueprint.route("/questionnaire/answers", methods=["POST"])
+@require_jwt
+def questionnaire_submit_answers():
+    """
+    Salva le risposte dell'utente loggato al questionario.
+    """
+    user_id = g.user_id
+    payload = _parse_json_body()
+    answers = payload.get("answers")
+
+    if not isinstance(answers, dict) or not answers:
+        return jsonify({"error": "answers must be a non-empty object"}), 400
+
+    try:
+        repo.save_question_answers(user_id, answers)
+        return jsonify({"ok": True}), 200
+
+    except ValueError as e:
+        # errore di validazione degli ID → 400
+        return jsonify({"error": str(e)}), 400
+
+    except Exception as e:
+        current_app.logger.exception(
+            f"Error saving questionnaire answers for user {user_id}: {e}"
+        )
+        return jsonify({"error": "Database error"}), 500
+
+
+
 
 # ========= Reminder =========
 @api_blueprint.route("/reminder/all", methods=["GET"])
@@ -1332,6 +1588,38 @@ def reminder_delete(rid: str):
             _commit_or_409(s)
         write_changes_delete("reminder", rid)
         return ("", 204)
+
+@api_blueprint.route("/plant/<plant_id>/reminders", methods=["GET"])
+@require_jwt
+def get_reminders_for_plant(plant_id: str):
+    _ensure_uuid(plant_id, "plant_id")
+    with _session_ctx() as s:
+        reminders = (
+            s.query(Reminder)
+            .filter(
+                Reminder.user_id == g.user_id,
+                Reminder.entity_type == "plant",
+                Reminder.entity_id == plant_id,
+            )
+            .order_by(Reminder.scheduled_at.asc())
+            .all()
+        )
+
+        # anche se non ce ne sono, restituisci una lista vuota (200)
+        return jsonify([_serialize_instance(r) for r in reminders]), 200
+
+
+@api_blueprint.route("/reminders", methods=["GET"])
+@require_jwt
+def get_all_reminders():
+    with _session_ctx() as s:
+        reminders = (
+            s.query(Reminder)
+            .filter(Reminder.user_id == g.user_id)
+            .order_by(Reminder.scheduled_at.asc())
+            .all()
+        )
+        return jsonify([_serialize_instance(r) for r in reminders]), 200
 
 
 # ========= Upload Plant Photo =========
