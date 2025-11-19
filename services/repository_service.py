@@ -8,6 +8,9 @@ from sqlalchemy import select, func
 from models.base import SessionLocal
 from models.entities import Plant, UserPlant, Family, PlantPhoto
 from models.scripts.replay_changes import write_changes_upsert
+from models.entities import Question
+from datetime import datetime, timedelta
+from models.entities import Question, WateringPlan,Reminder
 
 
 class RepositoryService:
@@ -86,25 +89,54 @@ class RepositoryService:
         candidates.sort(key=lambda x: (-x[0], len((x[1].get("latin") or ""))))
         return candidates[0][1]
 
-    # =======================
+     # =======================
     # Getters dal JSON
     # =======================
     def get_family(self, scientific_name: str) -> Optional[str]:
         """
-        Dato uno scientific_name (anche parziale) ritorna l'ID della Family nel DB,
-        cercando la family nel JSON tramite matching fuzzy/regex.
+        Dato uno scientific_name (da PlantNet), prova a:
+        - fare match con il campo "latin" del file house_plants.json
+          usando l'helper _match_houseplant_item
+        - ricavare il nome di family (item["family"] o item["name"])
+        - cercare quella family nel DB
+        - restituire l'id della family, oppure None se non trovata.
         """
-        it = self._match_houseplant_item(scientific_name)
-        if not it:
+        print(f"[get_family] scientific_name={scientific_name!r}")
+
+        # Usa già il JSON caricato/cachato
+        item = self._match_houseplant_item(scientific_name)
+        if not item:
+            print(f"[get_family] NO MATCH in JSON for scientific_name={scientific_name!r}")
             return None
 
-        matched_family_name = (it.get("family") or it.get("name") or "").strip()
+        latin = (item.get("latin") or "").strip()
+        matched_family_name = (item.get("family") or item.get("name") or "").strip()
+
+        print(
+            f"[get_family] MATCH item: latin={latin!r}, "
+            f"matched_family_name={matched_family_name!r}"
+        )
+
         if not matched_family_name:
+            print(f"[get_family] Item has no 'family'/'name' field, giving up.")
             return None
 
+        # Cerco nel DB la Family corrispondente
         with self.Session() as s:
-            fam = s.query(Family).filter(func.lower(Family.name) == matched_family_name.lower()).first()
-            return str(fam.id) if fam else None
+            fam = (
+                s.query(Family)
+                .filter(func.lower(Family.name) == matched_family_name.lower())
+                .first()
+            )
+
+            if not fam:
+                print(
+                    f"[get_family] NO DB family row for name={matched_family_name!r}"
+                )
+                return None
+
+            print(f"[get_family] DB family found: id={fam.id}, name={fam.name!r}")
+            return str(fam.id)
 
     def get_common_name(self, scientific_name: str) -> Optional[str]:
         it = self._match_houseplant_item(scientific_name)
@@ -307,10 +339,18 @@ class RepositoryService:
     def get_plants_by_user(self, user_id: str) -> List[Dict]:
         with self.Session() as s:
             stmt = (
-                select(Plant.id, Plant.scientific_name, Plant.common_name, UserPlant.nickname, UserPlant.location_note)
+                select(
+                    Plant.id,
+                    Plant.scientific_name,
+                    Plant.common_name,
+                    UserPlant.nickname,
+                    UserPlant.location_note,
+                )
+                .select_from(Plant)
                 .join(UserPlant, UserPlant.plant_id == Plant.id)
                 .where(UserPlant.user_id == user_id)
-                .order_by(Plant.common_name.nulls_last(), Plant.scientific_name)
+                # niente .nulls_last() che dava problemi in alcune combinazioni
+                .order_by(Plant.common_name, Plant.scientific_name)
             )
             rows = s.execute(stmt).all()
             return [
@@ -323,6 +363,7 @@ class RepositoryService:
                 }
                 for r in rows
             ]
+
 
     def get_all_families(self) -> List[Dict]:
         with self.Session() as s:
@@ -388,3 +429,276 @@ class RepositoryService:
                 }
                 for r in rows
             ]
+
+    def create_default_questions_for_user(self, user_id: str, session=None) -> List[Question]:
+        """
+        Create, for a newly registered user, a copy of the template questions.
+        If a session is passed, use it (same transaction as user_add).
+        Returns the list of created Question objects (does NOT commit if the session is external).
+        """
+        # Load question templates from question.json (cached in self._question_templates_cache)
+        if not hasattr(self, "_question_templates_cache"):
+            file_path = os.path.join(os.path.dirname(__file__), "..", "question.json")
+            file_path = os.path.realpath(file_path)
+            with open(file_path, "r", encoding="utf-8") as f:
+                self._question_templates_cache = json.load(f)
+        templates = self._question_templates_cache
+
+        owns_session = False
+        if session is None:
+            session = self.Session()
+            owns_session = True
+
+        questions: List[Question] = []
+        try:
+            for tpl in templates:
+                options = tpl.get("options") or []
+                q = Question(
+                    user_id=user_id,
+                    text=tpl["text"],
+                    type=tpl.get("type", "single_choice"),
+                    options_json={"options": options},
+                    active=True,
+                    user_answer=None,
+                    answered_at=None,
+                )
+                session.add(q)
+                questions.append(q)
+
+            if owns_session:
+                session.commit()
+
+            return questions
+        finally:
+            if owns_session:
+                session.close()
+
+    def get_questions_for_user(self, user_id: str) -> List[Dict]:
+        """
+        Restituisce le domande del questionario per un dato utente,
+        con le opzioni già spacchettate e l'eventuale risposta salvata.
+        """
+        with self.Session() as s:
+            rows = (
+                s.query(Question)
+                .filter(Question.user_id == user_id, Question.active.is_(True))
+                .order_by(Question.id)
+                .all()
+            )
+
+            out: List[Dict] = []
+            for q in rows:
+                options = []
+                if isinstance(q.options_json, dict):
+                    raw_opts = q.options_json.get("options") or []
+                    if isinstance(raw_opts, list):
+                        options = [str(o) for o in raw_opts]
+
+                out.append(
+                    {
+                        "id": str(q.id),
+                        "text": q.text,
+                        "type": q.type,
+                        "options": options,
+                        # tipicamente "1", "2", "3" o "4"
+                        "user_answer": q.user_answer,
+                        "answered_at": q.answered_at.isoformat() if q.answered_at else None,
+                    }
+                )
+            return out
+        
+    def create_default_watering_plan_for_plant(
+        self,
+        session,
+        user_id: str,
+        plant_id: str,
+    ):
+        """
+        Crea un WateringPlan di default per (user_id, plant_id)
+        usando le preferenze del questionario e crea anche
+        il primo Reminder collegato alla pianta.
+        Va chiamata dentro una sessione esistente.
+        """
+        # 0) se esiste già un WP per (user, plant), non fare doppioni
+        existing = (
+            session.query(WateringPlan)
+            .filter(
+                WateringPlan.user_id == user_id,
+                WateringPlan.plant_id == plant_id,
+            )
+            .first()
+        )
+        if existing:
+            return existing
+
+        # 1) prendo le preferenze dal questionario
+        prefs = self.get_user_reminder_preferences(user_id, session=session)
+
+        day_pref = prefs.get("day_pref") or 3  # fallback: Any day
+        time_pref = prefs.get("time_pref") or 1  # fallback: Morning
+
+        now = datetime.utcnow()
+
+        # 2) orario dalla Q2
+        if time_pref == 1:      # Morning (07-10)
+            hour = 8
+        elif time_pref == 2:    # Lunch
+            hour = 13
+        elif time_pref == 3:    # Evening
+            hour = 19
+        else:                   # I don't care
+            hour = 9
+
+        # 3) intervallo giorni dalla Q1
+        if day_pref == 4:       # Every other day
+            interval_days = 2
+        else:
+            interval_days = 3   # esempio: ogni 3 giorni di default
+
+        # 4) prima scadenza: domani all'ora scelta
+        next_due = (now + timedelta(days=1)).replace(
+            hour=hour, minute=0, second=0, microsecond=0
+        )
+
+        # 5) creo il WateringPlan
+        wp = WateringPlan(
+            user_id=user_id,
+            plant_id=plant_id,
+            next_due_at=next_due,
+            interval_days=interval_days,
+            check_soil_moisture=False,
+            notes="Auto-created from questionnaire preferences.",
+        )
+        session.add(wp)
+        session.flush()  # così WP è persistito prima di creare il reminder
+
+        # 6) creo il primo Reminder (solo se il modello Reminder esiste nel DB)
+        plant = session.query(Plant).filter(Plant.id == plant_id).one_or_none()
+        if plant is not None:
+            title = f"Water {plant.common_name or plant.scientific_name or 'your plant'}"
+        else:
+            title = "Water your plant"
+
+        rem = Reminder(
+            user_id=user_id,
+            title=title,
+            note=None,
+            scheduled_at=next_due,
+            done_at=None,
+            recurrence_rrule=None,  # in futuro possiamo codificare interval_days
+            entity_type="plant",
+            entity_id=plant_id,
+        )
+        session.add(rem)
+
+        # Il commit lo fa la route /plant/add
+        return wp
+
+
+    def save_question_answers(self, user_id: str, answers: Dict[str, str]) -> None:
+        """
+        Salva le risposte dell'utente.
+
+        answers = {
+            "<question_id>": "1",  # indice opzione 1..4 (stringa)
+            "<question_id>": "3",
+            ...
+        }
+        """
+        if not answers:
+            return
+
+        now = datetime.utcnow()
+        q_ids = list(answers.keys())
+
+        with self.Session() as s:
+            q_rows = (
+                s.query(Question)
+                .filter(Question.id.in_(q_ids))
+                .all()
+            )
+
+            by_id = {str(q.id): q for q in q_rows}
+
+            # 1) Prima controllo che TUTTI gli ID passati siano validi
+            invalid_ids = []
+            for qid in answers.keys():
+                q = by_id.get(qid)
+                if not q or str(q.user_id) != str(user_id):
+                    invalid_ids.append(qid)
+
+            if invalid_ids:
+                # niente commit, sollevo errore di validazione
+                raise ValueError(f"Invalid question IDs for this user: {', '.join(invalid_ids)}")
+
+            # 2) Se sono tutti validi, aggiorno le risposte
+            for qid, ans in answers.items():
+                q = by_id[qid]
+                q.user_answer = str(ans)   # "1","2","3","4"
+                q.answered_at = now
+
+            s.commit()
+
+
+    def get_user_reminder_preferences(self, user_id: str, session=None) -> dict:
+        """
+        Legge le Question dell'utente e tira fuori le preferenze utili
+        per i reminders/ watering plan.
+        Per ora usiamo solo:
+        - Q1: When do you prefer to take care of your plants?
+        - Q2: At what time of day are you usually available?
+        Ritorna un dict semplice, es: {"day_pref": 1, "time_pref": 3}
+        """
+        owns_session = False
+        if session is None:
+            session = self.Session()
+            owns_session = True
+
+        try:
+            questions = (
+                session.query(Question)
+                .filter(Question.user_id == user_id)
+                .all()
+            )
+
+            day_pref = None
+            time_pref = None
+
+            for q in questions:
+                if not q.user_answer:
+                    continue
+                text = (q.text or "").strip()
+                try:
+                    idx = int(str(q.user_answer))
+                except ValueError:
+                    continue
+
+                if "When do you prefer to take care of your plants?" in text:
+                    day_pref = idx
+                elif "At what time of day are you usually available?" in text:
+                    time_pref = idx
+
+            prefs = {
+                "day_pref": day_pref,   # 1..4 o None
+                "time_pref": time_pref, # 1..4 o None
+            }
+            return prefs
+        finally:
+            if owns_session:
+                session.close()
+
+    def get_family_by_name(self, family_name: str) -> Optional[str]:
+        """
+        Ritorna l'id della Family dato il nome (case-insensitive),
+        oppure None se non trovata.
+        """
+        if not family_name:
+            return None
+
+        with self.Session() as s:
+            fam = (
+                s.query(Family)
+                .filter(func.lower(Family.name) == family_name.lower())
+                .first()
+            )
+            return str(fam.id) if fam else None

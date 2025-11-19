@@ -180,14 +180,5 @@
       "max_temp_c": 26,
       "difficulty": 3
     }
-  ],
-  "user_plant": [
-    {
-      "user_id": "bc3721da-834f-43b0-bb46-5d44ef60594e",
-      "plant_id": "a381e208-062f-4f6c-b18a-35d66a792de7",
-      "nickname": null,
-      "location_note": null,
-      "since": null
-    }
   ]
 }

@@ -10,14 +10,18 @@ PLANT_NET_PATH = "https://my-api.plantnet.org/v2/identify/all"
 
 class ImageProcessingService:
     @staticmethod
-    def _identify_plant(image_bytes: bytes, base_url: str, api_key: str) -> str | None:
+    def _identify_plant(image_bytes: bytes, base_url: str, api_key: str) -> dict | None:
         """
         Manda l'immagine a PlantNet usando:
-          base_url + "?api-key=" + api_key
+          base_url + "?api-key=" + api_key"
 
-        Ritorna:
-          - scientificNameWithoutAuthor del best match
-          - oppure None se non ci sono risultati
+        Ritorna un dict del tipo:
+        {
+            "scientific_name": "Dieffenbachia daguensis",
+            "family_name": "Araceae",
+            "score": 0.05475
+        }
+        oppure None se non ci sono risultati.
         """
         url = f"{base_url}?api-key={api_key}"
 
@@ -28,7 +32,6 @@ class ImageProcessingService:
             )
         ]
 
-        # come nel tuo esempio: organs = ["auto"]
         data = [
             ("organs", "auto"),
         ]
@@ -44,8 +47,13 @@ class ImageProcessingService:
         # Best match = risultato con score più alto
         best = max(results, key=lambda r: r.get("score") or 0)
         species = best.get("species") or {}
+        family = species.get("family") or {}
 
-        return species.get("scientificNameWithoutAuthor")
+        return {
+            "scientific_name": species.get("scientificNameWithoutAuthor"),
+            "family_name": family.get("scientificNameWithoutAuthor"),
+            "score": best.get("score"),
+        }
 
     @staticmethod
     def process_image(file):
@@ -53,8 +61,12 @@ class ImageProcessingService:
         Riceve un file (es. request.files['file']),
         lo ridimensiona, lo converte in JPEG e lo manda a PlantNet.
 
-        Ritorna:
-          scientificNameWithoutAuthor del best match
+        Ritorna un dict:
+        {
+            "scientific_name": ...,
+            "family_name": ...,
+            "score": ...
+        }
         """
         img = Image.open(file.stream)
         img.thumbnail((512, 512))
@@ -62,11 +74,10 @@ class ImageProcessingService:
         img.save(buffer, format="JPEG")
         buffer.seek(0)
 
-        scientific_name = ImageProcessingService._identify_plant(
+        info = ImageProcessingService._identify_plant(
             buffer.getvalue(),
             base_url=PLANT_NET_PATH,
             api_key=PLANT_NET_KEY,
         )
 
-        # qui ritorniamo direttamente lo scientific name senza autore
-        return scientific_name
+        return info
