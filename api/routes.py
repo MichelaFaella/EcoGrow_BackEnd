@@ -9,10 +9,12 @@ import uuid
 from contextlib import contextmanager
 from datetime import datetime
 
+from PIL import Image
 # Third-party
-from flask import Blueprint, jsonify, current_app, request, abort, g
+from flask import Blueprint, jsonify, current_app, request, abort, g, url_for
 from flask import current_app
-from werkzeug.utils import secure_filename
+from sqlalchemy.orm import selectinload
+from werkzeug.utils import secure_filename, send_from_directory
 from werkzeug.security import check_password_hash
 from werkzeug.security import generate_password_hash
 from sqlalchemy import func
@@ -50,6 +52,7 @@ from models.entities import (
 api_blueprint = Blueprint("api", __name__)
 repo = RepositoryService()
 REFRESH_TTL_DAYS = int(os.getenv("REFRESH_TTL_DAYS", "90"))
+UPLOAD_FOLDER = "uploads"
 
 image_service = ImageProcessingService()
 
@@ -230,20 +233,111 @@ def _filter_fields_for_model(payload: dict, Model, *, exclude: set[str] = None) 
 
 
 def _serialize_with_relations(instance):
+    """
+    Serializza l'istanza (es. UserPlant) includendo:
+    - plant
+    - photos
+    e per ogni foto genera anche l'immagine compressa (WebP) in base64
+      nel campo "image", in modo analogo a come il client la invia.
+    """
     data = _serialize_instance(instance)
 
-    # Serializza la pianta (relazione 1:1)
     plant = getattr(instance, "plant", None)
-    if plant:
-        data["plant"] = _serialize_instance(plant)
+    if not plant:
+        return data
 
-        # Serializza foto (relazione 1:N)
-        photos = getattr(plant, "photos", [])
-        data["plant"]["photos"] = [
-            _serialize_instance(p) for p in photos
-        ]
+    # Dati della pianta
+    plant_data = _serialize_instance(plant)
+    data["plant"] = plant_data
 
+    photos = getattr(plant, "photos", [])
+    serialized_photos = []
+
+    for photo in photos:
+        photo_data = _serialize_instance(photo)
+
+        plant_id = str(plant.id)
+        filename = photo.url  # quello salvato nel DB (es. "2108...jpg")
+
+        if not filename:
+            # Se per qualche motivo manca il filename, salto la foto
+            serialized_photos.append(photo_data)
+            continue
+
+        # 1) ottengo (o creo) la versione ridotta su disco
+        resized_filename = _get_or_create_resized_image(plant_id, filename)
+
+        # 2) scelgo il file da usare (preferisco il ridotto)
+        filename_only = os.path.basename(resized_filename or filename)
+        image_path = os.path.join(UPLOAD_FOLDER, plant_id, filename_only)
+        photo_data["image_path"] = image_path  # info interna, se ti serve
+
+        # 3) leggo il file e lo comprimo in WebP, poi base64
+        image_b64 = None
+        try:
+            # apro la jpeg ridotta
+            with Image.open(image_path) as img:
+                img = img.convert("RGB")
+
+                # ricompressione in WebP (come lato client: qualità 70)
+                buf = io.BytesIO()
+                img.save(buf, format="WEBP", quality=70, method=6)
+                webp_bytes = buf.getvalue()
+
+            image_b64 = base64.b64encode(webp_bytes).decode("ascii")
+        except FileNotFoundError:
+            print(f"[WARN] Image not found while serializing: {image_path}")
+        except Exception as e:
+            print(f"[ERROR] Failed to compress/encode image {image_path}: {e}")
+
+        # questo è il campo che Flutter può usare direttamente
+        photo_data["image"] = image_b64
+
+        serialized_photos.append(photo_data)
+
+    plant_data["photos"] = serialized_photos
     return data
+
+
+MAX_SIZE = (800, 800)  # risoluzione massima lato lungo
+
+
+def _get_or_create_resized_image(plant_id: str, filename: str) -> str | None:
+    """
+    Ritorna il NOME FILE della versione compressa.
+    Se non esiste, la crea a partire dall'originale.
+    """
+    # Caso: nel DB hai già un path tipo "uploads/..." → prendo solo il nome file
+    filename_only = os.path.basename(filename)
+
+    base, ext = os.path.splitext(filename_only)
+    if not ext:
+        ext = ".jpg"
+
+    resized_name = f"{base}_small{ext}"
+    orig_path = os.path.join(UPLOAD_FOLDER, plant_id, filename_only)
+    resized_path = os.path.join(UPLOAD_FOLDER, plant_id, resized_name)
+
+    # Se esiste già, riusala
+    if os.path.exists(resized_path):
+        return resized_name
+
+    # Se non esiste neanche l'originale, non posso fare nulla
+    if not os.path.exists(orig_path):
+        print(f"[WARN] Original image not found: {orig_path}")
+        return None
+
+    try:
+        with Image.open(orig_path) as img:
+            img = img.convert("RGB")
+            img.thumbnail(MAX_SIZE)
+            os.makedirs(os.path.dirname(resized_path), exist_ok=True)
+            img.save(resized_path, format="JPEG", quality=80, optimize=True)
+            print(f"[DEBUG] Created resized image: {resized_path}")
+            return resized_name
+    except Exception as e:
+        print(f"[ERROR] Failed to resize image {orig_path}: {e}")
+        return None
 
 
 def _serialize_instance(instance) -> dict:
@@ -366,6 +460,10 @@ def get_families():
 
 
 # ========= Plants (by user) =========
+@api_blueprint.route("/uploads/<path:path>", methods=["GET"])
+def serve_uploads(path):
+    return send_from_directory(UPLOAD_FOLDER, path)
+
 @api_blueprint.route("/plants", methods=["GET"])
 @require_jwt
 def get_plants():
@@ -481,6 +579,7 @@ def create_plant():
     defaults = repo.get_plant_defaults(scientific_name) or {}
     print("[DEBUG] Defaults caricati:", defaults)
 
+    # Base payload: scientific_name + tutto ciò che il JSON conosce
     payload = {
         "scientific_name": scientific_name,
         **{k: v for k, v in defaults.items() if v is not None},
@@ -630,7 +729,7 @@ def create_plant():
             write_changes_upsert("plant", [_serialize_instance(p)])
 
             # ================================================================
-            #  SALVATAGGIO IMMAGINE SU FILESYSTEM  (UNICA AGGIUNTA)
+            #  SALVATAGGIO IMMAGINE SU FILESYSTEM + RECORD PlantPhoto
             # ================================================================
             try:
                 plant_id = str(p.id)
@@ -639,15 +738,30 @@ def create_plant():
                 os.makedirs(base_dir, exist_ok=True)
 
                 photo_id = str(uuid.uuid4())
-                image_path = os.path.join(base_dir, f"{photo_id}.jpg")
+                filename = f"{photo_id}.jpg"
+                image_path = os.path.join(base_dir, filename)
 
+                # Salva il file sul filesystem
                 with open(image_path, "wb") as f:
                     f.write(image_bytes)
 
                 print(f"[DEBUG] Immagine salvata in: {image_path}")
 
+                # Crea la riga in plant_photo
+                photo = PlantPhoto(
+                    id=photo_id,
+                    plant_id=plant_id,
+                    url=filename,  # nel DB salvo SOLO il nome file
+                    caption=None,
+                    order_index=0,
+                )
+                s.add(photo)
+
+                # (opzionale) log per replay_changes
+                write_changes_upsert("plant_photo", [_serialize_instance(photo)])
+
             except Exception as e:
-                print(f"[ERRORE] Salvataggio immagine fallito: {e}")
+                print(f"[ERRORE] Salvataggio immagine/PlantPhoto fallito: {e}")
             # ================================================================
 
             # link user-plant
@@ -657,7 +771,7 @@ def create_plant():
                 plant_id=str(p.id),
                 nickname=None,
                 location_note=None,
-                since=None,
+                since=datetime.now(),
                 overwrite=False,
             )
 
@@ -1186,7 +1300,13 @@ def user_delete_me():
 @require_jwt
 def user_plant_all():
     with _session_ctx() as s:
-        rows = s.query(UserPlant).all()
+        rows = (
+            s.query(UserPlant)
+            .options(
+                selectinload(UserPlant.plant).selectinload(Plant.photos)
+            )
+            .all()
+        )
         return jsonify([_serialize_with_relations(r) for r in rows]), 200
 
 

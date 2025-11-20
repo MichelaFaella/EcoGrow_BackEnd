@@ -48,6 +48,9 @@ class RepositoryService:
         - tutti i token contenuti (ordine libero)
         - prefix su genere (quando un solo token)
         - contenimento semplice
+
+        Se NON trova nulla e il nome ha più token (es. "Rosa chinensis"),
+        fa un fallback sul SOLO genere (primo token, es. "Rosa").
         Ritorna l'intero dict dell'item (o None).
         """
         data = self._load_house_plants()
@@ -56,40 +59,58 @@ class RepositoryService:
             return None
 
         q_tokens = q_norm.split()
-        rx = self._build_ordered_regex(q_tokens)
 
-        candidates: List[Tuple[int, dict]] = []
-        for item in data:
-            latin = (item.get("latin") or "").strip()
-            if not latin:
-                continue
-            lat_norm = self._normalize(latin)
+        def _search_with_tokens(tokens: List[str]) -> Optional[dict]:
+            rx = self._build_ordered_regex(tokens)
+            candidates: List[Tuple[int, dict]] = []
 
-            score = 0
-            # A) regex ordinata
-            if rx.search(lat_norm):
-                score += 100
-            # B) tutti i token presenti (ordine libero)
-            if all(tok in lat_norm for tok in q_tokens):
-                score += 50
-            # C) prefix su genere
-            if len(q_tokens) == 1 and lat_norm.startswith(q_tokens[0]):
-                score += 25
-            # D) contenimento semplice
-            if q_norm in lat_norm:
-                score += 10
+            for item in data:
+                latin = (item.get("latin") or "").strip()
+                if not latin:
+                    continue
+                lat_norm = self._normalize(latin)
 
-            if score > 0:
-                candidates.append((score, item))
+                score = 0
+                # A) regex ordinata
+                if rx.search(lat_norm):
+                    score += 100
+                # B) tutti i token presenti (ordine libero)
+                if all(tok in lat_norm for tok in tokens):
+                    score += 50
+                # C) prefix su genere (solo se un token)
+                if len(tokens) == 1 and lat_norm.startswith(tokens[0]):
+                    score += 25
+                # D) contenimento semplice
+                if " ".join(tokens) in lat_norm:
+                    score += 10
 
-        if not candidates:
-            return None
+                if score > 0:
+                    candidates.append((score, item))
 
-        # best score; a parità preferisci latin più corto (più specifico)
-        candidates.sort(key=lambda x: (-x[0], len((x[1].get("latin") or ""))))
-        return candidates[0][1]
+            if not candidates:
+                return None
 
-     # =======================
+            # best score; a parità preferisci latin più corto (più specifico)
+            candidates.sort(key=lambda x: (-x[0], len((x[1].get("latin") or ""))))
+            return candidates[0][1]
+
+        # 1) primo tentativo: nome completo (es. "rosa chinensis")
+        item = _search_with_tokens(q_tokens)
+        if item is not None:
+            return item
+
+        # 2) fallback: se c'è almeno genere + qualcosa, prova solo il genere
+        if len(q_tokens) > 1:
+            genus = q_tokens[0]
+            print(f"[RepositoryService] Fallback match sul genere: {genus!r} per {scientific_name!r}")
+            item = _search_with_tokens([genus])
+            if item is not None:
+                return item
+
+        # 3) niente da fare
+        return None
+
+    # =======================
     # Getters dal JSON
     # =======================
     def get_family(self, scientific_name: str) -> Optional[str]:

@@ -331,6 +331,63 @@
       "difficulty": 3,
       "light_level": 3,
       "scientific_name": "Lophophora williamsii"
+    },
+    {
+      "max_temp_c": 28,
+      "created_at": "2025-11-20T00:25:46",
+      "water_level": 5,
+      "size": "small",
+      "origin": "Cultivar",
+      "use": "Table top, Tertiary",
+      "light_level": 4,
+      "id": "f2141ebf-92bc-495f-9077-f3805ebd14c5",
+      "min_temp_c": 15,
+      "scientific_name": "Spathiphyllum wallisii",
+      "common_name": "Peace lily",
+      "pests": null,
+      "family_id": "ddc38e06-6633-48eb-988e-af2579ef2b53",
+      "climate": "Tropical",
+      "category": "Spathiphyllum",
+      "difficulty": 3,
+      "updated_at": "2025-11-20T00:25:46"
+    },
+    {
+      "max_temp_c": 28,
+      "size": "medium",
+      "id": "1e18c06e-8e9e-4947-adfb-5a1a3e1ddcbf",
+      "category": "Flowering shrub",
+      "updated_at": "2025-11-20T00:35:35",
+      "family_id": "b9cbfcc6-ce18-47cd-ac15-3535712d8c45",
+      "climate": "Temperate",
+      "scientific_name": "Rosa lucieae",
+      "light_level": 5,
+      "pests": null,
+      "difficulty": 3,
+      "created_at": "2025-11-20T00:35:35",
+      "use": "Garden plant, Cut flowers, Ornamental",
+      "min_temp_c": 5,
+      "common_name": "Rose",
+      "water_level": 3,
+      "origin": "Asia"
+    },
+    {
+      "min_temp_c": 15,
+      "max_temp_c": 28,
+      "climate": "Tropical",
+      "water_level": 5,
+      "light_level": 4,
+      "pests": null,
+      "created_at": "2025-11-20T10:31:51",
+      "id": "11d82928-5f94-4d6b-99d8-a096edabcc44",
+      "size": "small",
+      "common_name": "Peace lily",
+      "use": "Table top, Tertiary",
+      "origin": "Cultivar",
+      "difficulty": 3,
+      "scientific_name": "Spathiphyllum cochlearispathum",
+      "category": "Spathiphyllum",
+      "family_id": "ddc38e06-6633-48eb-988e-af2579ef2b53",
+      "updated_at": "2025-11-20T10:31:51"
     }
   ],
   "user_plant": [
@@ -389,6 +446,53 @@
       "nickname": null,
       "location_note": null,
       "since": null
+    },
+    {
+      "user_id": "891dbac7-1207-40bc-83b8-9731f6ef026a",
+      "plant_id": "f2141ebf-92bc-495f-9077-f3805ebd14c5",
+      "nickname": null,
+      "location_note": null,
+      "since": "2025-11-20"
+    },
+    {
+      "user_id": "891dbac7-1207-40bc-83b8-9731f6ef026a",
+      "plant_id": "1e18c06e-8e9e-4947-adfb-5a1a3e1ddcbf",
+      "nickname": null,
+      "location_note": null,
+      "since": "2025-11-20"
+    },
+    {
+      "user_id": "891dbac7-1207-40bc-83b8-9731f6ef026a",
+      "plant_id": "11d82928-5f94-4d6b-99d8-a096edabcc44",
+      "nickname": null,
+      "location_note": null,
+      "since": "2025-11-20"
+    }
+  ],
+  "plant_photo": [
+    {
+      "created_at": null,
+      "plant_id": "f2141ebf-92bc-495f-9077-f3805ebd14c5",
+      "order_index": 0,
+      "caption": null,
+      "id": "24712f27-b8e4-4b75-8ec2-7f5834d23c46",
+      "url": "24712f27-b8e4-4b75-8ec2-7f5834d23c46.jpg"
+    },
+    {
+      "caption": null,
+      "id": "210813f9-8b06-496b-b038-22aa42bc0c71",
+      "plant_id": "1e18c06e-8e9e-4947-adfb-5a1a3e1ddcbf",
+      "created_at": null,
+      "url": "210813f9-8b06-496b-b038-22aa42bc0c71.jpg",
+      "order_index": 0
+    },
+    {
+      "url": "1f9267b3-9897-44e1-83b0-50c9340937fb.jpg",
+      "order_index": 0,
+      "created_at": null,
+      "id": "1f9267b3-9897-44e1-83b0-50c9340937fb",
+      "plant_id": "11d82928-5f94-4d6b-99d8-a096edabcc44",
+      "caption": null
     }
   ]
 }

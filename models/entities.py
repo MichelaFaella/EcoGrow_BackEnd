@@ -133,6 +133,12 @@ class Plant(Base):
         lazy="selectin",
     )
 
+    user_links: Mapped[List["UserPlant"]] = relationship(
+        back_populates="plant",
+        lazy="selectin",
+        cascade="all, delete-orphan"
+    )
+
     watering_plans: Mapped[List["WateringPlan"]] = relationship(
         back_populates="plant",
         cascade="all, delete-orphan",
@@ -239,6 +245,12 @@ class User(Base):
         lazy="selectin",
     )
 
+    user_links: Mapped[List["UserPlant"]] = relationship(
+        back_populates="user",
+        lazy="selectin",
+        cascade="all, delete-orphan"
+    )
+
     watering_plans: Mapped[List["WateringPlan"]] = relationship(
         back_populates="user",
         cascade="all, delete-orphan",
@@ -302,6 +314,16 @@ class UserPlant(Base):
     nickname: Mapped[Optional[str]] = mapped_column(String(100))
     location_note: Mapped[Optional[str]] = mapped_column(String(255))
     since: Mapped[Optional[date]] = mapped_column(Date)
+
+    user: Mapped["User"] = relationship(
+        back_populates="user_links",
+        lazy="selectin"
+    )
+
+    plant: Mapped["Plant"] = relationship(
+        back_populates="user_links",
+        lazy="selectin"
+    )
 
 
 class Friendship(Base):
