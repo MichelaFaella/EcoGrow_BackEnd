@@ -1,9 +1,13 @@
 from __future__ import annotations
 
+import base64
 import json, os, re, unicodedata
 from functools import lru_cache
 from datetime import datetime, date
+from io import BytesIO
 from typing import List, Dict, Optional, Tuple
+
+from PIL import Image
 from sqlalchemy import select, func
 from models.base import SessionLocal
 from models.entities import Plant, UserPlant, Family, PlantPhoto
@@ -707,6 +711,68 @@ class RepositoryService:
         finally:
             if owns_session:
                 session.close()
+
+    def get_full_plant_info(self, plant_id: str) -> Optional[Dict]:
+        """
+        Restituisce tutte le info della pianta + foto base64 compressa.
+        """
+        with self.Session() as s:
+            plant = s.query(Plant).filter(Plant.id == plant_id).first()
+            if not plant:
+                return None
+
+            # Family
+            family_name = None
+            family_description = None
+            if plant.family_id:
+                fam = s.query(Family).filter(Family.id == plant.family_id).first()
+                if fam:
+                    family_name = fam.name
+                    family_description = getattr(fam, "description", None)
+
+            # Foto → Base64 compresso
+            photo_base64 = None
+            photo_row = (
+                s.query(PlantPhoto)
+                .filter(PlantPhoto.plant_id == plant_id)
+                .order_by(PlantPhoto.id.asc())
+                .first()
+            )
+
+            if photo_row:
+                image_path = getattr(photo_row, "path", None)  # <-- CAMBIA QUI se diverso
+                if image_path and os.path.exists(image_path):
+                    # Compressione vera dell’immagine
+                    img = Image.open(image_path)
+
+                    # Ridimensiona se molto grande
+                    img.thumbnail((800, 800), Image.Resampling.LANCZOS)
+
+                    # Salva in buffer JPEG compresso
+                    buffer = BytesIO()
+                    img.save(buffer, format="JPEG", quality=60, optimize=True)  # qualità regolabile
+                    buffer.seek(0)
+
+                    # Converto in base64
+                    photo_base64 = base64.b64encode(buffer.read()).decode("utf-8")
+
+            return {
+                "id": str(plant.id),
+                "scientific_name": plant.scientific_name,
+                "common_name": plant.common_name,
+                "category": plant.category,
+                "climate": plant.climate,
+                "origin": plant.origin,
+                "use": plant.use,
+                "size": plant.size,
+                "water_level": plant.water_level,
+                "light_level": plant.light_level,
+                "min_temp_c": plant.min_temp_c,
+                "max_temp_c": plant.max_temp_c,
+                "family_name": family_name,
+                "family_description": family_description,
+                "photo_base64": photo_base64,
+            }
 
     def get_family_by_name(self, family_name: str) -> Optional[str]:
         """

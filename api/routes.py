@@ -232,6 +232,48 @@ def _filter_fields_for_model(payload: dict, Model, *, exclude: set[str] = None) 
     return {k: v for k, v in payload.items() if k in cols}
 
 
+def _serialize_full_plant(plant):
+    # famiglia
+    family_name = plant.family.name if plant.family else None
+    family_description = (
+        plant.family.description if plant.family else None
+    )
+
+    # foto compressa base64 (prendo la prima)
+    photo_base64 = None
+    if plant.photos:
+        photo = plant.photos[0]  # la prima foto
+        image_path = getattr(photo, "path", None)
+
+        if image_path and os.path.exists(image_path):
+            img = Image.open(image_path)
+            img.thumbnail((800, 800), Image.Resampling.LANCZOS)
+            buf = io.BytesIO()
+            img.save(buf, format="JPEG", quality=60, optimize=True)
+            buf.seek(0)
+            photo_base64 = base64.b64encode(buf.read()).decode("utf-8")
+
+    return {
+        "id": str(plant.id),
+        "scientific_name": plant.scientific_name,
+        "common_name": plant.common_name,
+        "category": plant.category,
+        "climate": plant.climate,
+        "origin": plant.origin,
+        "use": plant.use,
+        "size": plant.size,
+        "water_level": plant.water_level,
+        "light_level": plant.light_level,
+        "min_temp_c": plant.min_temp_c,
+        "max_temp_c": plant.max_temp_c,
+
+        "family_name": family_name,
+        "family_description": family_description,
+
+        "photo_base64": photo_base64,
+    }
+
+
 def _serialize_with_relations(instance):
     """
     Serializza l'istanza (es. UserPlant) includendo:
@@ -443,6 +485,7 @@ def check_auth():
         return jsonify({"authenticated": False}), 401
     return jsonify({"authenticated": True, "user_id": user_id}), 200
 
+
 @api_blueprint.route("/user/me", methods=["GET"])
 @require_jwt
 def user_me():
@@ -498,6 +541,7 @@ def get_families():
 def serve_uploads(path):
     return send_from_directory(UPLOAD_FOLDER, path)
 
+
 @api_blueprint.route("/plants", methods=["GET"])
 @require_jwt
 def get_plants():
@@ -522,6 +566,26 @@ def get_all_plants():
         return jsonify(plants), 200
     except Exception:
         return jsonify({"error": "Database error"}), 500
+
+
+@api_blueprint.route("/plant/full/<plant_id>", methods=["GET"])
+@require_jwt
+def get_full_plant(plant_id):
+    with _session_ctx() as s:
+        row = (
+            s.query(Plant)
+            .options(
+                selectinload(Plant.photos),
+                selectinload(Plant.family),
+            )
+            .filter(Plant.id == plant_id)
+            .first()
+        )
+
+        if not row:
+            return jsonify({"error": "Plant not found"}), 404
+
+        return jsonify(_serialize_full_plant(row)), 200
 
 
 # ========= CREATE Plant (PlantNet + defaults + watering plan) =========
@@ -1224,7 +1288,7 @@ def user_add():
 @api_blueprint.route("/user/update", methods=["PATCH", "PUT"])
 @require_jwt
 def user_update():
-    uid = g.user_id   # <-- PRENDI ID DAL TOKEN
+    uid = g.user_id  # <-- PRENDI ID DAL TOKEN
     payload = _parse_json_body()
 
     if payload.get("password"):
