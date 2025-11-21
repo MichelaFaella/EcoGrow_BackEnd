@@ -443,6 +443,40 @@ def check_auth():
         return jsonify({"authenticated": False}), 401
     return jsonify({"authenticated": True, "user_id": user_id}), 200
 
+@api_blueprint.route("/user/me", methods=["GET"])
+@require_jwt
+def user_me():
+    print("\n---- [GET /user/me] START ----")
+
+    user_id = g.user_id
+    print(f"[GET /user/me] Extracted user_id from JWT: {user_id}")
+
+    repo = RepositoryService()
+
+    try:
+        with repo.Session() as s:
+            print("[GET /user/me] DB session opened")
+
+            user = s.query(User).filter(User.id == user_id).first()
+
+            if not user:
+                print(f"[GET /user/me] User NOT FOUND in DB → id={user_id}")
+                print("---- [GET /user/me] END (404) ----\n")
+                return jsonify({"error": "User not found"}), 404
+
+            print(f"[GET /user/me] User found in DB: {user.id} {user.first_name} {user.last_name}")
+
+            serialized = _serialize_instance(user)
+            print("[GET /user/me] Serialized user:", serialized)
+
+            print("---- [GET /user/me] END (200) ----\n")
+            return jsonify(serialized), 200
+
+    except Exception as e:
+        print(f"[GET /user/me] ERROR: {e}")
+        print("---- [GET /user/me] END (500) ----\n")
+        return jsonify({"error": "Internal server error"}), 500
+
 
 # ========= Ping =========
 @api_blueprint.route("/ping", methods=["GET"])
@@ -1187,21 +1221,27 @@ def user_add():
         }), 201
 
 
-@api_blueprint.route("/user/update/<uid>", methods=["PATCH", "PUT"])
+@api_blueprint.route("/user/update", methods=["PATCH", "PUT"])
 @require_jwt
-def user_update(uid: str):
-    _ensure_uuid(uid, "user_id")
+def user_update():
+    uid = g.user_id   # <-- PRENDI ID DAL TOKEN
     payload = _parse_json_body()
+
     if payload.get("password"):
         payload["password_hash"] = generate_password_hash(payload.pop("password"))
+
     with _session_ctx() as s:
         u = s.get(User, uid)
-        if not u: return jsonify({"error": "User not found"}), 404
+        if not u:
+            return jsonify({"error": "User not found"}), 404
+
         for k, v in _filter_fields_for_model(payload, User).items():
             setattr(u, k, v)
+
         u.updated_at = datetime.utcnow()
         _commit_or_409(s)
         write_changes_upsert("user", [_serialize_instance(u)])
+
         return jsonify({"ok": True, "id": u.id}), 200
 
 
