@@ -27,6 +27,11 @@ import secrets
 from models.scripts.replay_changes import seed_from_changes, write_changes_delete, write_changes_upsert
 from models.base import SessionLocal
 from services.image_processing_service import ImageProcessingService
+from services.model_inference_service import (
+    get_disease_inference_service,
+    parse_unknown_threshold,
+    pick_param,
+)
 
 # Local application
 from services.repository_service import RepositoryService
@@ -230,48 +235,6 @@ def _filter_fields_for_model(payload: dict, Model, *, exclude: set[str] = None) 
     if exclude:
         cols = cols - set(exclude)
     return {k: v for k, v in payload.items() if k in cols}
-
-
-def _serialize_full_plant(plant):
-    # famiglia
-    family_name = plant.family.name if plant.family else None
-    family_description = (
-        plant.family.description if plant.family else None
-    )
-
-    # foto compressa base64 (prendo la prima)
-    photo_base64 = None
-    if plant.photos:
-        photo = plant.photos[0]  # la prima foto
-        image_path = getattr(photo, "path", None)
-
-        if image_path and os.path.exists(image_path):
-            img = Image.open(image_path)
-            img.thumbnail((800, 800), Image.Resampling.LANCZOS)
-            buf = io.BytesIO()
-            img.save(buf, format="JPEG", quality=60, optimize=True)
-            buf.seek(0)
-            photo_base64 = base64.b64encode(buf.read()).decode("utf-8")
-
-    return {
-        "id": str(plant.id),
-        "scientific_name": plant.scientific_name,
-        "common_name": plant.common_name,
-        "category": plant.category,
-        "climate": plant.climate,
-        "origin": plant.origin,
-        "use": plant.use,
-        "size": plant.size,
-        "water_level": plant.water_level,
-        "light_level": plant.light_level,
-        "min_temp_c": plant.min_temp_c,
-        "max_temp_c": plant.max_temp_c,
-
-        "family_name": family_name,
-        "family_description": family_description,
-
-        "photo_base64": photo_base64,
-    }
 
 
 def _serialize_with_relations(instance):
@@ -486,45 +449,44 @@ def check_auth():
     return jsonify({"authenticated": True, "user_id": user_id}), 200
 
 
-@api_blueprint.route("/user/me", methods=["GET"])
-@require_jwt
-def user_me():
-    print("\n---- [GET /user/me] START ----")
-
-    user_id = g.user_id
-    print(f"[GET /user/me] Extracted user_id from JWT: {user_id}")
-
-    repo = RepositoryService()
-
-    try:
-        with repo.Session() as s:
-            print("[GET /user/me] DB session opened")
-
-            user = s.query(User).filter(User.id == user_id).first()
-
-            if not user:
-                print(f"[GET /user/me] User NOT FOUND in DB → id={user_id}")
-                print("---- [GET /user/me] END (404) ----\n")
-                return jsonify({"error": "User not found"}), 404
-
-            print(f"[GET /user/me] User found in DB: {user.id} {user.first_name} {user.last_name}")
-
-            serialized = _serialize_instance(user)
-            print("[GET /user/me] Serialized user:", serialized)
-
-            print("---- [GET /user/me] END (200) ----\n")
-            return jsonify(serialized), 200
-
-    except Exception as e:
-        print(f"[GET /user/me] ERROR: {e}")
-        print("---- [GET /user/me] END (500) ----\n")
-        return jsonify({"error": "Internal server error"}), 500
-
-
 # ========= Ping =========
 @api_blueprint.route("/ping", methods=["GET"])
 def ping():
     return jsonify(ping="pong")
+
+
+@api_blueprint.route("/ai/model/disease-detection", methods=["POST"])
+def ai_model_disease_detection():
+    if "image" not in request.files:
+        return jsonify({"error": "Missing 'image' file in request."}), 400
+
+    file_bytes = request.files["image"].read()
+    service = get_disease_inference_service()
+
+    body = request.get_json(silent=True) if request.is_json else None
+    try:
+        raw_thr = request.values.get("unknown_threshold")
+        if raw_thr is None:
+            raw_thr = pick_param(body, "unknown_threshold", service.default_unknown_threshold)
+        unknown_threshold = parse_unknown_threshold(raw_thr)
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 400
+
+    try:
+        result = service.predict_from_bytes(
+            file_bytes,
+            unknown_threshold=unknown_threshold,
+        )
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 400
+    except KeyError as exc:
+        return jsonify({"error": str(exc)}), 404
+    except RuntimeError as exc:
+        return jsonify({"error": str(exc)}), 500
+    except Exception as exc:  # noqa: BLE001
+        return jsonify({"error": f"Inference failed: {exc}"}), 500
+
+    return jsonify({"status": "success", "data": result}), 200
 
 
 @api_blueprint.route("/families", methods=["GET"])
@@ -540,7 +502,6 @@ def get_families():
 @api_blueprint.route("/uploads/<path:path>", methods=["GET"])
 def serve_uploads(path):
     return send_from_directory(UPLOAD_FOLDER, path)
-
 
 @api_blueprint.route("/plants", methods=["GET"])
 @require_jwt
@@ -566,26 +527,6 @@ def get_all_plants():
         return jsonify(plants), 200
     except Exception:
         return jsonify({"error": "Database error"}), 500
-
-
-@api_blueprint.route("/plant/full/<plant_id>", methods=["GET"])
-@require_jwt
-def get_full_plant(plant_id):
-    with _session_ctx() as s:
-        row = (
-            s.query(Plant)
-            .options(
-                selectinload(Plant.photos),
-                selectinload(Plant.family),
-            )
-            .filter(Plant.id == plant_id)
-            .first()
-        )
-
-        if not row:
-            return jsonify({"error": "Plant not found"}), 404
-
-        return jsonify(_serialize_full_plant(row)), 200
 
 
 # ========= CREATE Plant (PlantNet + defaults + watering plan) =========
@@ -1285,27 +1226,21 @@ def user_add():
         }), 201
 
 
-@api_blueprint.route("/user/update", methods=["PATCH", "PUT"])
+@api_blueprint.route("/user/update/<uid>", methods=["PATCH", "PUT"])
 @require_jwt
-def user_update():
-    uid = g.user_id  # <-- PRENDI ID DAL TOKEN
+def user_update(uid: str):
+    _ensure_uuid(uid, "user_id")
     payload = _parse_json_body()
-
     if payload.get("password"):
         payload["password_hash"] = generate_password_hash(payload.pop("password"))
-
     with _session_ctx() as s:
         u = s.get(User, uid)
-        if not u:
-            return jsonify({"error": "User not found"}), 404
-
+        if not u: return jsonify({"error": "User not found"}), 404
         for k, v in _filter_fields_for_model(payload, User).items():
             setattr(u, k, v)
-
         u.updated_at = datetime.utcnow()
         _commit_or_409(s)
         write_changes_upsert("user", [_serialize_instance(u)])
-
         return jsonify({"ok": True, "id": u.id}), 200
 
 

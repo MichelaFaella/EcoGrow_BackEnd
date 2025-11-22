@@ -1,0 +1,41 @@
+FROM python:3.12-slim
+
+ENV PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PYTHONPATH=/app \
+    PORT=8000 \
+    U2NET_HOME=/app/artifacts/u2net \
+    ECOGROW_MODEL_CACHE=/app/artifacts/pretrained
+
+WORKDIR /app
+
+COPY requirements.txt .
+COPY services/disease_detection_requirements.txt .
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        build-essential \
+        libgl1 \
+        libglib2.0-0 \
+        libsm6 \
+        libxext6 \
+        libjpeg62-turbo \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN python -m pip install --upgrade pip \
+    && python -m pip install --no-cache-dir -r disease_detection_requirements.txt
+
+COPY disease_detection /app/disease_detection
+COPY services/model_inference_service.py /app/services/model_inference_service.py
+COPY infra/warm_assets.py /app/infra/warm_assets.py
+
+RUN mkdir -p /app/artifacts/detectors /app/artifacts/pretrained $U2NET_HOME
+
+# Pre-warm rembg (downloads U2Net) and MobileCLIP checkpoints at build time.
+RUN python /app/infra/warm_assets.py
+
+ENV ECOGROW_PAYLOAD_DIR=/app/artifacts/detectors \
+    ECOGROW_SEGMENTATION=1
+
+EXPOSE 8000
+
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "services.model_inference_service:app"]

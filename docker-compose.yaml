@@ -37,7 +37,11 @@ services:
       DB_PORT: 3306
       DB_ECHO: "false"
       CHANGES_PATH: "/app/models/scripts/fixtures/changes.json"
-      UPLOAD_DIR: "/app/uploads"        
+      UPLOAD_DIR: "/app/uploads"
+      U2NET_HOME: "/app/artifacts/u2net"
+      ECOGROW_MODEL_CACHE: "/app/artifacts/pretrained"
+      ECOGROW_PAYLOAD_DIR: "/app/artifacts/detectors"
+      ECOGROW_SEGMENTATION: "1"
       PYTHONUNBUFFERED: "1"
     ports:
       - "8000:8000"
@@ -48,7 +52,30 @@ services:
     command: python app.py
     volumes:
       - ./models/scripts/fixtures/changes.json:/app/models/scripts/fixtures/changes.json
-      - ./uploads:/app/uploads          
+      - ./uploads:/app/uploads
+      - ./artifacts/pretrained:/app/artifacts/pretrained
+      - ./artifacts/u2net:/app/artifacts/u2net
+      - ./artifacts/detectors:/app/artifacts/detectors
+
+  model:
+    build:
+      context: .
+      dockerfile: services/Dockerfile.model
+    container_name: ecogrow-model
+    env_file:
+      - .env
+    environment:
+      ECOGROW_PAYLOAD_DIR: /app/artifacts/detectors
+      ECOGROW_SEGMENTATION: "1"
+      ECOGROW_MODEL_CACHE: /app/artifacts/pretrained
+      U2NET_HOME: /app/artifacts/u2net
+    ports:
+      - "8001:8000"
+    restart: unless-stopped
+    volumes:
+      - ./artifacts/detectors:/app/artifacts/detectors:ro
+      - ./artifacts/pretrained:/app/artifacts/pretrained:ro
+      - ./artifacts/u2net:/app/artifacts/u2net:ro
 
 volumes:
   db_data:
