@@ -31,7 +31,7 @@ from services.image_processing_service import ImageProcessingService
 # Local application
 from services.repository_service import RepositoryService
 from utils.jwt_helper import generate_token, validate_token
-from models.entities import SizeEnum
+from models.entities import SizeEnum, QuestionOption
 from models.entities import (
     Disease,
     Family,
@@ -1403,15 +1403,23 @@ def user_delete_me():
 @api_blueprint.route("/user_plant/all", methods=["GET"])
 @require_jwt
 def user_plant_all():
+    """
+    Restituisce SOLO le piante del giardino dell'utente loggato.
+    """
+    user_id = g.user_id  # preso dal JWT
+
     with _session_ctx() as s:
         rows = (
             s.query(UserPlant)
             .options(
                 selectinload(UserPlant.plant).selectinload(Plant.photos)
             )
+            .filter(UserPlant.user_id == user_id)
             .all()
         )
+
         return jsonify([_serialize_with_relations(r) for r in rows]), 200
+
 
 
 @api_blueprint.route("/user_plant/add", methods=["POST"])
@@ -1706,70 +1714,163 @@ def watering_log_delete(lid: str):
         return ("", 204)
 
 
-# ========= Question =========
 @api_blueprint.route("/question/all", methods=["GET"])
 @require_jwt
 def question_all():
+    """
+    Restituisce tutte le domande con le opzioni associate.
+    (Endpoint "admin" / gestione, non legato a un singolo utente.)
+    """
     with _session_ctx() as s:
-        # if Question has no created_at, order by id
+        # se Question avesse created_at lo useremmo, altrimenti ordiniamo per id
         order_col = getattr(Question, "created_at", Question.id)
-        rows = s.query(Question).order_by(order_col.desc()).all()
-        return jsonify([_serialize_instance(r) for r in rows]), 200
+        rows = (
+            s.query(Question)
+            .filter(Question.active.is_(True))
+            .order_by(order_col.desc())
+            .all()
+        )
+
+        out = []
+        for q in rows:
+            opts = sorted(q.options, key=lambda o: o.position)
+            out.append({
+                "id": str(q.id),
+                "text": q.text,
+                "type": q.type,
+                "active": q.active,
+                "options": [
+                    {
+                        "id": str(o.id),
+                        "label": o.label,      # 'A','B','C','D'
+                        "text": o.text,
+                        "position": o.position
+                    }
+                    for o in opts
+                ],
+            })
+
+        return jsonify(out), 200
 
 
 @api_blueprint.route("/question/add", methods=["POST"])
 @require_jwt
 def question_add():
+    """
+    Crea una nuova domanda globale con le sue opzioni.
+
+    Payload atteso:
+    {
+      "text": "When do you prefer to take care of your plants?",
+      "type": "preference",
+      "active": true,              // opzionale, default True
+      "options": [                 // opzionale ma consigliato
+        "Weekdays only",
+        "Weekends only",
+        "Any day is fine",
+        "Every other day"
+      ]
+    }
+    """
     payload = _parse_json_body()
-    data = _filter_fields_for_model(payload, Question)
 
-    required = ["text", "type"]  # user_id rimosso
-    missing = [k for k in required if not data.get(k)]
-    if missing:
-        return jsonify({"error": f"Campi obbligatori: {', '.join(missing)}"}), 400
+    text = (payload.get("text") or "").strip()
+    qtype = (payload.get("type") or "").strip()
+    active = payload.get("active", True)
+    options = payload.get("options") or []
 
-    data["user_id"] = g.user_id
+    if not text or not qtype:
+        return jsonify({"error": "Campi obbligatori: text, type"}), 400
+
+    if not isinstance(options, list) or not options:
+        return jsonify({"error": "options deve essere una lista non vuota"}), 400
+
     with _session_ctx() as s:
-        q = Question(**data)
+        # crea la domanda
+        q = Question(
+            text=text,
+            type=qtype,
+            active=bool(active),
+        )
         s.add(q)
+        s.flush()  # per avere q.id
+
+        # crea le opzioni
+        for idx, opt_text in enumerate(options, start=1):
+            label = chr(ord("A") + (idx - 1))  # 'A','B','C','D', ...
+            opt = QuestionOption(
+                question_id=q.id,
+                label=label,
+                text=str(opt_text),
+                is_correct=False,
+                position=idx,
+            )
+            s.add(opt)
+
         _commit_or_409(s)
         write_changes_upsert("question", [_serialize_instance(q)])
-        return jsonify({"ok": True, "id": q.id}), 201
+        # se vuoi, potresti loggare anche le QuestionOption su un canale separato
+
+        return jsonify({"ok": True, "id": str(q.id)}), 201
 
 
 @api_blueprint.route("/question/update/<qid>", methods=["PATCH", "PUT"])
 @require_jwt
 def question_update(qid: str):
+    """
+    Aggiorna i campi base di una domanda (text, type, active).
+    Per le opzioni servirebbe un endpoint dedicato (non gestito qui).
+    """
     _ensure_uuid(qid, "question_id")
     payload = _parse_json_body()
+
     with _session_ctx() as s:
         q = s.get(Question, qid)
-        if not q: return jsonify({"error": "Question not found"}), 404
-        for k, v in _filter_fields_for_model(payload, Question).items():
-            setattr(q, k, v)
+        if not q:
+            return jsonify({"error": "Question not found"}), 404
+
+        # consentiamo solo text, type, active
+        if "text" in payload:
+            q.text = (payload["text"] or "").strip()
+        if "type" in payload:
+            q.type = (payload["type"] or "").strip()
+        if "active" in payload:
+            q.active = bool(payload["active"])
+
         _commit_or_409(s)
         write_changes_upsert("question", [_serialize_instance(q)])
-        return jsonify({"ok": True, "id": q.id}), 200
+        return jsonify({"ok": True, "id": str(q.id)}), 200
 
 
 @api_blueprint.route("/question/delete/<qid>", methods=["DELETE"])
 @require_jwt
 def question_delete(qid: str):
+    """
+    Elimina una domanda globale.
+    Le QuestionOption e UserQuestionAnswer collegate
+    vengono eliminate in cascata (ON DELETE CASCADE).
+    """
     _ensure_uuid(qid, "question_id")
     with _session_ctx() as s:
         q = s.get(Question, qid)
         if q:
             s.delete(q)
             _commit_or_409(s)
-        write_changes_delete("question", qid)
+            write_changes_delete("question", qid)
+        # 204 anche se la domanda non esiste (idempotente)
         return ("", 204)
 
+
+# ========= Questionnaire (per utente loggato) =========
 
 @api_blueprint.route("/questionnaire/questions", methods=["GET"])
 @require_jwt
 def questionnaire_get_questions():
     """
-    Restituisce le domande del questionario per l'utente loggato.
+    Restituisce le domande del questionario per l'utente loggato,
+    con opzioni ed eventuale risposta già data.
+
+    È un semplice wrapper su repo.get_questions_for_user(user_id).
     """
     user_id = g.user_id
 
@@ -1777,7 +1878,9 @@ def questionnaire_get_questions():
         questions = repo.get_questions_for_user(user_id)
         return jsonify(questions), 200
     except Exception as e:
-        current_app.logger.exception(f"Error fetching questionnaire for user {user_id}: {e}")
+        current_app.logger.exception(
+            f"Error fetching questionnaire for user {user_id}: {e}"
+        )
         return jsonify({"error": "Database error"}), 500
 
 
@@ -1786,6 +1889,15 @@ def questionnaire_get_questions():
 def questionnaire_submit_answers():
     """
     Salva le risposte dell'utente loggato al questionario.
+
+    Payload atteso:
+    {
+      "answers": {
+        "<question_id>": "1",   // indice opzione 1..4
+        "<question_id>": "3",
+        ...
+      }
+    }
     """
     user_id = g.user_id
     payload = _parse_json_body()
@@ -1799,7 +1911,7 @@ def questionnaire_submit_answers():
         return jsonify({"ok": True}), 200
 
     except ValueError as e:
-        # errore di validazione degli ID → 400
+        # errore di validazione (ID domanda non valido, indice fuori range, ecc.)
         return jsonify({"error": str(e)}), 400
 
     except Exception as e:
