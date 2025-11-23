@@ -57,6 +57,8 @@ UPLOAD_FOLDER = "uploads"
 
 image_service = ImageProcessingService()
 reminder_service = ReminderService()
+
+
 # disease_service = DiseaseRecognitionService()
 
 @api_blueprint.errorhandler(401)
@@ -274,69 +276,100 @@ def _serialize_full_plant(plant):
 
 
 def _serialize_with_relations(instance):
-    """
-    Serializza l'istanza (es. UserPlant) includendo:
-    - plant
-    - photos
-    e per ogni foto genera anche l'immagine compressa (WebP) in base64
-      nel campo "image", in modo analogo a come il client la invia.
-    """
+    print("\n===== DEBUG _serialize_with_relations START =====")
+
+    # Serializziamo UserPlant
     data = _serialize_instance(instance)
+    print("[LOG] DATA (dopo _serialize_instance):", data)
 
     plant = getattr(instance, "plant", None)
     if not plant:
+        print("[LOG] Nessuna plant associata! RETURN")
+        print("===== DEBUG _serialize_with_relations END =====\n")
         return data
 
-    # Dati della pianta
-    plant_data = _serialize_instance(plant)
-    data["plant"] = plant_data
+    print("[LOG] Plant trovata, ID:", plant.id)
+    print("[LOG] SIZE RAW:", plant.size, type(plant.size))
 
+    # SERIALIZZAZIONE MANUALE DELLA PIANTA
+    plant_data = {
+        "id": str(plant.id),
+        "scientific_name": plant.scientific_name,
+        "common_name": plant.common_name,
+        "category": plant.category,
+        "climate": plant.climate,
+        "origin": plant.origin,
+        "use": plant.use,
+        "difficulty": plant.difficulty,
+        "light_level": plant.light_level,
+        "min_temp_c": plant.min_temp_c,
+        "max_temp_c": plant.max_temp_c,
+        "family_id": str(plant.family_id) if plant.family_id else None,
+        "created_at": plant.created_at.isoformat() if plant.created_at else None,
+    }
+
+    print("[LOG] plant_data PRIMA DI SIZE:", plant_data)
+
+    # ENUM → STRING
+    if plant.size is not None:
+        size_value = plant.size.value
+    else:
+        size_value = None
+
+    plant_data["size"] = size_value
+    data["size"] = size_value
+
+    print("[LOG] plant_data DOPO SIZE:", plant_data)
+    print("[LOG] data DOPO SIZE:", data)
+
+    # --- FOTO ---
     photos = getattr(plant, "photos", [])
     serialized_photos = []
 
+    print("[LOG] Numero foto:", len(photos))
+
     for photo in photos:
         photo_data = _serialize_instance(photo)
+        print("[LOG] Foto base:", photo_data)
 
         plant_id = str(plant.id)
-        filename = photo.url  # quello salvato nel DB (es. "2108...jpg")
+        filename = photo.url
 
         if not filename:
-            # Se per qualche motivo manca il filename, salto la foto
+            print("[LOG] Foto senza filename → aggiunta senza immagine")
             serialized_photos.append(photo_data)
             continue
 
-        # 1) ottengo (o creo) la versione ridotta su disco
         resized_filename = _get_or_create_resized_image(plant_id, filename)
-
-        # 2) scelgo il file da usare (preferisco il ridotto)
         filename_only = os.path.basename(resized_filename or filename)
         image_path = os.path.join(UPLOAD_FOLDER, plant_id, filename_only)
-        photo_data["image_path"] = image_path  # info interna, se ti serve
 
-        # 3) leggo il file e lo comprimo in WebP, poi base64
+        print("[LOG] Tentativo lettura immagine:", image_path)
+
         image_b64 = None
         try:
-            # apro la jpeg ridotta
             with Image.open(image_path) as img:
                 img = img.convert("RGB")
-
-                # ricompressione in WebP (come lato client: qualità 70)
                 buf = io.BytesIO()
                 img.save(buf, format="WEBP", quality=70, method=6)
                 webp_bytes = buf.getvalue()
 
             image_b64 = base64.b64encode(webp_bytes).decode("ascii")
-        except FileNotFoundError:
-            print(f"[WARN] Image not found while serializing: {image_path}")
         except Exception as e:
-            print(f"[ERROR] Failed to compress/encode image {image_path}: {e}")
+            print(f"[WARN] Image compress failed for {filename}: {e}")
 
-        # questo è il campo che Flutter può usare direttamente
         photo_data["image"] = image_b64
-
         serialized_photos.append(photo_data)
 
     plant_data["photos"] = serialized_photos
+
+    print("[LOG] plant_data FINALE:", plant_data)
+
+    data["plant"] = plant_data
+
+    print("[LOG] data FINALE PRIMA DEL RETURN:", data)
+    print("===== DEBUG _serialize_with_relations END =====\n")
+
     return data
 
 
@@ -953,6 +986,7 @@ def delete_plant(plant_id: str):
         write_changes_delete("plant", plant_id)
         return ("", 204)
 
+
 # ========= Family =========
 @api_blueprint.route("/family/all", methods=["GET"])
 def family_all():
@@ -1424,7 +1458,6 @@ def user_plant_all():
         return jsonify([_serialize_with_relations(r) for r in rows]), 200
 
 
-
 @api_blueprint.route("/user_plant/add", methods=["POST"])
 @require_jwt
 def user_plant_add():
@@ -1745,7 +1778,7 @@ def question_all():
                 "options": [
                     {
                         "id": str(o.id),
-                        "label": o.label,      # 'A','B','C','D'
+                        "label": o.label,  # 'A','B','C','D'
                         "text": o.text,
                         "position": o.position
                     }
@@ -1947,8 +1980,8 @@ def watering_overview():
         # 1. Calcolo settimana attuale
         # ---------------------------
         today = datetime.utcnow().date()
-        week_start = today - timedelta(days=today.weekday())   # lunedì
-        week_end = week_start + timedelta(days=6)              # domenica
+        week_start = today - timedelta(days=today.weekday())  # lunedì
+        week_end = week_start + timedelta(days=6)  # domenica
 
         raw_rows = repo.get_watering_overview_for_user(user_id)
 
@@ -1986,7 +2019,6 @@ def watering_overview():
     except Exception as e:
         print("[ERROR] /watering/overview:", e)
         return jsonify({"error": str(e)}), 500
-
 
 
 # ========= Watering – L'UTENTE HA INNAFFIATO =========
@@ -2071,6 +2103,7 @@ def plant_do_watering(plant_id: str):
             "interval_days": res.get("interval_days"),
         }
     ), 200
+
 
 @api_blueprint.route("/watering_plan/calendar-export", methods=["GET"])
 @require_jwt

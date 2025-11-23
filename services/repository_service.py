@@ -919,7 +919,7 @@ class RepositoryService:
         - dati pianta
         - watering_plan (next_due_at, interval_days, ecc.)
         - ultimo watering_log (done_at, amount_ml, note)
-        - photo_base64 (compressa)
+        - photo_base64 (compressa da PlantPhoto)
 
         SOLO piante con next_due_at ENTRO la prossima settimana.
         """
@@ -939,7 +939,6 @@ class RepositoryService:
                     WateringPlan.notes.label("plan_notes"),
                     Plant.common_name,
                     Plant.scientific_name,
-                    Plant.photo_base64_compressed.label("photo_base64_compressed"),
                     func.max(WateringLog.done_at).label("last_done_at"),
                     func.max(WateringLog.amount_ml).label("last_amount_ml"),
                 )
@@ -963,7 +962,6 @@ class RepositoryService:
                     WateringPlan.notes,
                     Plant.common_name,
                     Plant.scientific_name,
-                    Plant.photo_base64_compressed,
                 )
                 .order_by(WateringPlan.next_due_at.asc())
                 .all()
@@ -993,13 +991,15 @@ class RepositoryService:
                         r.next_due_at is not None and r.next_due_at < now
                 )
 
-                # ===== Foto compressa =====
+                # ===== Foto compressa: usa get_full_plant_info =====
                 photo_base64 = None
-                if r.photo_base64_compressed:
-                    try:
-                        photo_base64 = r.photo_base64_compressed.decode("utf-8")
-                    except Exception:
-                        photo_base64 = None
+                try:
+                    plant_info = self.get_full_plant_info(str(r.plant_id))
+                    if plant_info:
+                        photo_base64 = plant_info.get("photo_base64")
+                except Exception as e:
+                    print("[WARN] get_full_plant_info failed:", e)
+                    photo_base64 = None
 
                 result.append(
                     {
