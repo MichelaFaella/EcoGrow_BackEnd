@@ -19,14 +19,11 @@ WORKDIR /app
 
 # copia i requirements e aggiorna pip prima di installare
 COPY requirements.txt /app/requirements.txt
-COPY services/disease_detection_requirements.txt /app/disease_detection_requirements.txt
 
 # usa anche il repo CPU di PyTorch (ruote precompilate)
 # NB: se hai già messo torch/torchvision nel requirements, non toccarli: questo --extra-index-url basta
 RUN python -m pip install --upgrade pip && \
     pip install --no-cache-dir -r /app/requirements.txt \
-        --extra-index-url https://download.pytorch.org/whl/cpu && \
-    pip install --no-cache-dir -r /app/disease_detection_requirements.txt \
         --extra-index-url https://download.pytorch.org/whl/cpu
 
 # copia il resto dell'app

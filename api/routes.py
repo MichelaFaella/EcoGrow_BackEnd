@@ -9,6 +9,7 @@ import uuid
 from contextlib import contextmanager
 from datetime import datetime
 
+import requests
 from PIL import Image
 # Third-party
 from flask import Blueprint, jsonify, current_app, request, abort, g, url_for
@@ -27,11 +28,6 @@ import secrets
 from models.scripts.replay_changes import seed_from_changes, write_changes_delete, write_changes_upsert
 from models.base import SessionLocal
 from services.image_processing_service import ImageProcessingService
-from services.model_inference_service import (
-    get_disease_inference_service,
-    parse_unknown_threshold,
-    pick_param,
-)
 
 # Local application
 from services.repository_service import RepositoryService
@@ -58,6 +54,8 @@ api_blueprint = Blueprint("api", __name__)
 repo = RepositoryService()
 REFRESH_TTL_DAYS = int(os.getenv("REFRESH_TTL_DAYS", "90"))
 UPLOAD_FOLDER = "uploads"
+MODEL_PREDICT_URL = os.getenv("MODEL_URL", "http://model:8000/predict")
+MODEL_TIMEOUT = float(os.getenv("MODEL_TIMEOUT", "15"))
 
 image_service = ImageProcessingService()
 
@@ -160,13 +158,13 @@ def auth_refresh():
     # Il client NON manda nulla nel body: il refresh è nel cookie HttpOnly
     raw = request.cookies.get("refresh_token")
     if not raw:
-        return jsonify({"error": "refresh token mancante"}), 401
+        return jsonify({"error": "Missing refresh token"}), 401
 
     now = datetime.utcnow()
     with _session_ctx() as s:
         rt = s.query(RefreshToken).filter(RefreshToken.token == raw).first()
         if not rt or rt.expires_at < now:
-            return jsonify({"error": "Refresh non valido o scaduto"}), 401
+            return jsonify({"error": "Invalid or expired refresh token"}), 401
 
         # 1) Nuovo access JWT
         new_access = generate_token(rt.user_id)
@@ -338,7 +336,6 @@ def _get_or_create_resized_image(plant_id: str, filename: str) -> str | None:
             img.thumbnail(MAX_SIZE)
             os.makedirs(os.path.dirname(resized_path), exist_ok=True)
             img.save(resized_path, format="JPEG", quality=80, optimize=True)
-            print(f"[DEBUG] Created resized image: {resized_path}")
             return resized_name
     except Exception as e:
         print(f"[ERROR] Failed to resize image {orig_path}: {e}")
@@ -420,6 +417,64 @@ def _commit_or_409(session):
         abort(500, description="Commit failed")
 
 
+def _parse_unknown_threshold(raw_value) -> float | None:
+    if raw_value is None:
+        return None
+    try:
+        value = float(raw_value)
+    except (TypeError, ValueError) as exc:  # noqa: BLE001
+        raise ValueError("unknown_threshold must be a float between 0 and 1.") from exc
+    if not 0.0 <= value <= 1.0:
+        raise ValueError("unknown_threshold must be between 0.0 and 1.0.")
+    return value
+
+
+def _call_model_service(image_file, *, unknown_threshold: float | None = None) -> dict:
+    stream = getattr(image_file, "stream", image_file)
+    if hasattr(stream, "seek"):
+        stream.seek(0)
+    filename = getattr(image_file, "filename", None) or "upload.jpg"
+    mime = getattr(image_file, "mimetype", None) or getattr(image_file, "content_type", None) or "application/octet-stream"
+
+    files = {"image": (filename, stream, mime)}
+    data = {}
+    if unknown_threshold is not None:
+        data["unknown_threshold"] = str(unknown_threshold)
+
+    try:
+        resp = requests.post(
+            MODEL_PREDICT_URL,
+            files=files,
+            data=data or None,
+            timeout=MODEL_TIMEOUT,
+        )
+    except requests.Timeout as exc:  # noqa: BLE001
+        raise RuntimeError("Model service timeout") from exc
+    except requests.RequestException as exc:  # noqa: BLE001
+        raise RuntimeError(f"Model service unreachable: {exc}") from exc
+
+    if resp.status_code >= 400:
+        # Try to surface error payload from model service
+        try:
+            payload = resp.json()
+        except Exception:
+            payload = None
+        message = ""
+        if isinstance(payload, dict):
+            message = payload.get("error") or payload.get("message") or str(payload)
+        elif payload:
+            message = str(payload)
+        raise RuntimeError(f"Model service error ({resp.status_code}): {message or resp.text}")
+
+    try:
+        payload = resp.json()
+    except ValueError as exc:  # noqa: BLE001
+        raise RuntimeError("Invalid JSON from model service") from exc
+    if not isinstance(payload, dict):
+        raise RuntimeError("Unexpected response format from model service")
+    return payload
+
+
 def _plant_to_dict(p: Plant) -> dict:
     """Serialize only the persistent fields you want in changes.json."""
     return {
@@ -460,33 +515,26 @@ def ai_model_disease_detection():
     if "image" not in request.files:
         return jsonify({"error": "Missing 'image' file in request."}), 400
 
-    file_bytes = request.files["image"].read()
-    service = get_disease_inference_service()
-
     body = request.get_json(silent=True) if request.is_json else None
     try:
         raw_thr = request.values.get("unknown_threshold")
-        if raw_thr is None:
-            raw_thr = pick_param(body, "unknown_threshold", service.default_unknown_threshold)
-        unknown_threshold = parse_unknown_threshold(raw_thr)
+        if raw_thr is None and isinstance(body, dict):
+            raw_thr = body.get("unknown_threshold")
+        unknown_threshold = _parse_unknown_threshold(raw_thr)
     except ValueError as exc:
         return jsonify({"error": str(exc)}), 400
 
     try:
-        result = service.predict_from_bytes(
-            file_bytes,
+        result = _call_model_service(
+            request.files["image"],
             unknown_threshold=unknown_threshold,
         )
     except ValueError as exc:
         return jsonify({"error": str(exc)}), 400
-    except KeyError as exc:
-        return jsonify({"error": str(exc)}), 404
-    except RuntimeError as exc:
-        return jsonify({"error": str(exc)}), 500
     except Exception as exc:  # noqa: BLE001
-        return jsonify({"error": f"Inference failed: {exc}"}), 500
+        return jsonify({"error": f"Inference failed: {exc}"}), 502
 
-    return jsonify({"status": "success", "data": result}), 200
+    return jsonify(result), 200
 
 
 @api_blueprint.route("/families", methods=["GET"])
@@ -538,46 +586,33 @@ def create_plant():
     # LOG PRIMA DI PARSARE
     try:
         raw = request.get_data()
-        print(f"[DEBUG] request.get_data() LENGTH = {len(raw)}")
-        print(f"[DEBUG] request.get_data() FIRST 300 CHARS = {raw[:300]}")
     except Exception as e:
-        print(f"[DEBUG] ERROR WHILE READING RAW BODY: {e}")
 
-    print("[DEBUG] Avvio _parse_json_body()…")
 
     # =====================================================================
     # 1) PARSE JSON BODY
     # =====================================================================
     try:
         body = _parse_json_body()
-        print("[DEBUG] JSON PARSATO CORRETTAMENTE")
-        print("[DEBUG] BODY:", body)
     except Exception as e:
-        print("[ERRORE] _parse_json_body() ha fallito:", e)
         return jsonify({"error": "Invalid JSON"}), 400
 
     # =====================================================================
     # 2) RECUPERO BASE64
     # =====================================================================
-    print("[DEBUG] Controllo campo image…")
 
     image_b64 = body.get("image")
     if not image_b64:
-        print("[ERRORE] Image non presente nel body JSON")
         return jsonify({"error": "Field 'image' is required"}), 400
 
-    print(f"[DEBUG] Lunghezza Base64 ricevuta = {len(image_b64)}")
 
     # =====================================================================
     # 3) BASE64 → BYTES
     # =====================================================================
-    print("[DEBUG] Decodifica base64…")
 
     try:
         image_bytes = base64.b64decode(image_b64)
-        print(f"[DEBUG] Base64 decodificato. Bytes = {len(image_bytes)}")
     except Exception as e:
-        print("[ERRORE] Base64 non valido:", e)
         return jsonify({"error": "Invalid base64 image data"}), 400
 
     # wrapper compatibile col servizio
@@ -586,37 +621,28 @@ def create_plant():
             self.stream = io.BytesIO(b)
 
     fake_file = _FileWrapper(image_bytes)
-    print("[DEBUG] _FileWrapper creato correttamente")
 
     # =====================================================================
     # 4) CHIAMATA A PLANTNET
     # =====================================================================
-    print("[DEBUG] → Invio immagine a PlantNet…")
 
     try:
         plant_info = image_service.process_image(fake_file)
-        print("[DEBUG] ← Risposta da PlantNet:", plant_info)
     except Exception as e:
-        print("[ERRORE] PlantNet FALLITA:", e)
         return jsonify({"error": "Image processing failed"}), 500
 
     if not plant_info or not plant_info.get("scientific_name"):
-        print("[ERRORE] Nessun match da PlantNet")
         return jsonify({"error": "No plant match found from PlantNet"}), 422
 
     scientific_name = plant_info["scientific_name"]
     family_name = plant_info.get("family_name")
 
-    print(f"[DEBUG] scientific_name = {scientific_name}")
-    print(f"[DEBUG] family_name (PlantNet) = {family_name}")
 
     # =====================================================================
     # 5) DEFAULTS
     # =====================================================================
-    print("[DEBUG] Carico defaults repository…")
 
     defaults = repo.get_plant_defaults(scientific_name) or {}
-    print("[DEBUG] Defaults caricati:", defaults)
 
     # Base payload: scientific_name + tutto ciò che il JSON conosce
     payload = {
@@ -624,7 +650,6 @@ def create_plant():
         **{k: v for k, v in defaults.items() if v is not None},
     }
 
-    print("[DEBUG] Payload iniziale:", payload)
 
     # =====================================================================
     # 6) ID + TIMESTAMPS
@@ -638,12 +663,10 @@ def create_plant():
     payload["created_at"] = now
     payload["updated_at"] = now
 
-    print("[DEBUG] Payload con ID + timestamps:", payload)
 
     # =====================================================================
     # 7) NORMALIZZAZIONI CAMPI
     # =====================================================================
-    print("[DEBUG] Normalizzazione campi NOT NULL…")
 
     # use
     if "use" in cols:
@@ -694,23 +717,19 @@ def create_plant():
         if insects is not None:
             payload["pests"] = insects
 
-    print("[DEBUG] Payload dopo normalizzazione:", payload)
 
     # =====================================================================
     # 8) VALIDAZIONE NUMERICA
     # =====================================================================
-    print("[DEBUG] Validazione numerica…")
 
     try:
         wl = int(payload["water_level"])
         ll = int(payload["light_level"])
         if not (1 <= wl <= 5) or not (1 <= ll <= 5):
-            print("[ERRORE] Valori acqua/luce fuori range")
             return jsonify({"error": "water_level/light_level must be in [1..5]"}), 400
         payload["water_level"] = wl
         payload["light_level"] = ll
     except Exception as e:
-        print("[ERRORE] Valori numerici acqua/luce non validi:", e)
         return jsonify({"error": "water_level/light_level must be integer"}), 400
 
     # temperature
@@ -722,48 +741,38 @@ def create_plant():
         payload["min_temp_c"] = tmin
         payload["max_temp_c"] = tmax
     except Exception as e:
-        print("[ERRORE] Temp non valide:", e)
         return jsonify({"error": "min_temp_c/max_temp_c must be integer"}), 400
 
-    print("[DEBUG] Payload validato:", payload)
 
     # =====================================================================
     # 9) FILTRAGGIO MODELLO
     # =====================================================================
     data = _filter_fields_for_model(payload, Plant)
-    print("[DEBUG] Payload finale per DB:", data)
 
     # =====================================================================
     # 10) DB
     # =====================================================================
-    print("[DEBUG] Apertura transazione DB…")
 
     with _session_ctx() as s:
         try:
             # family
-            print("[DEBUG] Risoluzione family…")
 
             fam_id = None
             if family_name:
                 fam_id = repo.get_family_by_name(family_name)
-                print("[DEBUG] family da PlantNet:", fam_id)
 
             if not fam_id:
                 fam_id = repo.get_family(data["scientific_name"])
-                print("[DEBUG] family da defaults JSON:", fam_id)
 
             if not fam_id:
-                print("[ERRORE] Family non trovata")
                 return jsonify({"error": "Family not found"}), 400
 
             data["family_id"] = fam_id
 
             # create plant
-            print("[DEBUG] Creazione pianta nel DB…")
             p = Plant(**data)
             s.add(p)
             _commit_or_409(s)
-            print(f"[DEBUG] Pianta creata ID={p.id}")
 
             write_changes_upsert("plant", [_serialize_instance(p)])
 
@@ -784,7 +793,6 @@ def create_plant():
                 with open(image_path, "wb") as f:
                     f.write(image_bytes)
 
-                print(f"[DEBUG] Immagine salvata in: {image_path}")
 
                 # Crea la riga in plant_photo
                 photo = PlantPhoto(
@@ -800,11 +808,9 @@ def create_plant():
                 write_changes_upsert("plant_photo", [_serialize_instance(photo)])
 
             except Exception as e:
-                print(f"[ERRORE] Salvataggio immagine/PlantPhoto fallito: {e}")
             # ================================================================
 
             # link user-plant
-            print("[DEBUG] Creo link user-plant…")
             repo.ensure_user_plant_link(
                 user_id=g.user_id,
                 plant_id=str(p.id),
@@ -815,7 +821,6 @@ def create_plant():
             )
 
             # watering plan
-            print("[DEBUG] Creo watering plan…")
             try:
                 repo.create_default_watering_plan_for_plant(
                     session=s,
@@ -823,9 +828,7 @@ def create_plant():
                     plant_id=str(p.id),
                 )
                 s.commit()
-                print("[DEBUG] Watering plan creato")
             except Exception as e:
-                print("[ERRORE] Watering plan fallito:", e)
                 s.rollback()
 
             print("\n================== [create_plant] COMPLETATA ==================\n")
@@ -1130,7 +1133,7 @@ def plant_disease_add():
 
     with _session_ctx() as s:
         if not s.get(UserPlant, (g.user_id, data["plant_id"])):
-            return jsonify({"error": "Forbidden: non possiedi questa pianta"}), 403
+            return jsonify({"error": "Forbidden: you do not own this plant"}), 403
 
         pd = PlantDisease(**data)
         s.add(pd)
@@ -1262,7 +1265,7 @@ def user_delete_me():
     with _session_ctx() as s:
         u = s.get(User, current_user_id)
         if not u:
-            return jsonify({"error": "User non trovato"}), 404
+            return jsonify({"error": "User not found"}), 404
 
         up_rows = (
             s.query(UserPlant)
@@ -1543,7 +1546,7 @@ def watering_plan_add():
 
     with _session_ctx() as s:
         if not s.get(UserPlant, (g.user_id, data["plant_id"])):
-            return jsonify({"error": "Forbidden: non possiedi questa pianta"}), 403
+            return jsonify({"error": "Forbidden: you do not own this plant"}), 403
 
         data["user_id"] = g.user_id
         wp = WateringPlan(**data)
@@ -1603,7 +1606,7 @@ def watering_log_add():
 
     with _session_ctx() as s:
         if not s.get(UserPlant, (g.user_id, data["plant_id"])):
-            return jsonify({"error": "Forbidden: non possiedi questa pianta"}), 403
+            return jsonify({"error": "Forbidden: you do not own this plant"}), 403
 
         data["user_id"] = g.user_id
         wl = WateringLog(**data)
