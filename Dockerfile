@@ -28,8 +28,7 @@ RUN python -m pip install --upgrade pip && \
 
 # copia il resto dell'app
 COPY . /app
-RUN chmod +x /app/infra/entrypoint_api.sh
 
 EXPOSE 8000
-ENTRYPOINT ["bash", "/app/infra/entrypoint_api.sh"]
+
 CMD ["gunicorn", "-w", "2", "-b", "0.0.0.0:8000", "app:create_app()"]
