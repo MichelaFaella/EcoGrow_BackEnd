@@ -1925,6 +1925,153 @@ def questionnaire_submit_answers():
 
 
 # ========= Reminder =========
+
+# ========= Watering – OVERVIEW SETTIMANALE =========
+@api_blueprint.route("/watering/overview", methods=["GET"])
+@require_jwt
+def watering_overview():
+    """
+    Restituisce una settimana completa (lun–dom) a partire da oggi.
+    Ogni giorno contiene:
+    - tutte le piante con next_due_at = giorno
+    - o una lista vuota
+    """
+
+    try:
+        user_id = g.user_id
+    except Exception:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    try:
+        # ---------------------------
+        # 1. Calcolo settimana attuale
+        # ---------------------------
+        today = datetime.utcnow().date()
+        week_start = today - timedelta(days=today.weekday())   # lunedì
+        week_end = week_start + timedelta(days=6)              # domenica
+
+        raw_rows = repo.get_watering_overview_for_user(user_id)
+
+        # ---------------------------
+        # 2. Raggruppo per giorno
+        # ---------------------------
+        grouped = {
+            (week_start + timedelta(days=i)).isoformat(): []
+            for i in range(7)
+        }
+
+        for r in raw_rows:
+            next_due_str = r.get("next_due_at")
+            if not next_due_str:
+                continue
+
+            day_key = next_due_str[:10]
+
+            if week_start.isoformat() <= day_key <= week_end.isoformat():
+                grouped[day_key].append(r)
+
+        # ---------------------------
+        # 3. Montiamo risposta finale
+        # ---------------------------
+        result = []
+        for day, plants in grouped.items():
+            result.append({
+                "date": day,
+                "plants_count": len(plants),
+                "plants": plants,
+            })
+
+        return jsonify(result), 200
+
+    except Exception as e:
+        print("[ERROR] /watering/overview:", e)
+        return jsonify({"error": str(e)}), 500
+
+
+
+# ========= Watering – L'UTENTE HA INNAFFIATO =========
+@api_blueprint.route("/plant/<plant_id>/watering/do", methods=["POST"])
+@require_jwt
+def plant_do_watering(plant_id: str):
+    """
+    L'utente segnala che ha appena innaffiato una pianta.
+
+    Body JSON atteso (minimo):
+    {
+      "amount_ml": 200,
+      "note": "un po' d’acqua in più oggi"  (opzionale),
+      "done_at": "2025-11-30T13:00:00"     (opzionale, ISO 8601; se assente = adesso)
+    }
+
+    Logica:
+    - chiama ReminderService.register_watering_and_schedule_next(
+        user_id=g.user_id,
+        plant_id=plant_id,
+        amount_ml=amount_ml,
+        note=note,
+        done_at=done_at
+      )
+    - questo:
+        * crea WateringLog reale
+        * aggiorna WateringPlan.next_due_at
+        * crea WateringLog "programmato" futuro
+        * crea nuovo Reminder
+    """
+    _ensure_uuid(plant_id, "plant_id")
+
+    payload = _parse_json_body() or {}
+
+    # amount_ml obbligatorio
+    amount_ml = payload.get("amount_ml")
+    if amount_ml is None:
+        return jsonify({"error": "Campo obbligatorio: amount_ml"}), 400
+
+    try:
+        amount_ml = int(amount_ml)
+    except (TypeError, ValueError):
+        return jsonify({"error": "amount_ml deve essere un intero"}), 400
+
+    note = payload.get("note") or None
+    done_at_raw = payload.get("done_at")
+    done_at = None
+
+    if done_at_raw:
+        # se il client manda una stringa ISO la parsifichiamo, altrimenti lasciamo None
+        if isinstance(done_at_raw, str):
+            try:
+                done_at = datetime.fromisoformat(done_at_raw)
+            except Exception:
+                return jsonify({"error": "done_at deve essere in formato ISO 8601"}), 400
+
+    # Verifica che l'utente possieda la pianta
+    with _session_ctx() as s:
+        if not s.get(UserPlant, (g.user_id, plant_id)):
+            return jsonify({"error": "Forbidden: non possiedi questa pianta"}), 403
+
+    # Usiamo il servizio ad alto livello che gestisce piano + log + reminder
+    res = reminder_service.register_watering_and_schedule_next(
+        user_id=str(g.user_id),
+        plant_id=plant_id,
+        amount_ml=amount_ml,
+        note=note,
+        done_at=done_at,
+    )
+
+    if not res.get("ok"):
+        return jsonify({"error": res.get("error", "Unable to register watering")}), 400
+
+    # Rispondiamo con qualche info utile al frontend
+    return jsonify(
+        {
+            "ok": True,
+            "plan_id": res.get("plan_id"),
+            "plant_id": res.get("plant_id"),
+            "last_watered_at": res.get("last_watered_at"),
+            "next_due_at": res.get("next_due_at"),
+            "interval_days": res.get("interval_days"),
+        }
+    ), 200
+
 @api_blueprint.route("/watering_plan/calendar-export", methods=["GET"])
 @require_jwt
 def watering_plan_calendar_export():

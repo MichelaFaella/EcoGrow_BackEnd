@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import uuid
 import base64
 import json
 import os
@@ -24,6 +25,7 @@ from models.entities import (
     UserQuestionAnswer,
     WateringPlan,
     Reminder,
+    WateringLog,
 )
 
 
@@ -907,3 +909,117 @@ class RepositoryService:
                 .first()
             )
             return str(fam.id) if fam else None
+
+    # =======================
+    # WATERING PAGE - overview (settimanale)
+    # =======================
+    def get_watering_overview_for_user(self, user_id: str) -> List[Dict]:
+        """
+        Restituisce una lista di piante dell'utente con:
+        - dati pianta
+        - watering_plan (next_due_at, interval_days, ecc.)
+        - ultimo watering_log (done_at, amount_ml, note)
+        - photo_base64 (compressa)
+
+        SOLO piante con next_due_at ENTRO la prossima settimana.
+        """
+
+        now = datetime.utcnow()
+        week_limit = now + timedelta(days=7)
+
+        with self.Session() as s:
+            rows = (
+                s.query(
+                    WateringPlan.id.label("plan_id"),
+                    WateringPlan.user_id,
+                    WateringPlan.plant_id,
+                    WateringPlan.next_due_at,
+                    WateringPlan.interval_days,
+                    WateringPlan.check_soil_moisture,
+                    WateringPlan.notes.label("plan_notes"),
+                    Plant.common_name,
+                    Plant.scientific_name,
+                    Plant.photo_base64_compressed.label("photo_base64_compressed"),
+                    func.max(WateringLog.done_at).label("last_done_at"),
+                    func.max(WateringLog.amount_ml).label("last_amount_ml"),
+                )
+                .join(Plant, Plant.id == WateringPlan.plant_id)
+                .outerjoin(
+                    WateringLog,
+                    (WateringLog.user_id == WateringPlan.user_id)
+                    & (WateringLog.plant_id == WateringPlan.plant_id),
+                )
+                .filter(
+                    WateringPlan.user_id == user_id,
+                    WateringPlan.next_due_at <= week_limit,
+                )
+                .group_by(
+                    WateringPlan.id,
+                    WateringPlan.user_id,
+                    WateringPlan.plant_id,
+                    WateringPlan.next_due_at,
+                    WateringPlan.interval_days,
+                    WateringPlan.check_soil_moisture,
+                    WateringPlan.notes,
+                    Plant.common_name,
+                    Plant.scientific_name,
+                    Plant.photo_base64_compressed,
+                )
+                .order_by(WateringPlan.next_due_at.asc())
+                .all()
+            )
+
+            result: List[Dict] = []
+
+            for r in rows:
+                plant_name = r.common_name or r.scientific_name or "Your plant"
+
+                # ===== Ultimo log =====
+                last_log = (
+                    s.query(WateringLog)
+                    .filter(
+                        WateringLog.user_id == r.user_id,
+                        WateringLog.plant_id == r.plant_id,
+                    )
+                    .order_by(WateringLog.done_at.desc())
+                    .first()
+                )
+
+                last_log_done_at = getattr(last_log, "done_at", None)
+                last_log_amount_ml = getattr(last_log, "amount_ml", None)
+                last_log_note = getattr(last_log, "note", None)
+
+                overdue = (
+                        r.next_due_at is not None and r.next_due_at < now
+                )
+
+                # ===== Foto compressa =====
+                photo_base64 = None
+                if r.photo_base64_compressed:
+                    try:
+                        photo_base64 = r.photo_base64_compressed.decode("utf-8")
+                    except Exception:
+                        photo_base64 = None
+
+                result.append(
+                    {
+                        "plant_id": str(r.plant_id),
+                        "plant_name": plant_name,
+                        "plan_id": str(r.plan_id),
+                        "next_due_at": r.next_due_at.isoformat()
+                        if r.next_due_at else None,
+                        "interval_days": int(r.interval_days),
+                        "check_soil_moisture": bool(r.check_soil_moisture),
+                        "plan_notes": r.plan_notes,
+                        "last_log_done_at": last_log_done_at.isoformat()
+                        if last_log_done_at else None,
+                        "last_log_amount_ml": int(last_log_amount_ml)
+                        if last_log_amount_ml is not None else None,
+                        "last_log_note": last_log_note,
+                        "overdue": overdue,
+                        "photo_base64": photo_base64,
+                    }
+                )
+
+            return result
+
