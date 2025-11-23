@@ -27,6 +27,7 @@ import secrets
 from models.scripts.replay_changes import seed_from_changes, write_changes_delete, write_changes_upsert
 from models.base import SessionLocal
 from services.image_processing_service import ImageProcessingService
+from services.reminder_service import ReminderService
 
 # Local application
 from services.repository_service import RepositoryService
@@ -55,9 +56,7 @@ REFRESH_TTL_DAYS = int(os.getenv("REFRESH_TTL_DAYS", "90"))
 UPLOAD_FOLDER = "uploads"
 
 image_service = ImageProcessingService()
-
-
-# reminder_service = ReminderService()
+reminder_service = ReminderService()
 # disease_service = DiseaseRecognitionService()
 
 @api_blueprint.errorhandler(401)
@@ -727,7 +726,7 @@ def create_plant():
             raw_clim = ""
         payload["climate"] = str(raw_clim)
 
-    # livello acqua e luce
+    # livelli acqua/luce
     if "water_level" in cols and payload.get("water_level") is None:
         payload["water_level"] = defaults.get("water_level", 3)
     if "light_level" in cols and payload.get("light_level") is None:
@@ -737,12 +736,11 @@ def create_plant():
     if "difficulty" in cols and payload.get("difficulty") is None:
         payload["difficulty"] = defaults.get("difficulty", 3)
 
-    # temp min
+    # temp min/max
     if "min_temp_c" in cols and payload.get("min_temp_c") is None:
         tempmin = defaults.get("tempmin") or {}
         payload["min_temp_c"] = tempmin.get("celsius", 15)
 
-    # temp max
     if "max_temp_c" in cols and payload.get("max_temp_c") is None:
         tempmax = defaults.get("tempmax") or {}
         payload["max_temp_c"] = tempmax.get("celsius", 25)
@@ -772,7 +770,6 @@ def create_plant():
         print("[ERRORE] Valori numerici acqua/luce non validi:", e)
         return jsonify({"error": "water_level/light_level must be integer"}), 400
 
-    # temperature
     try:
         tmin = int(payload["min_temp_c"])
         tmax = int(payload["max_temp_c"])
@@ -793,7 +790,7 @@ def create_plant():
     print("[DEBUG] Payload finale per DB:", data)
 
     # =====================================================================
-    # 10) DB
+    # 10) TRANSAZIONE DB
     # =====================================================================
     print("[DEBUG] Apertura transazione DB…")
 
@@ -862,7 +859,7 @@ def create_plant():
                 print(f"[ERRORE] Salvataggio immagine/PlantPhoto fallito: {e}")
             # ================================================================
 
-            # link user-plant
+            # LINK USER → PLANT (SEMPRE)
             print("[DEBUG] Creo link user-plant…")
             repo.ensure_user_plant_link(
                 user_id=g.user_id,
@@ -873,19 +870,26 @@ def create_plant():
                 overwrite=False,
             )
 
-            # watering plan
-            print("[DEBUG] Creo watering plan…")
+            # ================================================================
+            # WATERING PLAN (NON DEVE MAI ROMPERE NULLA)
+            # ================================================================
+            print("[DEBUG] Creo watering plan da questionario + pianta…")
             try:
-                repo.create_default_watering_plan_for_plant(
-                    session=s,
-                    user_id=g.user_id,
+                # usa il ReminderService istanziato in alto:
+                # reminder_service = ReminderService()
+                reminder_service.create_plan_for_new_plant(
+                    user_id=str(g.user_id),
                     plant_id=str(p.id),
                 )
-                s.commit()
-                print("[DEBUG] Watering plan creato")
+                print("[DEBUG] Watering plan creato/aggiornato")
             except Exception as e:
-                print("[ERRORE] Watering plan fallito:", e)
-                s.rollback()
+                # qui logghiamo SOLO l'errore, ma NON facciamo rollback
+                print("[ERRORE] Creazione watering plan fallita (ignoro):", e)
+
+            # ================================================================
+            # COMMIT FINALE — SALVA TUTTO SENZA ROLLBACK
+            # ================================================================
+            s.commit()
 
             print("\n================== [create_plant] COMPLETATA ==================\n")
 
@@ -948,7 +952,6 @@ def delete_plant(plant_id: str):
             _commit_or_409(s)
         write_changes_delete("plant", plant_id)
         return ("", 204)
-
 
 # ========= Family =========
 @api_blueprint.route("/family/all", methods=["GET"])
@@ -1922,6 +1925,49 @@ def questionnaire_submit_answers():
 
 
 # ========= Reminder =========
+@api_blueprint.route("/watering_plan/calendar-export", methods=["GET"])
+@require_jwt
+def watering_plan_calendar_export():
+    """
+    Esporta tutti i watering plan dell'utente loggato
+    in un formato comodo da usare come eventi calendario sul telefono.
+    """
+    user_id = g.user_id
+
+    with _session_ctx() as s:
+        # Join con Plant per avere il nome pianta
+        rows = (
+            s.query(WateringPlan, Plant)
+            .join(Plant, Plant.id == WateringPlan.plant_id)
+            .filter(WateringPlan.user_id == user_id)
+            .order_by(WateringPlan.next_due_at.asc())
+            .all()
+        )
+
+        events = []
+        for wp, plant in rows:
+            # titolo leggibile per il calendario
+            title = f"Water {plant.common_name or plant.scientific_name}"
+
+            events.append({
+                "id": str(wp.id),
+                "plant_id": str(plant.id),
+                "plant_name": plant.common_name or plant.scientific_name,
+                "title": title,
+
+                # quando parte il promemoria
+                "start": wp.next_due_at.isoformat(),  # es. 2025-11-23T09:00:00
+
+                # ogni quanti giorni si ripete
+                "interval_days": wp.interval_days,
+
+                # se vuoi farla usare per note/event description
+                "notes": wp.notes,
+            })
+
+        return jsonify(events), 200
+
+
 @api_blueprint.route("/reminder/all", methods=["GET"])
 @require_jwt
 def reminder_all():
