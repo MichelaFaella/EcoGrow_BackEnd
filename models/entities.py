@@ -1,13 +1,9 @@
 from __future__ import annotations
 
-from datetime import datetime, date
-from typing import List, Optional
 import uuid
+from datetime import datetime, date
 from enum import Enum
-from sqlalchemy import Enum as SAEnum
-from datetime import datetime
-from sqlalchemy.orm import Mapped, mapped_column
-from sqlalchemy import String, DateTime, ForeignKey
+from typing import List, Optional
 
 from sqlalchemy import (
     Boolean,
@@ -26,17 +22,22 @@ from sqlalchemy import (
 )
 from sqlalchemy.dialects.mysql import JSON as MySQLJSON
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy import Enum as SAEnum
 
 from .base import Base  # usa la tua Base/engine/SessionLocal
 
 
 # ======================================================================
-# CORE
+# UTILS
 # ======================================================================
 
 def gen_uuid() -> str:
     return str(uuid.uuid4())
 
+
+# ======================================================================
+# CORE
+# ======================================================================
 
 class Family(Base):
     __tablename__ = "family"
@@ -46,7 +47,10 @@ class Family(Base):
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     # 1:N  (una family ha molte piante)
-    plants: Mapped[list["Plant"]] = relationship(back_populates="family", lazy="selectin")
+    plants: Mapped[List["Plant"]] = relationship(
+        back_populates="family",
+        lazy="selectin",
+    )
 
 
 class SizeEnum(str, Enum):
@@ -73,21 +77,21 @@ class Plant(Base):
 
     # ENUM/logici
     category: Mapped[str] = mapped_column(String(100), nullable=False)  # CategoryEnum logico
-    climate: Mapped[str] = mapped_column(String(100), nullable=False)  # ClimateEnum logico
-    pests: Mapped[Optional[dict]] = mapped_column(MySQLJSON)  # es. ["aphid","whitefly"]
+    climate: Mapped[str] = mapped_column(String(100), nullable=False)   # ClimateEnum logico
+    pests: Mapped[Optional[dict]] = mapped_column(MySQLJSON)            # es. ["aphid","whitefly"]
 
     size: Mapped[SizeEnum] = mapped_column(
         SAEnum(
             SizeEnum,
             name="size_enum",
-            native_enum=True,  # usa l'enum MySQL invece di VARCHAR
-            values_callable=lambda obj: [e.value for e in obj]  # <--- PRENDE I VALUE (lowercase)
+            native_enum=True,
+            values_callable=lambda obj: [e.value for e in obj],
         ),
         nullable=False,
         default=SizeEnum.MEDIUM,
     )
 
-    # NEW: 1:N con Family
+    # 1:N con Family
     family_id: Mapped[Optional[str]] = mapped_column(
         String(36),
         ForeignKey("family.id", ondelete="RESTRICT", onupdate="CASCADE"),
@@ -95,8 +99,12 @@ class Plant(Base):
     )
 
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow,
-                                                 onupdate=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        nullable=False,
+        default=datetime.utcnow,
+        onupdate=datetime.utcnow,
+    )
 
     __table_args__ = (
         CheckConstraint("water_level BETWEEN 1 AND 5", name="ck_plant_water_level"),
@@ -109,7 +117,10 @@ class Plant(Base):
     )
 
     # relazioni
-    family: Mapped[Optional["Family"]] = relationship(back_populates="plants", lazy="selectin")
+    family: Mapped[Optional["Family"]] = relationship(
+        back_populates="plants",
+        lazy="selectin",
+    )
 
     photos: Mapped[List["PlantPhoto"]] = relationship(
         back_populates="plant",
@@ -119,7 +130,6 @@ class Plant(Base):
         lazy="selectin",
     )
 
-    # rimosso: families (N↔N)
     diseases: Mapped[List["PlantDisease"]] = relationship(
         back_populates="plant",
         cascade="all, delete-orphan",
@@ -136,7 +146,7 @@ class Plant(Base):
     user_links: Mapped[List["UserPlant"]] = relationship(
         back_populates="plant",
         lazy="selectin",
-        cascade="all, delete-orphan"
+        cascade="all, delete-orphan",
     )
 
     watering_plans: Mapped[List["WateringPlan"]] = relationship(
@@ -236,8 +246,12 @@ class User(Base):
     first_name: Mapped[str] = mapped_column(String(100), nullable=False)
     last_name: Mapped[str] = mapped_column(String(100), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow,
-                                                 onupdate=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        nullable=False,
+        default=datetime.utcnow,
+        onupdate=datetime.utcnow,
+    )
 
     plants: Mapped[List["Plant"]] = relationship(
         secondary="user_plant",
@@ -248,7 +262,7 @@ class User(Base):
     user_links: Mapped[List["UserPlant"]] = relationship(
         back_populates="user",
         lazy="selectin",
-        cascade="all, delete-orphan"
+        cascade="all, delete-orphan",
     )
 
     watering_plans: Mapped[List["WateringPlan"]] = relationship(
@@ -264,7 +278,8 @@ class User(Base):
         lazy="selectin",
     )
 
-    questions: Mapped[List["Question"]] = relationship(
+    # Risposte alle domande (non più domande per utente)
+    question_answers: Mapped[List["UserQuestionAnswer"]] = relationship(
         back_populates="user",
         cascade="all, delete-orphan",
         passive_deletes=True,
@@ -317,12 +332,12 @@ class UserPlant(Base):
 
     user: Mapped["User"] = relationship(
         back_populates="user_links",
-        lazy="selectin"
+        lazy="selectin",
     )
 
     plant: Mapped["Plant"] = relationship(
         back_populates="user_links",
-        lazy="selectin"
+        lazy="selectin",
     )
 
 
@@ -344,17 +359,27 @@ class Friendship(Base):
     )
     status: Mapped[str] = mapped_column(String(50), nullable=False)
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
-    updated_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow,
-                                                 onupdate=datetime.utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        nullable=False,
+        default=datetime.utcnow,
+        onupdate=datetime.utcnow,
+    )
 
     # Colonne generate per bloccare duplicati (a,b) == (b,a)
     user_min: Mapped[Optional[str]] = mapped_column(
         String(36),
-        Computed("CASE WHEN user_id_a < user_id_b THEN user_id_a ELSE user_id_b END", persisted=False),
+        Computed(
+            "CASE WHEN user_id_a < user_id_b THEN user_id_a ELSE user_id_b END",
+            persisted=False,
+        ),
     )
     user_max: Mapped[Optional[str]] = mapped_column(
         String(36),
-        Computed("CASE WHEN user_id_a < user_id_b THEN user_id_b ELSE user_id_a END", persisted=False),
+        Computed(
+            "CASE WHEN user_id_a < user_id_b THEN user_id_b ELSE user_id_a END",
+            persisted=False,
+        ),
     )
 
     __table_args__ = (
@@ -462,27 +487,96 @@ class WateringLog(Base):
 
 
 # ======================================================================
-# QUESTIONARIO (1:N – domande personalizzate per utente)
+# QUESTIONARIO (domande globali + opzioni + risposte utente)
 # ======================================================================
 
 class Question(Base):
     __tablename__ = "question"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=gen_uuid)
+    text: Mapped[str] = mapped_column(Text, nullable=False)
+    type: Mapped[str] = mapped_column(String(50), nullable=False)  # es. "preference", "onboarding"
+    active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+
+    # 1:N con opzioni
+    options: Mapped[List["QuestionOption"]] = relationship(
+        back_populates="question",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+        lazy="selectin",
+        order_by="QuestionOption.position.asc()",
+    )
+
+    # 1:N con risposte degli utenti
+    answers: Mapped[List["UserQuestionAnswer"]] = relationship(
+        back_populates="question",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+        lazy="selectin",
+    )
+
+
+class QuestionOption(Base):
+    __tablename__ = "question_option"
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=gen_uuid)
+    question_id: Mapped[str] = mapped_column(
+        String(36),
+        ForeignKey("question.id", ondelete="CASCADE", onupdate="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    label: Mapped[str] = mapped_column(String(1), nullable=False)  # 'A','B','C','D'
+    text: Mapped[str] = mapped_column(Text, nullable=False)
+    is_correct: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    position: Mapped[int] = mapped_column(SmallInteger, nullable=False)
+
+    question: Mapped["Question"] = relationship(back_populates="options")
+
+    answers: Mapped[List["UserQuestionAnswer"]] = relationship(
+        back_populates="option",
+        cascade="all, delete-orphan",
+        passive_deletes=True,
+        lazy="selectin",
+    )
+
+
+class UserQuestionAnswer(Base):
+    __tablename__ = "user_question_answer"
+    __table_args__ = (
+        UniqueConstraint("user_id", "question_id", name="uq_user_question"),
+        Index("ix_uqa_question", "question_id"),
+    )
+
+    id: Mapped[str] = mapped_column(String(36), primary_key=True, default=gen_uuid)
+
     user_id: Mapped[str] = mapped_column(
         String(36),
         ForeignKey("user.id", ondelete="CASCADE", onupdate="CASCADE"),
         nullable=False,
         index=True,
     )
-    text: Mapped[str] = mapped_column(Text, nullable=False)
-    type: Mapped[str] = mapped_column(String(50), nullable=False)
-    options_json: Mapped[Optional[dict]] = mapped_column(MySQLJSON)
-    active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
-    user_answer: Mapped[Optional[str]] = mapped_column(Text)
-    answered_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
+    question_id: Mapped[str] = mapped_column(
+        String(36),
+        ForeignKey("question.id", ondelete="CASCADE", onupdate="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    option_id: Mapped[str] = mapped_column(
+        String(36),
+        ForeignKey("question_option.id", ondelete="CASCADE", onupdate="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    answered_at: Mapped[datetime] = mapped_column(
+        DateTime,
+        nullable=False,
+        default=datetime.utcnow,
+    )
 
-    user: Mapped["User"] = relationship(back_populates="questions")
+    user: Mapped["User"] = relationship(back_populates="question_answers")
+    question: Mapped["Question"] = relationship(back_populates="answers")
+    option: Mapped["QuestionOption"] = relationship(back_populates="answers")
 
 
 # ======================================================================
@@ -510,10 +604,10 @@ class Reminder(Base):
 
     user: Mapped["User"] = relationship(back_populates="reminders")
 
+
 # ==============================
 # Refresh token (sessione utente)
 # ==============================
-
 
 class RefreshToken(Base):
     __tablename__ = "refresh_token"
@@ -525,7 +619,11 @@ class RefreshToken(Base):
         index=True,
         nullable=False,
     )
-    token: Mapped[str] = mapped_column(String(255), unique=True, nullable=False)  # plaintext, minimo indispensabile
+    token: Mapped[str] = mapped_column(
+        String(255),
+        unique=True,
+        nullable=False,
+    )  # plaintext, minimo indispensabile
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
     last_used_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
     expires_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)

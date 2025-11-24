@@ -32,7 +32,7 @@ from services.image_processing_service import ImageProcessingService
 # Local application
 from services.repository_service import RepositoryService
 from utils.jwt_helper import generate_token, validate_token
-from models.entities import SizeEnum
+from models.entities import SizeEnum, QuestionOption
 from models.entities import (
     Disease,
     Family,
@@ -429,17 +429,44 @@ def _parse_unknown_threshold(raw_value) -> float | None:
     return value
 
 
-def _call_model_service(image_file, *, unknown_threshold: float | None = None) -> dict:
+def _call_model_service(
+    image_file,
+    *,
+    unknown_threshold: float | None = None,
+    family: str | None = None,
+    disease_suggestions: list[str] | None = None,
+) -> dict:
+    """Call the external model API or fall back to the inline service."""
+    inline = not MODEL_PREDICT_URL or MODEL_PREDICT_URL.lower() in {"inline", "local", "self"}
+
     stream = getattr(image_file, "stream", image_file)
     if hasattr(stream, "seek"):
         stream.seek(0)
     filename = getattr(image_file, "filename", None) or "upload.jpg"
     mime = getattr(image_file, "mimetype", None) or getattr(image_file, "content_type", None) or "application/octet-stream"
 
+    if inline:
+        from ecogrow_disease_detection.model_inference_service import get_disease_inference_service
+
+        data = stream.read()
+        service = get_disease_inference_service()
+        result = service.predict_from_bytes(
+            data,
+            family=family,
+            disease_suggestions=disease_suggestions,
+            unknown_threshold=unknown_threshold,
+        )
+        return {"status": "success", "data": result}
+
     files = {"image": (filename, stream, mime)}
-    data = {}
+    data = []
     if unknown_threshold is not None:
-        data["unknown_threshold"] = str(unknown_threshold)
+        data.append(("unknown_threshold", str(unknown_threshold)))
+    if family:
+        data.append(("family", family))
+    if disease_suggestions:
+        for d in disease_suggestions:
+            data.append(("disease_suggestions", d))
 
     try:
         resp = requests.post(
@@ -524,10 +551,21 @@ def ai_model_disease_detection():
     except ValueError as exc:
         return jsonify({"error": str(exc)}), 400
 
+    family = request.values.get("family") or (body.get("family") if isinstance(body, dict) else None)
+    disease_suggestions = []
+    if request.values:
+        disease_suggestions.extend([v for v in request.values.getlist("disease_suggestions") if v])
+    if isinstance(body, dict):
+        raw = body.get("disease_suggestions")
+        if isinstance(raw, list):
+            disease_suggestions.extend([str(v) for v in raw if v is not None])
+
     try:
         result = _call_model_service(
             request.files["image"],
             unknown_threshold=unknown_threshold,
+            family=family,
+            disease_suggestions=disease_suggestions or None,
         )
     except ValueError as exc:
         return jsonify({"error": str(exc)}), 400
@@ -581,34 +619,14 @@ def get_all_plants():
 @api_blueprint.route("/plant/add", methods=["POST"])
 @require_jwt
 def create_plant():
-    print("\n================== [create_plant] RICHIESTA ARRIVATA ==================\n")
-
-    # LOG PRIMA DI PARSARE
-    try:
-        raw = request.get_data()
-    except Exception as e:
-
-
-    # =====================================================================
-    # 1) PARSE JSON BODY
-    # =====================================================================
     try:
         body = _parse_json_body()
     except Exception as e:
         return jsonify({"error": "Invalid JSON"}), 400
 
-    # =====================================================================
-    # 2) RECUPERO BASE64
-    # =====================================================================
-
     image_b64 = body.get("image")
     if not image_b64:
         return jsonify({"error": "Field 'image' is required"}), 400
-
-
-    # =====================================================================
-    # 3) BASE64 → BYTES
-    # =====================================================================
 
     try:
         image_bytes = base64.b64decode(image_b64)
@@ -621,10 +639,6 @@ def create_plant():
             self.stream = io.BytesIO(b)
 
     fake_file = _FileWrapper(image_bytes)
-
-    # =====================================================================
-    # 4) CHIAMATA A PLANTNET
-    # =====================================================================
 
     try:
         plant_info = image_service.process_image(fake_file)
@@ -789,25 +803,23 @@ def create_plant():
                 filename = f"{photo_id}.jpg"
                 image_path = os.path.join(base_dir, filename)
 
-                # Salva il file sul filesystem
                 with open(image_path, "wb") as f:
                     f.write(image_bytes)
 
-
-                # Crea la riga in plant_photo
                 photo = PlantPhoto(
                     id=photo_id,
                     plant_id=plant_id,
-                    url=filename,  # nel DB salvo SOLO il nome file
+                    url=filename,  # only store filename in DB
                     caption=None,
                     order_index=0,
                 )
                 s.add(photo)
 
-                # (opzionale) log per replay_changes
                 write_changes_upsert("plant_photo", [_serialize_instance(photo)])
 
-            except Exception as e:
+            except Exception:
+                s.rollback()
+                return jsonify({"error": "Failed to save plant photo"}), 500
             # ================================================================
 
             # link user-plant
@@ -831,12 +843,9 @@ def create_plant():
             except Exception as e:
                 s.rollback()
 
-            print("\n================== [create_plant] COMPLETATA ==================\n")
-
             return jsonify({"ok": True, "id": str(p.id)}), 201
 
         except Exception as e:
-            print(f"[ERRORE GENERALE DB] {e}")
             s.rollback()
             return jsonify({"error": f"DB error: {e}"}), 500
 
@@ -1341,15 +1350,23 @@ def user_delete_me():
 @api_blueprint.route("/user_plant/all", methods=["GET"])
 @require_jwt
 def user_plant_all():
+    """
+    Restituisce SOLO le piante del giardino dell'utente loggato.
+    """
+    user_id = g.user_id  # preso dal JWT
+
     with _session_ctx() as s:
         rows = (
             s.query(UserPlant)
             .options(
                 selectinload(UserPlant.plant).selectinload(Plant.photos)
             )
+            .filter(UserPlant.user_id == user_id)
             .all()
         )
+
         return jsonify([_serialize_with_relations(r) for r in rows]), 200
+
 
 
 @api_blueprint.route("/user_plant/add", methods=["POST"])
@@ -1644,70 +1661,163 @@ def watering_log_delete(lid: str):
         return ("", 204)
 
 
-# ========= Question =========
 @api_blueprint.route("/question/all", methods=["GET"])
 @require_jwt
 def question_all():
+    """
+    Restituisce tutte le domande con le opzioni associate.
+    (Endpoint "admin" / gestione, non legato a un singolo utente.)
+    """
     with _session_ctx() as s:
-        # if Question has no created_at, order by id
+        # se Question avesse created_at lo useremmo, altrimenti ordiniamo per id
         order_col = getattr(Question, "created_at", Question.id)
-        rows = s.query(Question).order_by(order_col.desc()).all()
-        return jsonify([_serialize_instance(r) for r in rows]), 200
+        rows = (
+            s.query(Question)
+            .filter(Question.active.is_(True))
+            .order_by(order_col.desc())
+            .all()
+        )
+
+        out = []
+        for q in rows:
+            opts = sorted(q.options, key=lambda o: o.position)
+            out.append({
+                "id": str(q.id),
+                "text": q.text,
+                "type": q.type,
+                "active": q.active,
+                "options": [
+                    {
+                        "id": str(o.id),
+                        "label": o.label,      # 'A','B','C','D'
+                        "text": o.text,
+                        "position": o.position
+                    }
+                    for o in opts
+                ],
+            })
+
+        return jsonify(out), 200
 
 
 @api_blueprint.route("/question/add", methods=["POST"])
 @require_jwt
 def question_add():
+    """
+    Crea una nuova domanda globale con le sue opzioni.
+
+    Payload atteso:
+    {
+      "text": "When do you prefer to take care of your plants?",
+      "type": "preference",
+      "active": true,              // opzionale, default True
+      "options": [                 // opzionale ma consigliato
+        "Weekdays only",
+        "Weekends only",
+        "Any day is fine",
+        "Every other day"
+      ]
+    }
+    """
     payload = _parse_json_body()
-    data = _filter_fields_for_model(payload, Question)
 
-    required = ["text", "type"]  # user_id rimosso
-    missing = [k for k in required if not data.get(k)]
-    if missing:
-        return jsonify({"error": f"Campi obbligatori: {', '.join(missing)}"}), 400
+    text = (payload.get("text") or "").strip()
+    qtype = (payload.get("type") or "").strip()
+    active = payload.get("active", True)
+    options = payload.get("options") or []
 
-    data["user_id"] = g.user_id
+    if not text or not qtype:
+        return jsonify({"error": "Campi obbligatori: text, type"}), 400
+
+    if not isinstance(options, list) or not options:
+        return jsonify({"error": "options deve essere una lista non vuota"}), 400
+
     with _session_ctx() as s:
-        q = Question(**data)
+        # crea la domanda
+        q = Question(
+            text=text,
+            type=qtype,
+            active=bool(active),
+        )
         s.add(q)
+        s.flush()  # per avere q.id
+
+        # crea le opzioni
+        for idx, opt_text in enumerate(options, start=1):
+            label = chr(ord("A") + (idx - 1))  # 'A','B','C','D', ...
+            opt = QuestionOption(
+                question_id=q.id,
+                label=label,
+                text=str(opt_text),
+                is_correct=False,
+                position=idx,
+            )
+            s.add(opt)
+
         _commit_or_409(s)
         write_changes_upsert("question", [_serialize_instance(q)])
-        return jsonify({"ok": True, "id": q.id}), 201
+        # se vuoi, potresti loggare anche le QuestionOption su un canale separato
+
+        return jsonify({"ok": True, "id": str(q.id)}), 201
 
 
 @api_blueprint.route("/question/update/<qid>", methods=["PATCH", "PUT"])
 @require_jwt
 def question_update(qid: str):
+    """
+    Aggiorna i campi base di una domanda (text, type, active).
+    Per le opzioni servirebbe un endpoint dedicato (non gestito qui).
+    """
     _ensure_uuid(qid, "question_id")
     payload = _parse_json_body()
+
     with _session_ctx() as s:
         q = s.get(Question, qid)
-        if not q: return jsonify({"error": "Question not found"}), 404
-        for k, v in _filter_fields_for_model(payload, Question).items():
-            setattr(q, k, v)
+        if not q:
+            return jsonify({"error": "Question not found"}), 404
+
+        # consentiamo solo text, type, active
+        if "text" in payload:
+            q.text = (payload["text"] or "").strip()
+        if "type" in payload:
+            q.type = (payload["type"] or "").strip()
+        if "active" in payload:
+            q.active = bool(payload["active"])
+
         _commit_or_409(s)
         write_changes_upsert("question", [_serialize_instance(q)])
-        return jsonify({"ok": True, "id": q.id}), 200
+        return jsonify({"ok": True, "id": str(q.id)}), 200
 
 
 @api_blueprint.route("/question/delete/<qid>", methods=["DELETE"])
 @require_jwt
 def question_delete(qid: str):
+    """
+    Elimina una domanda globale.
+    Le QuestionOption e UserQuestionAnswer collegate
+    vengono eliminate in cascata (ON DELETE CASCADE).
+    """
     _ensure_uuid(qid, "question_id")
     with _session_ctx() as s:
         q = s.get(Question, qid)
         if q:
             s.delete(q)
             _commit_or_409(s)
-        write_changes_delete("question", qid)
+            write_changes_delete("question", qid)
+        # 204 anche se la domanda non esiste (idempotente)
         return ("", 204)
 
+
+# ========= Questionnaire (per utente loggato) =========
 
 @api_blueprint.route("/questionnaire/questions", methods=["GET"])
 @require_jwt
 def questionnaire_get_questions():
     """
-    Restituisce le domande del questionario per l'utente loggato.
+    Restituisce le domande del questionario per l'utente loggato,
+    con opzioni ed eventuale risposta già data.
+
+    È un semplice wrapper su repo.get_questions_for_user(user_id).
     """
     user_id = g.user_id
 
@@ -1715,7 +1825,9 @@ def questionnaire_get_questions():
         questions = repo.get_questions_for_user(user_id)
         return jsonify(questions), 200
     except Exception as e:
-        current_app.logger.exception(f"Error fetching questionnaire for user {user_id}: {e}")
+        current_app.logger.exception(
+            f"Error fetching questionnaire for user {user_id}: {e}"
+        )
         return jsonify({"error": "Database error"}), 500
 
 
@@ -1724,6 +1836,15 @@ def questionnaire_get_questions():
 def questionnaire_submit_answers():
     """
     Salva le risposte dell'utente loggato al questionario.
+
+    Payload atteso:
+    {
+      "answers": {
+        "<question_id>": "1",   // indice opzione 1..4
+        "<question_id>": "3",
+        ...
+      }
+    }
     """
     user_id = g.user_id
     payload = _parse_json_body()
@@ -1737,7 +1858,7 @@ def questionnaire_submit_answers():
         return jsonify({"ok": True}), 200
 
     except ValueError as e:
-        # errore di validazione degli ID → 400
+        # errore di validazione (ID domanda non valido, indice fuori range, ecc.)
         return jsonify({"error": str(e)}), 400
 
     except Exception as e:

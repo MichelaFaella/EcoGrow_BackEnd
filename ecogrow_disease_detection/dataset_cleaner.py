@@ -36,34 +36,7 @@ DEFAULT_IMAGE_EXTENSIONS = (".jpg", ".jpeg", ".png", ".bmp", ".tiff")
 os.environ.setdefault("KMP_DUPLICATE_LIB_OK", "TRUE")
 os.environ.setdefault("OMP_NUM_THREADS", "1")
 
-"""model = torch.hub.load(
-    'facebookresearch/dinov2', 
-    'dinov2_vits14'   # questa è la variante ViT-S/14
-).to(device)
 
-
-transform = transforms.Compose([
-    transforms.Resize(256),
-    transforms.CenterCrop(224),
-    transforms.ToTensor(),
-    transforms.Normalize(
-        mean=[0.485, 0.456, 0.406], 
-        std=[0.229, 0.224, 0.225],
-    ),
-])
-
-index = faiss.IndexFlatIP(emb.shape[1])     # cosine similarity se normalizzati
-index.add(emb)
-
-k = 5
-D, I = index.search(emb, k)  # D: similarità, I: indici
-Ora hai:
-
-I[i] = immagini più simili a immagine i
-
-D[i] = quanto sono simili
-
-"""
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 class DatasetCleaner:

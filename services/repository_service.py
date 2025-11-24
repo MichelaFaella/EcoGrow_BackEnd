@@ -1,20 +1,30 @@
 from __future__ import annotations
 
 import base64
-import json, os, re, unicodedata
+import json
+import os
+import re
+import unicodedata
 from functools import lru_cache
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 from io import BytesIO
 from typing import List, Dict, Optional, Tuple
 
 from PIL import Image
 from sqlalchemy import select, func
 from models.base import SessionLocal
-from models.entities import Plant, UserPlant, Family, PlantPhoto
 from models.scripts.replay_changes import write_changes_upsert
-from models.entities import Question
-from datetime import datetime, timedelta
-from models.entities import Question, WateringPlan,Reminder
+from models.entities import (
+    Plant,
+    UserPlant,
+    Family,
+    PlantPhoto,
+    Question,
+    QuestionOption,
+    UserQuestionAnswer,
+    WateringPlan,
+    Reminder,
+)
 
 
 class RepositoryService:
@@ -128,7 +138,6 @@ class RepositoryService:
         """
         print(f"[get_family] scientific_name={scientific_name!r}")
 
-        # Usa già il JSON caricato/cachato
         item = self._match_houseplant_item(scientific_name)
         if not item:
             print(f"[get_family] NO MATCH in JSON for scientific_name={scientific_name!r}")
@@ -146,7 +155,6 @@ class RepositoryService:
             print(f"[get_family] Item has no 'family'/'name' field, giving up.")
             return None
 
-        # Cerco nel DB la Family corrispondente
         with self.Session() as s:
             fam = (
                 s.query(Family)
@@ -300,18 +308,24 @@ class RepositoryService:
                 changed = False
                 if overwrite:
                     if up.nickname != nickname:
-                        up.nickname = nickname; changed = True
+                        up.nickname = nickname
+                        changed = True
                     if up.location_note != location_note:
-                        up.location_note = location_note; changed = True
+                        up.location_note = location_note
+                        changed = True
                     if up.since != since_date:
-                        up.since = since_date; changed = True
+                        up.since = since_date
+                        changed = True
                 else:
                     if nickname is not None and nickname != up.nickname:
-                        up.nickname = nickname; changed = True
+                        up.nickname = nickname
+                        changed = True
                     if location_note is not None and location_note != up.location_note:
-                        up.location_note = location_note; changed = True
+                        up.location_note = location_note
+                        changed = True
                     if since is not None and since_date != up.since:
-                        up.since = since_date; changed = True
+                        up.since = since_date
+                        changed = True
 
                 if changed:
                     s.commit()
@@ -374,7 +388,6 @@ class RepositoryService:
                 .select_from(Plant)
                 .join(UserPlant, UserPlant.plant_id == Plant.id)
                 .where(UserPlant.user_id == user_id)
-                # niente .nulls_last() che dava problemi in alcune combinazioni
                 .order_by(Plant.common_name, Plant.scientific_name)
             )
             rows = s.execute(stmt).all()
@@ -388,7 +401,6 @@ class RepositoryService:
                 }
                 for r in rows
             ]
-
 
     def get_all_families(self) -> List[Dict]:
         with self.Session() as s:
@@ -455,13 +467,23 @@ class RepositoryService:
                 for r in rows
             ]
 
+    # =======================
+    # QUESTIONARIO - seeding
+    # =======================
     def create_default_questions_for_user(self, user_id: str, session=None) -> List[Question]:
         """
-        Create, for a newly registered user, a copy of the template questions.
-        If a session is passed, use it (same transaction as user_add).
-        Returns the list of created Question objects (does NOT commit if the session is external).
+        Compat: nome storico.
+        Ora in realtà fa il SEED globale delle domande se non esistono ancora.
+
+        Legge da question.json:
+        [
+          {"text": "...", "type": "...", "options": ["opt1","opt2","opt3","opt4"]},
+          ...
+        ]
+
+        Ritorna la lista di Question presenti a DB (nuove o già esistenti).
         """
-        # Load question templates from question.json (cached in self._question_templates_cache)
+        # cache locale del JSON
         if not hasattr(self, "_question_templates_cache"):
             file_path = os.path.join(os.path.dirname(__file__), "..", "question.json")
             file_path = os.path.realpath(file_path)
@@ -474,64 +496,253 @@ class RepositoryService:
             session = self.Session()
             owns_session = True
 
-        questions: List[Question] = []
         try:
+            existing_questions = session.query(Question).order_by(Question.id).all()
+            if existing_questions:
+                return existing_questions
+
+            created: List[Question] = []
+
             for tpl in templates:
                 options = tpl.get("options") or []
+
                 q = Question(
-                    user_id=user_id,
                     text=tpl["text"],
                     type=tpl.get("type", "single_choice"),
-                    options_json={"options": options},
                     active=True,
-                    user_answer=None,
-                    answered_at=None,
                 )
                 session.add(q)
-                questions.append(q)
+                session.flush()  # per avere q.id
+
+                for idx, opt_text in enumerate(options, start=1):
+                    label = chr(ord("A") + (idx - 1))  # 'A','B','C','D'
+                    opt = QuestionOption(
+                        question_id=q.id,
+                        label=label,
+                        text=str(opt_text),
+                        is_correct=False,
+                        position=idx,
+                    )
+                    session.add(opt)
+
+                created.append(q)
 
             if owns_session:
                 session.commit()
 
-            return questions
+            return created
         finally:
             if owns_session:
                 session.close()
 
+    # =======================
+    # QUESTIONARIO - lettura
+    # =======================
     def get_questions_for_user(self, user_id: str) -> List[Dict]:
         """
-        Restituisce le domande del questionario per un dato utente,
-        con le opzioni già spacchettate e l'eventuale risposta salvata.
+        Restituisce tutte le domande attive con le opzioni associate
+        e l'eventuale risposta già data dall'utente.
+
+        Output per ogni domanda:
+        {
+            "id": "<question_id>",
+            "text": "...",
+            "type": "...",
+            "options": ["opt1", "opt2", "opt3", "opt4"],
+            "user_answer": "1" | "2" | "3" | "4" | None,
+            "answered_at": "2025-01-01T12:00:00" | None
+        }
         """
         with self.Session() as s:
-            rows = (
+            questions: List[Question] = (
                 s.query(Question)
-                .filter(Question.user_id == user_id, Question.active.is_(True))
+                .filter(Question.active.is_(True))
                 .order_by(Question.id)
                 .all()
             )
 
+            if not questions:
+                return []
+
+            answers: List[UserQuestionAnswer] = (
+                s.query(UserQuestionAnswer)
+                .filter(
+                    UserQuestionAnswer.user_id == user_id,
+                    UserQuestionAnswer.question_id.in_([q.id for q in questions]),
+                )
+                .all()
+            )
+            answers_by_qid: Dict[str, UserQuestionAnswer] = {
+                a.question_id: a for a in answers
+            }
+
             out: List[Dict] = []
-            for q in rows:
-                options = []
-                if isinstance(q.options_json, dict):
-                    raw_opts = q.options_json.get("options") or []
-                    if isinstance(raw_opts, list):
-                        options = [str(o) for o in raw_opts]
+
+            for q in questions:
+                # opzioni ordinate per position (1..4)
+                opts: List[QuestionOption] = sorted(q.options, key=lambda o: o.position)
+                options_text = [o.text for o in opts]
+
+                u_ans = answers_by_qid.get(q.id)
+                user_answer_idx: Optional[int] = None
+                answered_at: Optional[datetime] = None
+
+                if u_ans is not None:
+                    answered_at = u_ans.answered_at
+                    # mappa option_id -> indice (1..4)
+                    for idx, opt in enumerate(opts, start=1):
+                        if opt.id == u_ans.option_id:
+                            user_answer_idx = idx
+                            break
 
                 out.append(
                     {
                         "id": str(q.id),
                         "text": q.text,
                         "type": q.type,
-                        "options": options,
-                        # tipicamente "1", "2", "3" o "4"
-                        "user_answer": q.user_answer,
-                        "answered_at": q.answered_at.isoformat() if q.answered_at else None,
+                        "options": options_text,
+                        "user_answer": str(user_answer_idx) if user_answer_idx is not None else None,
+                        "answered_at": answered_at.isoformat() if answered_at else None,
                     }
                 )
+
             return out
-        
+
+    # =======================
+    # QUESTIONARIO - scrittura
+    # =======================
+    def save_question_answers(self, user_id: str, answers: Dict[str, str]) -> None:
+        """
+        Salva le risposte dell'utente nel modello normalizzato.
+
+        answers = {
+            "<question_id>": "1",  # indice opzione 1..4 (stringa)
+            "<question_id>": "3",
+            ...
+        }
+        """
+        if not answers:
+            return
+
+        now = datetime.utcnow()
+        q_ids = list(answers.keys())
+
+        with self.Session() as s:
+            # carico le domande attive interessate
+            questions: List[Question] = (
+                s.query(Question)
+                .filter(
+                    Question.id.in_(q_ids),
+                    Question.active.is_(True),
+                )
+                .all()
+            )
+            questions_by_id: Dict[str, Question] = {q.id: q for q in questions}
+
+            # controllo che tutti gli ID siano validi
+            invalid_ids = [qid for qid in q_ids if qid not in questions_by_id]
+            if invalid_ids:
+                raise ValueError(f"Invalid question IDs: {', '.join(invalid_ids)}")
+
+            # risposte già presenti per questo utente su queste domande
+            existing_answers: List[UserQuestionAnswer] = (
+                s.query(UserQuestionAnswer)
+                .filter(
+                    UserQuestionAnswer.user_id == user_id,
+                    UserQuestionAnswer.question_id.in_(q_ids),
+                )
+                .all()
+            )
+            existing_by_qid: Dict[str, UserQuestionAnswer] = {
+                a.question_id: a for a in existing_answers
+            }
+
+            for qid, ans_value in answers.items():
+                q = questions_by_id[qid]
+
+                # parse indice 1..4
+                try:
+                    idx = int(str(ans_value))
+                except ValueError:
+                    raise ValueError(f"Invalid answer value for question {qid}: {ans_value!r}")
+
+                # trova l'opzione con quella position
+                opt = next((o for o in q.options if o.position == idx), None)
+                if opt is None:
+                    raise ValueError(f"No option at position {idx} for question {qid}")
+
+                existing = existing_by_qid.get(qid)
+                if existing is None:
+                    # nuova risposta
+                    new_answer = UserQuestionAnswer(
+                        user_id=user_id,
+                        question_id=qid,
+                        option_id=opt.id,
+                        answered_at=now,
+                    )
+                    s.add(new_answer)
+                    existing_by_qid[qid] = new_answer
+                else:
+                    # update risposta esistente
+                    existing.option_id = opt.id
+                    existing.answered_at = now
+
+            s.commit()
+
+    # =======================
+    # QUESTIONARIO - preferenze (per watering plan)
+    # =======================
+    def get_user_reminder_preferences(self, user_id: str, session=None) -> dict:
+        """
+        Legge le risposte dell'utente (UserQuestionAnswer) e tira fuori le
+        preferenze utili per i reminders / watering plan.
+
+        - Q1: When do you prefer to take care of your plants?
+        - Q2: At what time of day are you usually available?
+
+        Ritorna un dict:
+        {
+            "day_pref": 1..4 | None,
+            "time_pref": 1..4 | None
+        }
+        """
+        owns_session = False
+        if session is None:
+            session = self.Session()
+            owns_session = True
+
+        try:
+            rows = (
+                session.query(UserQuestionAnswer, Question, QuestionOption)
+                .join(Question, UserQuestionAnswer.question_id == Question.id)
+                .join(QuestionOption, UserQuestionAnswer.option_id == QuestionOption.id)
+                .filter(UserQuestionAnswer.user_id == user_id)
+                .all()
+            )
+
+            day_pref = None
+            time_pref = None
+
+            for uqa, q, opt in rows:
+                text = (q.text or "").strip()
+                idx = opt.position  # 1..4
+
+                if "When do you prefer to take care of your plants?" in text:
+                    day_pref = idx
+                elif "At what time of day are you usually available?" in text:
+                    time_pref = idx
+
+            return {
+                "day_pref": day_pref,
+                "time_pref": time_pref,
+            }
+        finally:
+            if owns_session:
+                session.close()
+
+    # =======================
+    # WATERING PLAN di default
+    # =======================
     def create_default_watering_plan_for_plant(
         self,
         session,
@@ -597,7 +808,7 @@ class RepositoryService:
         session.add(wp)
         session.flush()  # così WP è persistito prima di creare il reminder
 
-        # 6) creo il primo Reminder (solo se il modello Reminder esiste nel DB)
+        # 6) creo il primo Reminder
         plant = session.query(Plant).filter(Plant.id == plant_id).one_or_none()
         if plant is not None:
             title = f"Water {plant.common_name or plant.scientific_name or 'your plant'}"
@@ -610,7 +821,7 @@ class RepositoryService:
             note=None,
             scheduled_at=next_due,
             done_at=None,
-            recurrence_rrule=None,  # in futuro possiamo codificare interval_days
+            recurrence_rrule=None,
             entity_type="plant",
             entity_id=plant_id,
         )
@@ -619,99 +830,9 @@ class RepositoryService:
         # Il commit lo fa la route /plant/add
         return wp
 
-
-    def save_question_answers(self, user_id: str, answers: Dict[str, str]) -> None:
-        """
-        Salva le risposte dell'utente.
-
-        answers = {
-            "<question_id>": "1",  # indice opzione 1..4 (stringa)
-            "<question_id>": "3",
-            ...
-        }
-        """
-        if not answers:
-            return
-
-        now = datetime.utcnow()
-        q_ids = list(answers.keys())
-
-        with self.Session() as s:
-            q_rows = (
-                s.query(Question)
-                .filter(Question.id.in_(q_ids))
-                .all()
-            )
-
-            by_id = {str(q.id): q for q in q_rows}
-
-            # 1) Prima controllo che TUTTI gli ID passati siano validi
-            invalid_ids = []
-            for qid in answers.keys():
-                q = by_id.get(qid)
-                if not q or str(q.user_id) != str(user_id):
-                    invalid_ids.append(qid)
-
-            if invalid_ids:
-                # niente commit, sollevo errore di validazione
-                raise ValueError(f"Invalid question IDs for this user: {', '.join(invalid_ids)}")
-
-            # 2) Se sono tutti validi, aggiorno le risposte
-            for qid, ans in answers.items():
-                q = by_id[qid]
-                q.user_answer = str(ans)   # "1","2","3","4"
-                q.answered_at = now
-
-            s.commit()
-
-
-    def get_user_reminder_preferences(self, user_id: str, session=None) -> dict:
-        """
-        Legge le Question dell'utente e tira fuori le preferenze utili
-        per i reminders/ watering plan.
-        Per ora usiamo solo:
-        - Q1: When do you prefer to take care of your plants?
-        - Q2: At what time of day are you usually available?
-        Ritorna un dict semplice, es: {"day_pref": 1, "time_pref": 3}
-        """
-        owns_session = False
-        if session is None:
-            session = self.Session()
-            owns_session = True
-
-        try:
-            questions = (
-                session.query(Question)
-                .filter(Question.user_id == user_id)
-                .all()
-            )
-
-            day_pref = None
-            time_pref = None
-
-            for q in questions:
-                if not q.user_answer:
-                    continue
-                text = (q.text or "").strip()
-                try:
-                    idx = int(str(q.user_answer))
-                except ValueError:
-                    continue
-
-                if "When do you prefer to take care of your plants?" in text:
-                    day_pref = idx
-                elif "At what time of day are you usually available?" in text:
-                    time_pref = idx
-
-            prefs = {
-                "day_pref": day_pref,   # 1..4 o None
-                "time_pref": time_pref, # 1..4 o None
-            }
-            return prefs
-        finally:
-            if owns_session:
-                session.close()
-
+    # =======================
+    # Info complete pianta
+    # =======================
     def get_full_plant_info(self, plant_id: str) -> Optional[Dict]:
         """
         Restituisce tutte le info della pianta + foto base64 compressa.
@@ -742,18 +863,15 @@ class RepositoryService:
             if photo_row:
                 image_path = getattr(photo_row, "path", None)  # <-- CAMBIA QUI se diverso
                 if image_path and os.path.exists(image_path):
-                    # Compressione vera dell’immagine
                     img = Image.open(image_path)
 
                     # Ridimensiona se molto grande
                     img.thumbnail((800, 800), Image.Resampling.LANCZOS)
 
-                    # Salva in buffer JPEG compresso
                     buffer = BytesIO()
-                    img.save(buffer, format="JPEG", quality=60, optimize=True)  # qualità regolabile
+                    img.save(buffer, format="JPEG", quality=60, optimize=True)
                     buffer.seek(0)
 
-                    # Converto in base64
                     photo_base64 = base64.b64encode(buffer.read()).decode("utf-8")
 
             return {

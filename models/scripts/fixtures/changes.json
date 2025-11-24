@@ -151,13 +151,43 @@
       "id": "f282442e-94c9-4c9c-9395-2389b79b7aa7"
     },
     {
-      "last_name": "Faella",
       "created_at": "2025-11-13T12:35:08",
-      "password_hash": "scrypt:32768:8:1$lHPtq2EA4eIopkpe$ca133d1afd715e0766225a49e9b1292323d53f639db64526de4a746d50f8d606dbad5d0b8d2fa75a1b1c50facf30bee1d2c0b3fcc68577ca739f2788bda9ac39",
       "email": "fa.mikela@gmail.com",
+      "last_name": "Faella",
+      "password_hash": "scrypt:32768:8:1$lHPtq2EA4eIopkpe$ca133d1afd715e0766225a49e9b1292323d53f639db64526de4a746d50f8d606dbad5d0b8d2fa75a1b1c50facf30bee1d2c0b3fcc68577ca739f2788bda9ac39",
       "first_name": "Michela",
       "id": "891dbac7-1207-40bc-83b8-9731f6ef026a",
-      "updated_at": "2025-11-13T12:35:08"
+      "updated_at": "2025-11-21T13:29:23"
+    },
+    {
+      "created_at": "2025-11-22T17:04:55",
+      "password_hash": "scrypt:32768:8:1$9KOzQKNQM3YlO8iI$aa63150f6f182c1046656fe21580b4667fd732847f0d365bef715b3e99062f63074428c4fcc8f38240ce35db9a5ab828af655658fda935371aa80d2ed1b9fe5f",
+      "last_name": "Genovese",
+      "email": "alb.genovese@gmail.com",
+      "updated_at": "2025-11-22T17:04:55",
+      "id": "63d27756-135f-40e0-be1f-e0b4c144e16c",
+      "first_name": "Alberto"
+    },
+    {
+      "created_at": "2025-11-22T17:14:35",
+      "password_hash": "scrypt:32768:8:1$h7IZ6wgcvfgkZQet$e9cf2c174ae3d1d3a87ee6e4c02c83683124c3437e31409b949edcf35d9d1411027a364fe444c3046e693218b27cb68c452ee5a0c0fe7a70349f77e1d001eabb",
+      "last_name": "Genovese",
+      "email": "alb.geno@gmail.com",
+      "updated_at": "2025-11-22T17:14:35",
+      "id": "f9d7d3fb-9a3c-41b9-985c-41c49d93833d",
+      "first_name": "Alberto"
+    },
+    {
+      "id": "249dfe5a-d0d9-4316-9a93-4990abc6d662",
+      "_delete": true,
+      "created_at": "2025-11-22T17:28:25",
+      "updated_at": "2025-11-22T17:28:25"
+    },
+    {
+      "id": "9dbf30d7-f43d-4886-bf2d-5058439cc507",
+      "_delete": true,
+      "created_at": "2025-11-22T17:55:17",
+      "updated_at": "2025-11-22T17:55:17"
     }
   ],
   "plant": [
@@ -388,6 +418,63 @@
       "category": "Spathiphyllum",
       "family_id": "ddc38e06-6633-48eb-988e-af2579ef2b53",
       "updated_at": "2025-11-20T10:31:51"
+    },
+    {
+      "min_temp_c": 15,
+      "max_temp_c": 25,
+      "climate": "",
+      "water_level": 3,
+      "light_level": 3,
+      "pests": null,
+      "created_at": "2025-11-20T10:44:57",
+      "id": "87375962-be5d-4b61-9815-871fc487ceb7",
+      "size": "medium",
+      "common_name": null,
+      "use": "",
+      "origin": null,
+      "difficulty": 3,
+      "scientific_name": "Echinopsis densispina",
+      "category": "",
+      "family_id": "88d1cdfc-7f90-4d8a-b6cc-789bb2b511e0",
+      "updated_at": "2025-11-20T10:44:57"
+    },
+    {
+      "min_temp_c": 15,
+      "max_temp_c": 25,
+      "climate": "",
+      "water_level": 3,
+      "light_level": 3,
+      "pests": null,
+      "created_at": "2025-11-20T10:51:28",
+      "id": "af5f0637-b3bf-4e2e-b6cb-b6ec0cf6169a",
+      "size": "medium",
+      "common_name": null,
+      "use": "",
+      "origin": null,
+      "difficulty": 3,
+      "scientific_name": "Columnea arguta",
+      "category": "",
+      "family_id": "bbb99bdf-3851-4185-a263-b54f9736437b",
+      "updated_at": "2025-11-20T10:51:28"
+    },
+    {
+      "min_temp_c": 12,
+      "max_temp_c": 30,
+      "climate": "Tropical",
+      "water_level": 5,
+      "light_level": 4,
+      "pests": null,
+      "created_at": "2025-11-20T10:53:15",
+      "id": "0af31fbe-59a6-4bd6-996e-0cd3f0ac8e38",
+      "size": "small",
+      "common_name": "Maindenhair",
+      "use": "Potted plant, Ground cover, Table top",
+      "origin": "Brazil",
+      "difficulty": 3,
+      "scientific_name": "Adiantum raddianum",
+      "category": "Fern",
+      "family_id": "13a6ceee-6f0a-4ab6-b530-12a049ad2317",
+      "updated_at": "2025-11-20T10:53:15"
     }
   ],
   "user_plant": [
@@ -467,6 +554,27 @@
       "nickname": null,
       "location_note": null,
       "since": "2025-11-20"
+    },
+    {
+      "user_id": "891dbac7-1207-40bc-83b8-9731f6ef026a",
+      "plant_id": "87375962-be5d-4b61-9815-871fc487ceb7",
+      "nickname": null,
+      "location_note": null,
+      "since": "2025-11-20"
+    },
+    {
+      "user_id": "891dbac7-1207-40bc-83b8-9731f6ef026a",
+      "plant_id": "af5f0637-b3bf-4e2e-b6cb-b6ec0cf6169a",
+      "nickname": null,
+      "location_note": null,
+      "since": "2025-11-20"
+    },
+    {
+      "user_id": "891dbac7-1207-40bc-83b8-9731f6ef026a",
+      "plant_id": "0af31fbe-59a6-4bd6-996e-0cd3f0ac8e38",
+      "nickname": null,
+      "location_note": null,
+      "since": "2025-11-20"
     }
   ],
   "plant_photo": [
@@ -492,6 +600,30 @@
       "created_at": null,
       "id": "1f9267b3-9897-44e1-83b0-50c9340937fb",
       "plant_id": "11d82928-5f94-4d6b-99d8-a096edabcc44",
+      "caption": null
+    },
+    {
+      "url": "c7d6de1e-62f1-46d6-825e-d3883186ca9d.jpg",
+      "order_index": 0,
+      "created_at": null,
+      "id": "c7d6de1e-62f1-46d6-825e-d3883186ca9d",
+      "plant_id": "87375962-be5d-4b61-9815-871fc487ceb7",
+      "caption": null
+    },
+    {
+      "url": "aca7f68a-d687-4a64-8c8a-ce2f3b9418a4.jpg",
+      "order_index": 0,
+      "created_at": null,
+      "id": "aca7f68a-d687-4a64-8c8a-ce2f3b9418a4",
+      "plant_id": "af5f0637-b3bf-4e2e-b6cb-b6ec0cf6169a",
+      "caption": null
+    },
+    {
+      "url": "c710fb1d-b886-4f49-9742-0a7381ca326d.jpg",
+      "order_index": 0,
+      "created_at": null,
+      "id": "c710fb1d-b886-4f49-9742-0a7381ca326d",
+      "plant_id": "0af31fbe-59a6-4bd6-996e-0cd3f0ac8e38",
       "caption": null
     }
   ]

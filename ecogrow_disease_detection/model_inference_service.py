@@ -80,6 +80,11 @@ FAMILY_DISEASE_MAPPING = {
   ]
 }
 
+_FAMILY_DISEASES_NORMALIZED = {
+    fam.lower(): {d.lower() for d in diseases}
+    for fam, diseases in FAMILY_DISEASE_MAPPING.items()
+}
+
 
 DEFAULT_UNKNOWN_THRESHOLD = float(os.getenv("ECOGROW_UNKNOWN_THRESHOLD", "0.5"))
 
@@ -281,13 +286,10 @@ class DiseaseInferenceService:
     ) -> None:
         self.device = device or DEVICE
         self.payload_dir = Path(payload_dir)
-        print("building the segmenter")
-        self.segment_fn = _build_segmenter(enable_segmentation)
+        self.segment_fn = None#_build_segmenter(enable_segmentation)
         self.detector_profile: Optional[LoadedDetectorProfile] = None
-        print("loading the detector")
         self._load_detector_profile()
         self.default_unknown_threshold = float(default_unknown_threshold)
-        print("finito init")
 
     def _load_detector_profile_from_dir(
         self,
@@ -384,8 +386,9 @@ class DiseaseInferenceService:
     ) -> Dict[str, object]:
         if self.detector_profile is None:
             raise RuntimeError("No detector profiles available.")
-
+        print(f"family in run: {family}")
         restricted_diseases = self.restrict_diseases(family, disease_suggestions)
+        print(restricted_diseases)
         thr = self.default_unknown_threshold if unknown_threshold is None else float(unknown_threshold)
         profile_id = self.detector_profile.metadata.get("id", "default")
         prepared_image = self._prepare_image(image)
@@ -435,10 +438,11 @@ class DiseaseInferenceService:
         classes = getattr(self.detector_profile.detector, "classes", None) if self.detector_profile else None
         if not classes:
             return disease_suggestions
-
+        print(f"family: {family}, family in FAMILY_DISEASE_MAPPING: {family in FAMILY_DISEASE_MAPPING}")
         allowed = set(classes)
         if family:
             allowed &= set(FAMILY_DISEASE_MAPPING.get(family, allowed))
+            print(f"allowed: {allowed}")
         if disease_suggestions:
             allowed &= set(disease_suggestions)
 
@@ -544,6 +548,7 @@ def predict_route():
         return jsonify({"error": str(exc)}), 400
 
     family = request.values.get("family") or (body.get("family") if isinstance(body, dict) else None)
+ 
     disease_suggestions = _parse_disease_suggestions(body)
     service = get_disease_inference_service()
     try:
