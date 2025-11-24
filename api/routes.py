@@ -1968,50 +1968,48 @@ def watering_overview():
     Ogni giorno contiene:
     - tutte le piante con next_due_at = giorno
     - o una lista vuota
+    Le piante hanno già photo_base64 compresso (se presente).
     """
-
     try:
         user_id = g.user_id
     except Exception:
         return jsonify({"error": "Unauthorized"}), 401
 
     try:
-        # ---------------------------
-        # 1. Calcolo settimana attuale
-        # ---------------------------
+        # 1) calcolo settimana corrente (lun–dom)
         today = datetime.utcnow().date()
         week_start = today - timedelta(days=today.weekday())  # lunedì
-        week_end = week_start + timedelta(days=6)  # domenica
+        week_days = [
+            (week_start + timedelta(days=i)).isoformat()
+            for i in range(7)
+        ]
 
+        # 2) prendo le piante con info + photo_base64 dalla repository
         raw_rows = repo.get_watering_overview_for_user(user_id)
 
-        # ---------------------------
-        # 2. Raggruppo per giorno
-        # ---------------------------
-        grouped = {
-            (week_start + timedelta(days=i)).isoformat(): []
-            for i in range(7)
-        }
+        # 3) raggruppo per giorno (tenendo anche i giorni vuoti)
+        grouped = {d: [] for d in week_days}
 
         for r in raw_rows:
             next_due_str = r.get("next_due_at")
             if not next_due_str:
                 continue
 
+            # "2025-03-10T09:00:00" -> "2025-03-10"
             day_key = next_due_str[:10]
 
-            if week_start.isoformat() <= day_key <= week_end.isoformat():
+            # se è un giorno della settimana corrente, aggiungo
+            if day_key in grouped:
                 grouped[day_key].append(r)
 
-        # ---------------------------
-        # 3. Montiamo risposta finale
-        # ---------------------------
+        # 4) costruiamo la risposta finale
         result = []
-        for day, plants in grouped.items():
+        for day in week_days:
+            plants = grouped[day]
             result.append({
                 "date": day,
                 "plants_count": len(plants),
-                "plants": plants,
+                "plants": plants,   # OGNI plant ha anche "photo_base64"
             })
 
         return jsonify(result), 200
@@ -2019,6 +2017,7 @@ def watering_overview():
     except Exception as e:
         print("[ERROR] /watering/overview:", e)
         return jsonify({"error": str(e)}), 500
+
 
 
 # ========= Watering – L'UTENTE HA INNAFFIATO =========

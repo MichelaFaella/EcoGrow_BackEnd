@@ -837,45 +837,77 @@ class RepositoryService:
     # =======================
     def get_full_plant_info(self, plant_id: str) -> Optional[Dict]:
         """
-        Restituisce tutte le info della pianta + foto base64 compressa.
+        Restituisce tutte le info della pianta +
+        foto base64 compressa (se presente).
         """
         with self.Session() as s:
-            plant = s.query(Plant).filter(Plant.id == plant_id).first()
+            plant = (
+                s.query(Plant)
+                .filter(Plant.id == plant_id)
+                .first()
+            )
             if not plant:
                 return None
 
-            # Family
+            # ==========================
+            # FAMILY INFO
+            # ==========================
             family_name = None
             family_description = None
             if plant.family_id:
-                fam = s.query(Family).filter(Family.id == plant.family_id).first()
+                fam = (
+                    s.query(Family)
+                    .filter(Family.id == plant.family_id)
+                    .first()
+                )
                 if fam:
                     family_name = fam.name
                     family_description = getattr(fam, "description", None)
 
-            # Foto → Base64 compresso
+            # ==========================
+            # FOTO PIANTA
+            # ==========================
             photo_base64 = None
+
+            # prendiamo la prima foto (order_index)
             photo_row = (
                 s.query(PlantPhoto)
                 .filter(PlantPhoto.plant_id == plant_id)
-                .order_by(PlantPhoto.id.asc())
+                .order_by(PlantPhoto.order_index.asc())
                 .first()
             )
 
             if photo_row:
-                image_path = getattr(photo_row, "path", None)  # <-- CAMBIA QUI se diverso
-                if image_path and os.path.exists(image_path):
-                    img = Image.open(image_path)
+                # costruiamo path REALE del file
+                # es: uploads/<plant_id>/<filename>.jpg
+                base_dir = os.path.join("uploads", plant_id)
+                image_path = os.path.join(base_dir, photo_row.url)
 
-                    # Ridimensiona se molto grande
-                    img.thumbnail((800, 800), Image.Resampling.LANCZOS)
+                print("[DEBUG PHOTO] Image path:", image_path)
+                print("[DEBUG PHOTO] Exists? ->", os.path.exists(image_path))
 
-                    buffer = BytesIO()
-                    img.save(buffer, format="JPEG", quality=60, optimize=True)
-                    buffer.seek(0)
+                if os.path.exists(image_path):
+                    try:
+                        img = Image.open(image_path)
 
-                    photo_base64 = base64.b64encode(buffer.read()).decode("utf-8")
+                        # ridimensioniamo se molto grande
+                        img.thumbnail((800, 800), Image.Resampling.LANCZOS)
 
+                        buffer = BytesIO()
+                        img.save(buffer, format="JPEG", quality=60, optimize=True)
+                        buffer.seek(0)
+
+                        photo_base64 = base64.b64encode(buffer.read()).decode("utf-8")
+
+                    except Exception as e:
+                        print("[DEBUG PHOTO] ERROR opening/compressing image:", e)
+                        photo_base64 = None
+                else:
+                    print("[DEBUG PHOTO] File not found on disk.")
+
+            # ==========================
+            # RETURN INFO
+            # ==========================
             return {
                 "id": str(plant.id),
                 "scientific_name": plant.scientific_name,
