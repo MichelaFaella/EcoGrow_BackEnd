@@ -58,6 +58,7 @@ UPLOAD_FOLDER = "uploads"
 image_service = ImageProcessingService()
 reminder_service = ReminderService()
 
+
 @api_blueprint.errorhandler(401)
 def auth_missing(e):
     return jsonify({"error": "Missing or invalid JWT token"}), 401
@@ -1678,26 +1679,123 @@ def friendship_delete(fid: str):
 @api_blueprint.route("/shared_plant/all", methods=["GET"])
 @require_jwt
 def shared_plant_all():
+    """
+    Restituisce tutte le shared_plant dove l'utente è owner o recipient.
+
+    Output per ogni elemento:
+    {
+        "shared_id": "...",
+        "plant_id": "...",
+        "plant_name": "...",            # common_name o scientific_name
+        "nickname": "...",              # nickname dell'utente loggato (se esiste)
+        "friend_first_name": "...",
+        "friend_last_name": "...",
+        "photo_base64": "..."           # immagine compressa come per i reminder
+    }
+    """
+    user_id = g.user_id
+    repo = RepositoryService()
+
+    rows = repo.get_shared_plants_for_user(user_id)
+
+    out = []
     with _session_ctx() as s:
-        rows = s.query(SharedPlant).order_by(SharedPlant.created_at.desc()).all()
-        return jsonify([_serialize_instance(r) for r in rows]), 200
+        user_cache = {}
+
+        for sp in rows:
+            # --- plant info + foto compressa (come nei reminder) ---
+            plant = s.query(Plant).options(selectinload(Plant.photos),
+                                           selectinload(Plant.family)) \
+                .filter(Plant.id == sp.plant_id).first()
+
+            plant_name = None
+            photo_base64 = None
+            if plant:
+                serialized = _serialize_full_plant(plant)
+                plant_name = serialized.get("common_name") or serialized.get("scientific_name")
+                photo_base64 = serialized.get("photo_base64")
+
+            # --- nickname dell'utente loggato per quella pianta (se c'è) ---
+            up = s.get(UserPlant, (user_id, sp.plant_id))
+            nickname = up.nickname if up and up.nickname else None
+
+            # --- amico (owner/recipient opposto all'utente loggato) ---
+            friend_id = sp.recipient_user_id if sp.owner_user_id == user_id else sp.owner_user_id
+
+            if friend_id not in user_cache:
+                u = s.query(User).filter(User.id == friend_id).first()
+                user_cache[friend_id] = u
+            else:
+                u = user_cache[friend_id]
+
+            friend_first = u.first_name if u else None
+            friend_last = u.last_name if u else None
+
+            out.append({
+                "shared_id": str(sp.id),
+                "plant_id": str(sp.plant_id),
+                "plant_name": plant_name,
+                "nickname": nickname,
+                "friend_first_name": friend_first,
+                "friend_last_name": friend_last,
+                "photo_base64": photo_base64,
+            })
+
+    return jsonify(out), 200
 
 
 @api_blueprint.route("/shared_plant/add", methods=["POST"])
 @require_jwt
 def shared_plant_add():
+    """
+    Crea una nuova condivisione:
+    - owner = utente loggato (g.user_id)
+    - recipient = trovato tramite short_id
+    - plant_id passato dal frontend
+    """
     payload = _parse_json_body()
-    data = _filter_fields_for_model(payload, SharedPlant)
-    required = ["owner_user_id", "recipient_user_id", "plant_id"]
-    missing = [k for k in required if not data.get(k)]
-    if missing:
-        return jsonify({"error": f"Required fields: {', '.join(missing)}"}), 400
-    with _session_ctx() as s:
-        sp = SharedPlant(**data)
-        s.add(sp)
-        _commit_or_409(s)
-        write_changes_upsert("shared_plant", [_serialize_instance(sp)])
-        return jsonify({"ok": True, "id": sp.id}), 201
+    repo = RepositoryService()
+
+    plant_id = payload.get("plant_id")
+    short_id = payload.get("short_id")
+
+    if not plant_id or not short_id:
+        return jsonify({"error": "Missing plant_id or short_id"}), 400
+
+    owner_id = g.user_id
+
+    # Ricava recipient usando short-id
+    recipient_id = repo.get_user_id_by_short(short_id)
+    if not recipient_id:
+        return jsonify({"error": "Recipient not found"}), 404
+
+    if recipient_id == owner_id:
+        return jsonify({"error": "Cannot share with yourself"}), 400
+
+    # Controlla duplicati
+    existing = repo.get_shared_plants_for_user(owner_id)
+    for row in existing:
+        if (row.owner_user_id == owner_id and
+                row.recipient_user_id == recipient_id and
+                row.plant_id == plant_id and
+                row.ended_sharing_at is None):
+            return jsonify({"error": "Already shared"}), 409
+
+    # Crea la condivisione
+    data = {
+        "owner_user_id": owner_id,
+        "recipient_user_id": recipient_id,
+        "plant_id": plant_id,
+        "can_edit": True
+    }
+
+    try:
+        sp = repo.create_shared_plant(data)
+    except Exception as e:
+        print("[API] ERROR creating shared plant:", e)
+        return jsonify({"error": "Could not create shared plant"}), 500
+
+    return jsonify({"ok": True, "id": sp.id}), 201
 
 
 @api_blueprint.route("/shared_plant/update/<sid>", methods=["PATCH", "PUT"])
@@ -1705,27 +1803,29 @@ def shared_plant_add():
 def shared_plant_update(sid: str):
     _ensure_uuid(sid, "shared_plant_id")
     payload = _parse_json_body()
-    with _session_ctx() as s:
-        sp = s.get(SharedPlant, sid)
-        if not sp: return jsonify({"error": "SharedPlant not found"}), 404
-        for k, v in _filter_fields_for_model(payload, SharedPlant).items():
-            setattr(sp, k, v)
-        _commit_or_409(s)
-        write_changes_upsert("shared_plant", [_serialize_instance(sp)])
-        return jsonify({"ok": True, "id": sp.id}), 200
+    repo = RepositoryService()
+
+    # tieni solo i campi validi per SharedPlant
+    data = _filter_fields_for_model(payload, SharedPlant)
+
+    sp = repo.update_shared_plant(sid, data)
+    if not sp:
+        return jsonify({"error": "SharedPlant not found"}), 404
+
+    return jsonify({"ok": True, "id": sp.id}), 200
 
 
 @api_blueprint.route("/shared_plant/delete/<sid>", methods=["DELETE"])
 @require_jwt
 def shared_plant_delete(sid: str):
     _ensure_uuid(sid, "shared_plant_id")
-    with _session_ctx() as s:
-        sp = s.get(SharedPlant, sid)
-        if sp:
-            s.delete(sp)
-            _commit_or_409(s)
-        write_changes_delete("shared_plant", sid)
-        return ("", 204)
+    repo = RepositoryService()
+
+    ok = repo.delete_shared_plant(sid)
+    if not ok:
+        return jsonify({"error": "SharedPlant not found"}), 404
+
+    return ("", 204)
 
 
 # ========= WateringPlan =========

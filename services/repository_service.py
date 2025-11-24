@@ -25,7 +25,7 @@ from models.entities import (
     UserQuestionAnswer,
     WateringPlan,
     Reminder,
-    WateringLog, Friendship, User,
+    WateringLog, Friendship, User, SharedPlant,
 )
 
 
@@ -728,6 +728,166 @@ class RepositoryService:
 
             write_changes_delete("friendship", fid)
             print(f"[RepositoryService] Deleted friendship {fid}")
+
+    # ===========================
+    # SHARED_PLANT
+    # ===========================
+
+    def create_shared_plant(self, data: dict):
+        print(f"[RepositoryService] create_shared_plant data={data}")
+
+        with self.Session() as s:
+            sp = SharedPlant(**data)
+            s.add(sp)
+            s.commit()
+            s.refresh(sp)
+
+            write_changes_upsert("shared_plant", [{
+                "id": sp.id,
+                "owner_user_id": sp.owner_user_id,
+                "recipient_user_id": sp.recipient_user_id,
+                "plant_id": sp.plant_id,
+                "can_edit": sp.can_edit,
+                "created_at": sp.created_at.isoformat() if sp.created_at else None,
+                "ended_sharing_at": sp.ended_sharing_at.isoformat() if sp.ended_sharing_at else None,
+            }])
+
+            print(f"[RepositoryService] SharedPlant created id={sp.id}")
+            return sp
+
+    def get_shared_plant_by_id(self, sid: str) -> Optional[SharedPlant]:
+        print(f"[RepositoryService] get_shared_plant_by_id sid={sid}")
+        with self.Session() as s:
+            sp = s.get(SharedPlant, sid)
+            if sp:
+                print(f"[RepositoryService] Found shared plant {sid}")
+            else:
+                print(f"[RepositoryService] Shared plant {sid} NOT found")
+            return sp
+
+    def get_shared_plants_for_user(self, user_id: str):
+        """
+        Ritorna tutte le piante condivise dove l’utente è owner o recipient,
+        includendo:
+        - nome pianta
+        - nickname
+        - foto (base64)
+        - nome + cognome dell’amico
+        """
+        print(f"[RepositoryService] get_shared_plants_for_user user_id={user_id}")
+
+        with self.Session() as s:
+            shared = (
+                s.query(SharedPlant)
+                .filter(
+                    (SharedPlant.owner_user_id == user_id) |
+                    (SharedPlant.recipient_user_id == user_id)
+                )
+                .order_by(SharedPlant.created_at.desc())
+                .all()
+            )
+
+            print(f"[RepositoryService] Found {len(shared)} shared plants.")
+
+            out = []
+
+            for sp in shared:
+                # ---------------------------------------------------------
+                # 1. Identifica l'amico
+                # ---------------------------------------------------------
+                friend_id = (
+                    sp.recipient_user_id if sp.owner_user_id == user_id
+                    else sp.owner_user_id
+                )
+
+                friend = s.query(User).filter(User.id == friend_id).first()
+                first_name = friend.first_name if friend else None
+                last_name = friend.last_name if friend else None
+
+                # ---------------------------------------------------------
+                # 2. Info pianta
+                # ---------------------------------------------------------
+                plant = s.query(Plant).filter(Plant.id == sp.plant_id).first()
+                if plant:
+                    plant_name = plant.common_name or plant.scientific_name
+                    plant_nickname = plant.nickname
+                else:
+                    plant_name = None
+                    plant_nickname = None
+
+                # ---------------------------------------------------------
+                # 3. Foto pianta (primo elemento)
+                # ---------------------------------------------------------
+                photo = (
+                    s.query(PlantPhoto)
+                    .filter(PlantPhoto.plant_id == sp.plant_id)
+                    .order_by(PlantPhoto.created_at.asc())
+                    .first()
+                )
+
+                photo_b64 = photo.image if photo else None
+
+                # ---------------------------------------------------------
+                # OUTPUT
+                # ---------------------------------------------------------
+                out.append({
+                    "shared_id": str(sp.id),
+                    "plant_id": str(sp.plant_id),
+                    "owner_user_id": str(sp.owner_user_id),
+                    "recipient_user_id": str(sp.recipient_user_id),
+                    "can_edit": sp.can_edit,
+                    "created_at": sp.created_at.isoformat() if sp.created_at else None,
+
+                    # EXTRA
+                    "friend_first_name": first_name,
+                    "friend_last_name": last_name,
+                    "plant_name": plant_name,
+                    "plant_nickname": plant_nickname,
+                    "photo_base64": photo_b64,
+                })
+
+            return out
+
+    def update_shared_plant(self, sid: str, data: dict):
+        print(f"[RepositoryService] update_shared_plant sid={sid}, data={data}")
+        with self.Session() as s:
+            sp = s.get(SharedPlant, sid)
+            if not sp:
+                print("[RepositoryService] Shared plant not found")
+                return None
+
+            for k, v in data.items():
+                setattr(sp, k, v)
+
+            s.commit()
+
+            write_changes_upsert("shared_plant", [{
+                "id": sp.id,
+                "owner_user_id": sp.owner_user_id,
+                "recipient_user_id": sp.recipient_user_id,
+                "plant_id": sp.plant_id,
+                "can_edit": sp.can_edit,
+                "created_at": sp.created_at.isoformat() if sp.created_at else None,
+                "ended_sharing_at": sp.ended_sharing_at.isoformat() if sp.ended_sharing_at else None,
+            }])
+
+            return sp
+
+    def delete_shared_plant(self, sid: str) -> bool:
+        print(f"[RepositoryService] delete_shared_plant sid={sid}")
+
+        with self.Session() as s:
+            sp = s.get(SharedPlant, sid)
+            if not sp:
+                print("[RepositoryService] Nothing to delete (not found)")
+                return False
+
+            s.delete(sp)
+            s.commit()
+
+            write_changes_delete("shared_plant", sid)
+            print(f"[RepositoryService] Deleted shared plant {sid}")
+            return True
 
     # =======================
     # QUESTIONARIO - scrittura
