@@ -28,6 +28,7 @@ import secrets
 from models.scripts.replay_changes import seed_from_changes, write_changes_delete, write_changes_upsert
 from models.base import SessionLocal
 from services.image_processing_service import ImageProcessingService
+from services.reminder_service import ReminderService
 
 # Local application
 from services.repository_service import RepositoryService
@@ -58,9 +59,9 @@ MODEL_PREDICT_URL = os.getenv("MODEL_URL", "http://model:8000/predict")
 MODEL_TIMEOUT = float(os.getenv("MODEL_TIMEOUT", "15"))
 
 image_service = ImageProcessingService()
+reminder_service = ReminderService()
 
 
-# reminder_service = ReminderService()
 # disease_service = DiseaseRecognitionService()
 
 @api_blueprint.errorhandler(401)
@@ -158,13 +159,13 @@ def auth_refresh():
     # Il client NON manda nulla nel body: il refresh è nel cookie HttpOnly
     raw = request.cookies.get("refresh_token")
     if not raw:
-        return jsonify({"error": "Missing refresh token"}), 401
+        return jsonify({"error": "refresh token mancante"}), 401
 
     now = datetime.utcnow()
     with _session_ctx() as s:
         rt = s.query(RefreshToken).filter(RefreshToken.token == raw).first()
         if not rt or rt.expires_at < now:
-            return jsonify({"error": "Invalid or expired refresh token"}), 401
+            return jsonify({"error": "Refresh non valido o scaduto"}), 401
 
         # 1) Nuovo access JWT
         new_access = generate_token(rt.user_id)
@@ -235,70 +236,143 @@ def _filter_fields_for_model(payload: dict, Model, *, exclude: set[str] = None) 
     return {k: v for k, v in payload.items() if k in cols}
 
 
+def _serialize_full_plant(plant):
+    # famiglia
+    family_name = plant.family.name if plant.family else None
+    family_description = (
+        plant.family.description if plant.family else None
+    )
+
+    # foto compressa base64 (prendo la prima)
+    photo_base64 = None
+    if plant.photos:
+        photo = plant.photos[0]  # la prima foto
+        image_path = getattr(photo, "path", None)
+
+        if image_path and os.path.exists(image_path):
+            img = Image.open(image_path)
+            img.thumbnail((800, 800), Image.Resampling.LANCZOS)
+            buf = io.BytesIO()
+            img.save(buf, format="JPEG", quality=60, optimize=True)
+            buf.seek(0)
+            photo_base64 = base64.b64encode(buf.read()).decode("utf-8")
+
+    return {
+        "id": str(plant.id),
+        "scientific_name": plant.scientific_name,
+        "common_name": plant.common_name,
+        "category": plant.category,
+        "climate": plant.climate,
+        "origin": plant.origin,
+        "use": plant.use,
+        "size": plant.size,
+        "water_level": plant.water_level,
+        "light_level": plant.light_level,
+        "min_temp_c": plant.min_temp_c,
+        "max_temp_c": plant.max_temp_c,
+
+        "family_name": family_name,
+        "family_description": family_description,
+
+        "photo_base64": photo_base64,
+    }
+
+
 def _serialize_with_relations(instance):
-    """
-    Serializza l'istanza (es. UserPlant) includendo:
-    - plant
-    - photos
-    e per ogni foto genera anche l'immagine compressa (WebP) in base64
-      nel campo "image", in modo analogo a come il client la invia.
-    """
+    print("\n===== DEBUG _serialize_with_relations START =====")
+
+    # Serializziamo UserPlant
     data = _serialize_instance(instance)
+    print("[LOG] DATA (dopo _serialize_instance):", data)
 
     plant = getattr(instance, "plant", None)
     if not plant:
+        print("[LOG] Nessuna plant associata! RETURN")
+        print("===== DEBUG _serialize_with_relations END =====\n")
         return data
 
-    # Dati della pianta
-    plant_data = _serialize_instance(plant)
-    data["plant"] = plant_data
+    print("[LOG] Plant trovata, ID:", plant.id)
+    print("[LOG] SIZE RAW:", plant.size, type(plant.size))
 
+    # SERIALIZZAZIONE MANUALE DELLA PIANTA
+    plant_data = {
+        "id": str(plant.id),
+        "scientific_name": plant.scientific_name,
+        "common_name": plant.common_name,
+        "category": plant.category,
+        "climate": plant.climate,
+        "origin": plant.origin,
+        "use": plant.use,
+        "difficulty": plant.difficulty,
+        "light_level": plant.light_level,
+        "min_temp_c": plant.min_temp_c,
+        "max_temp_c": plant.max_temp_c,
+        "family_id": str(plant.family_id) if plant.family_id else None,
+        "created_at": plant.created_at.isoformat() if plant.created_at else None,
+    }
+
+    print("[LOG] plant_data PRIMA DI SIZE:", plant_data)
+
+    # ENUM → STRING
+    if plant.size is not None:
+        size_value = plant.size.value
+    else:
+        size_value = None
+
+    plant_data["size"] = size_value
+    data["size"] = size_value
+
+    print("[LOG] plant_data DOPO SIZE:", plant_data)
+    print("[LOG] data DOPO SIZE:", data)
+
+    # --- FOTO ---
     photos = getattr(plant, "photos", [])
     serialized_photos = []
 
+    print("[LOG] Numero foto:", len(photos))
+
     for photo in photos:
         photo_data = _serialize_instance(photo)
+        print("[LOG] Foto base:", photo_data)
 
         plant_id = str(plant.id)
-        filename = photo.url  # quello salvato nel DB (es. "2108...jpg")
+        filename = photo.url
 
         if not filename:
-            # Se per qualche motivo manca il filename, salto la foto
+            print("[LOG] Foto senza filename → aggiunta senza immagine")
             serialized_photos.append(photo_data)
             continue
 
-        # 1) ottengo (o creo) la versione ridotta su disco
         resized_filename = _get_or_create_resized_image(plant_id, filename)
-
-        # 2) scelgo il file da usare (preferisco il ridotto)
         filename_only = os.path.basename(resized_filename or filename)
         image_path = os.path.join(UPLOAD_FOLDER, plant_id, filename_only)
-        photo_data["image_path"] = image_path  # info interna, se ti serve
 
-        # 3) leggo il file e lo comprimo in WebP, poi base64
+        print("[LOG] Tentativo lettura immagine:", image_path)
+
         image_b64 = None
         try:
-            # apro la jpeg ridotta
             with Image.open(image_path) as img:
                 img = img.convert("RGB")
-
-                # ricompressione in WebP (come lato client: qualità 70)
                 buf = io.BytesIO()
                 img.save(buf, format="WEBP", quality=70, method=6)
                 webp_bytes = buf.getvalue()
 
             image_b64 = base64.b64encode(webp_bytes).decode("ascii")
-        except FileNotFoundError:
-            print(f"[WARN] Image not found while serializing: {image_path}")
         except Exception as e:
-            print(f"[ERROR] Failed to compress/encode image {image_path}: {e}")
+            print(f"[WARN] Image compress failed for {filename}: {e}")
 
-        # questo è il campo che Flutter può usare direttamente
         photo_data["image"] = image_b64
-
         serialized_photos.append(photo_data)
 
     plant_data["photos"] = serialized_photos
+
+    print("[LOG] plant_data FINALE:", plant_data)
+
+    data["plant"] = plant_data
+
+    print("[LOG] data FINALE PRIMA DEL RETURN:", data)
+    print("===== DEBUG _serialize_with_relations END =====\n")
+
     return data
 
 
@@ -336,6 +410,7 @@ def _get_or_create_resized_image(plant_id: str, filename: str) -> str | None:
             img.thumbnail(MAX_SIZE)
             os.makedirs(os.path.dirname(resized_path), exist_ok=True)
             img.save(resized_path, format="JPEG", quality=80, optimize=True)
+            print(f"[DEBUG] Created resized image: {resized_path}")
             return resized_name
     except Exception as e:
         print(f"[ERROR] Failed to resize image {orig_path}: {e}")
@@ -531,10 +606,46 @@ def check_auth():
     return jsonify({"authenticated": True, "user_id": user_id}), 200
 
 
+@api_blueprint.route("/user/me", methods=["GET"])
+@require_jwt
+def user_me():
+    print("\n---- [GET /user/me] START ----")
+
+    user_id = g.user_id
+    print(f"[GET /user/me] Extracted user_id from JWT: {user_id}")
+
+    repo = RepositoryService()
+
+    try:
+        with repo.Session() as s:
+            print("[GET /user/me] DB session opened")
+
+            user = s.query(User).filter(User.id == user_id).first()
+
+            if not user:
+                print(f"[GET /user/me] User NOT FOUND in DB → id={user_id}")
+                print("---- [GET /user/me] END (404) ----\n")
+                return jsonify({"error": "User not found"}), 404
+
+            print(f"[GET /user/me] User found in DB: {user.id} {user.first_name} {user.last_name}")
+
+            serialized = _serialize_instance(user)
+            print("[GET /user/me] Serialized user:", serialized)
+
+            print("---- [GET /user/me] END (200) ----\n")
+            return jsonify(serialized), 200
+
+    except Exception as e:
+        print(f"[GET /user/me] ERROR: {e}")
+        print("---- [GET /user/me] END (500) ----\n")
+        return jsonify({"error": "Internal server error"}), 500
+
+
 # ========= Ping =========
 @api_blueprint.route("/ping", methods=["GET"])
 def ping():
     return jsonify(ping="pong")
+
 
 
 @api_blueprint.route("/ai/model/disease-detection", methods=["POST"])
@@ -589,6 +700,7 @@ def get_families():
 def serve_uploads(path):
     return send_from_directory(UPLOAD_FOLDER, path)
 
+
 @api_blueprint.route("/plants", methods=["GET"])
 @require_jwt
 def get_plants():
@@ -615,22 +727,75 @@ def get_all_plants():
         return jsonify({"error": "Database error"}), 500
 
 
+@api_blueprint.route("/plant/full/<plant_id>", methods=["GET"])
+@require_jwt
+def get_full_plant(plant_id):
+    with _session_ctx() as s:
+        row = (
+            s.query(Plant)
+            .options(
+                selectinload(Plant.photos),
+                selectinload(Plant.family),
+            )
+            .filter(Plant.id == plant_id)
+            .first()
+        )
+
+        if not row:
+            return jsonify({"error": "Plant not found"}), 404
+
+        return jsonify(_serialize_full_plant(row)), 200
+
+
 # ========= CREATE Plant (PlantNet + defaults + watering plan) =========
 @api_blueprint.route("/plant/add", methods=["POST"])
 @require_jwt
 def create_plant():
+    print("\n================== [create_plant] RICHIESTA ARRIVATA ==================\n")
+
+    # LOG PRIMA DI PARSARE
+    try:
+        raw = request.get_data()
+        print(f"[DEBUG] request.get_data() LENGTH = {len(raw)}")
+        print(f"[DEBUG] request.get_data() FIRST 300 CHARS = {raw[:300]}")
+    except Exception as e:
+        print(f"[DEBUG] ERROR WHILE READING RAW BODY: {e}")
+
+    print("[DEBUG] Avvio _parse_json_body()…")
+
+    # =====================================================================
+    # 1) PARSE JSON BODY
+    # =====================================================================
     try:
         body = _parse_json_body()
+        print("[DEBUG] JSON PARSATO CORRETTAMENTE")
+        print("[DEBUG] BODY:", body)
     except Exception as e:
+        print("[ERRORE] _parse_json_body() ha fallito:", e)
         return jsonify({"error": "Invalid JSON"}), 400
+
+    # =====================================================================
+    # 2) RECUPERO BASE64
+    # =====================================================================
+    print("[DEBUG] Controllo campo image…")
 
     image_b64 = body.get("image")
     if not image_b64:
+        print("[ERRORE] Image non presente nel body JSON")
         return jsonify({"error": "Field 'image' is required"}), 400
+
+    print(f"[DEBUG] Lunghezza Base64 ricevuta = {len(image_b64)}")
+
+    # =====================================================================
+    # 3) BASE64 → BYTES
+    # =====================================================================
+    print("[DEBUG] Decodifica base64…")
 
     try:
         image_bytes = base64.b64decode(image_b64)
+        print(f"[DEBUG] Base64 decodificato. Bytes = {len(image_bytes)}")
     except Exception as e:
+        print("[ERRORE] Base64 non valido:", e)
         return jsonify({"error": "Invalid base64 image data"}), 400
 
     # wrapper compatibile col servizio
@@ -639,24 +804,37 @@ def create_plant():
             self.stream = io.BytesIO(b)
 
     fake_file = _FileWrapper(image_bytes)
+    print("[DEBUG] _FileWrapper creato correttamente")
+
+    # =====================================================================
+    # 4) CHIAMATA A PLANTNET
+    # =====================================================================
+    print("[DEBUG] → Invio immagine a PlantNet…")
 
     try:
         plant_info = image_service.process_image(fake_file)
+        print("[DEBUG] ← Risposta da PlantNet:", plant_info)
     except Exception as e:
+        print("[ERRORE] PlantNet FALLITA:", e)
         return jsonify({"error": "Image processing failed"}), 500
 
     if not plant_info or not plant_info.get("scientific_name"):
+        print("[ERRORE] Nessun match da PlantNet")
         return jsonify({"error": "No plant match found from PlantNet"}), 422
 
     scientific_name = plant_info["scientific_name"]
     family_name = plant_info.get("family_name")
 
+    print(f"[DEBUG] scientific_name = {scientific_name}")
+    print(f"[DEBUG] family_name (PlantNet) = {family_name}")
 
     # =====================================================================
     # 5) DEFAULTS
     # =====================================================================
+    print("[DEBUG] Carico defaults repository…")
 
     defaults = repo.get_plant_defaults(scientific_name) or {}
+    print("[DEBUG] Defaults caricati:", defaults)
 
     # Base payload: scientific_name + tutto ciò che il JSON conosce
     payload = {
@@ -664,6 +842,7 @@ def create_plant():
         **{k: v for k, v in defaults.items() if v is not None},
     }
 
+    print("[DEBUG] Payload iniziale:", payload)
 
     # =====================================================================
     # 6) ID + TIMESTAMPS
@@ -677,10 +856,12 @@ def create_plant():
     payload["created_at"] = now
     payload["updated_at"] = now
 
+    print("[DEBUG] Payload con ID + timestamps:", payload)
 
     # =====================================================================
     # 7) NORMALIZZAZIONI CAMPI
     # =====================================================================
+    print("[DEBUG] Normalizzazione campi NOT NULL…")
 
     # use
     if "use" in cols:
@@ -705,7 +886,7 @@ def create_plant():
             raw_clim = ""
         payload["climate"] = str(raw_clim)
 
-    # livello acqua e luce
+    # livelli acqua/luce
     if "water_level" in cols and payload.get("water_level") is None:
         payload["water_level"] = defaults.get("water_level", 3)
     if "light_level" in cols and payload.get("light_level") is None:
@@ -715,12 +896,11 @@ def create_plant():
     if "difficulty" in cols and payload.get("difficulty") is None:
         payload["difficulty"] = defaults.get("difficulty", 3)
 
-    # temp min
+    # temp min/max
     if "min_temp_c" in cols and payload.get("min_temp_c") is None:
         tempmin = defaults.get("tempmin") or {}
         payload["min_temp_c"] = tempmin.get("celsius", 15)
 
-    # temp max
     if "max_temp_c" in cols and payload.get("max_temp_c") is None:
         tempmax = defaults.get("tempmax") or {}
         payload["max_temp_c"] = tempmax.get("celsius", 25)
@@ -731,22 +911,25 @@ def create_plant():
         if insects is not None:
             payload["pests"] = insects
 
+    print("[DEBUG] Payload dopo normalizzazione:", payload)
 
     # =====================================================================
     # 8) VALIDAZIONE NUMERICA
     # =====================================================================
+    print("[DEBUG] Validazione numerica…")
 
     try:
         wl = int(payload["water_level"])
         ll = int(payload["light_level"])
         if not (1 <= wl <= 5) or not (1 <= ll <= 5):
+            print("[ERRORE] Valori acqua/luce fuori range")
             return jsonify({"error": "water_level/light_level must be in [1..5]"}), 400
         payload["water_level"] = wl
         payload["light_level"] = ll
     except Exception as e:
+        print("[ERRORE] Valori numerici acqua/luce non validi:", e)
         return jsonify({"error": "water_level/light_level must be integer"}), 400
 
-    # temperature
     try:
         tmin = int(payload["min_temp_c"])
         tmax = int(payload["max_temp_c"])
@@ -755,38 +938,48 @@ def create_plant():
         payload["min_temp_c"] = tmin
         payload["max_temp_c"] = tmax
     except Exception as e:
+        print("[ERRORE] Temp non valide:", e)
         return jsonify({"error": "min_temp_c/max_temp_c must be integer"}), 400
 
+    print("[DEBUG] Payload validato:", payload)
 
     # =====================================================================
     # 9) FILTRAGGIO MODELLO
     # =====================================================================
     data = _filter_fields_for_model(payload, Plant)
+    print("[DEBUG] Payload finale per DB:", data)
 
     # =====================================================================
-    # 10) DB
+    # 10) TRANSAZIONE DB
     # =====================================================================
+    print("[DEBUG] Apertura transazione DB…")
 
     with _session_ctx() as s:
         try:
             # family
+            print("[DEBUG] Risoluzione family…")
 
             fam_id = None
             if family_name:
                 fam_id = repo.get_family_by_name(family_name)
+                print("[DEBUG] family da PlantNet:", fam_id)
 
             if not fam_id:
                 fam_id = repo.get_family(data["scientific_name"])
+                print("[DEBUG] family da defaults JSON:", fam_id)
 
             if not fam_id:
+                print("[ERRORE] Family non trovata")
                 return jsonify({"error": "Family not found"}), 400
 
             data["family_id"] = fam_id
 
             # create plant
+            print("[DEBUG] Creazione pianta nel DB…")
             p = Plant(**data)
             s.add(p)
             _commit_or_409(s)
+            print(f"[DEBUG] Pianta creata ID={p.id}")
 
             write_changes_upsert("plant", [_serialize_instance(p)])
 
@@ -803,26 +996,31 @@ def create_plant():
                 filename = f"{photo_id}.jpg"
                 image_path = os.path.join(base_dir, filename)
 
+                # Salva il file sul filesystem
                 with open(image_path, "wb") as f:
                     f.write(image_bytes)
 
+                print(f"[DEBUG] Immagine salvata in: {image_path}")
+
+                # Crea la riga in plant_photo
                 photo = PlantPhoto(
                     id=photo_id,
                     plant_id=plant_id,
-                    url=filename,  # only store filename in DB
+                    url=filename,  # nel DB salvo SOLO il nome file
                     caption=None,
                     order_index=0,
                 )
                 s.add(photo)
 
+                # (opzionale) log per replay_changes
                 write_changes_upsert("plant_photo", [_serialize_instance(photo)])
 
-            except Exception:
-                s.rollback()
-                return jsonify({"error": "Failed to save plant photo"}), 500
+            except Exception as e:
+                print(f"[ERRORE] Salvataggio immagine/PlantPhoto fallito: {e}")
             # ================================================================
 
-            # link user-plant
+            # LINK USER → PLANT (SEMPRE)
+            print("[DEBUG] Creo link user-plant…")
             repo.ensure_user_plant_link(
                 user_id=g.user_id,
                 plant_id=str(p.id),
@@ -832,20 +1030,33 @@ def create_plant():
                 overwrite=False,
             )
 
-            # watering plan
+            # ================================================================
+            # WATERING PLAN (NON DEVE MAI ROMPERE NULLA)
+            # ================================================================
+            print("[DEBUG] Creo watering plan da questionario + pianta…")
             try:
-                repo.create_default_watering_plan_for_plant(
-                    session=s,
-                    user_id=g.user_id,
+                # usa il ReminderService istanziato in alto:
+                # reminder_service = ReminderService()
+                reminder_service.create_plan_for_new_plant(
+                    user_id=str(g.user_id),
                     plant_id=str(p.id),
                 )
-                s.commit()
+                print("[DEBUG] Watering plan creato/aggiornato")
             except Exception as e:
-                s.rollback()
+                # qui logghiamo SOLO l'errore, ma NON facciamo rollback
+                print("[ERRORE] Creazione watering plan fallita (ignoro):", e)
+
+            # ================================================================
+            # COMMIT FINALE — SALVA TUTTO SENZA ROLLBACK
+            # ================================================================
+            s.commit()
+
+            print("\n================== [create_plant] COMPLETATA ==================\n")
 
             return jsonify({"ok": True, "id": str(p.id)}), 201
 
         except Exception as e:
+            print(f"[ERRORE GENERALE DB] {e}")
             s.rollback()
             return jsonify({"error": f"DB error: {e}"}), 500
 
@@ -1142,7 +1353,7 @@ def plant_disease_add():
 
     with _session_ctx() as s:
         if not s.get(UserPlant, (g.user_id, data["plant_id"])):
-            return jsonify({"error": "Forbidden: you do not own this plant"}), 403
+            return jsonify({"error": "Forbidden: non possiedi questa pianta"}), 403
 
         pd = PlantDisease(**data)
         s.add(pd)
@@ -1238,21 +1449,27 @@ def user_add():
         }), 201
 
 
-@api_blueprint.route("/user/update/<uid>", methods=["PATCH", "PUT"])
+@api_blueprint.route("/user/update", methods=["PATCH", "PUT"])
 @require_jwt
-def user_update(uid: str):
-    _ensure_uuid(uid, "user_id")
+def user_update():
+    uid = g.user_id  # <-- PRENDI ID DAL TOKEN
     payload = _parse_json_body()
+
     if payload.get("password"):
         payload["password_hash"] = generate_password_hash(payload.pop("password"))
+
     with _session_ctx() as s:
         u = s.get(User, uid)
-        if not u: return jsonify({"error": "User not found"}), 404
+        if not u:
+            return jsonify({"error": "User not found"}), 404
+
         for k, v in _filter_fields_for_model(payload, User).items():
             setattr(u, k, v)
+
         u.updated_at = datetime.utcnow()
         _commit_or_409(s)
         write_changes_upsert("user", [_serialize_instance(u)])
+
         return jsonify({"ok": True, "id": u.id}), 200
 
 
@@ -1274,7 +1491,7 @@ def user_delete_me():
     with _session_ctx() as s:
         u = s.get(User, current_user_id)
         if not u:
-            return jsonify({"error": "User not found"}), 404
+            return jsonify({"error": "User non trovato"}), 404
 
         up_rows = (
             s.query(UserPlant)
@@ -1366,7 +1583,6 @@ def user_plant_all():
         )
 
         return jsonify([_serialize_with_relations(r) for r in rows]), 200
-
 
 
 @api_blueprint.route("/user_plant/add", methods=["POST"])
@@ -1563,7 +1779,7 @@ def watering_plan_add():
 
     with _session_ctx() as s:
         if not s.get(UserPlant, (g.user_id, data["plant_id"])):
-            return jsonify({"error": "Forbidden: you do not own this plant"}), 403
+            return jsonify({"error": "Forbidden: non possiedi questa pianta"}), 403
 
         data["user_id"] = g.user_id
         wp = WateringPlan(**data)
@@ -1623,7 +1839,7 @@ def watering_log_add():
 
     with _session_ctx() as s:
         if not s.get(UserPlant, (g.user_id, data["plant_id"])):
-            return jsonify({"error": "Forbidden: you do not own this plant"}), 403
+            return jsonify({"error": "Forbidden: non possiedi questa pianta"}), 403
 
         data["user_id"] = g.user_id
         wl = WateringLog(**data)
@@ -1689,7 +1905,7 @@ def question_all():
                 "options": [
                     {
                         "id": str(o.id),
-                        "label": o.label,      # 'A','B','C','D'
+                        "label": o.label,  # 'A','B','C','D'
                         "text": o.text,
                         "position": o.position
                     }
@@ -1869,6 +2085,196 @@ def questionnaire_submit_answers():
 
 
 # ========= Reminder =========
+
+# ========= Watering – OVERVIEW SETTIMANALE =========
+@api_blueprint.route("/watering/overview", methods=["GET"])
+@require_jwt
+def watering_overview():
+    """
+    Restituisce una settimana completa (lun–dom) a partire da oggi.
+    Ogni giorno contiene:
+    - tutte le piante con next_due_at = giorno
+    - o una lista vuota
+    Le piante hanno già photo_base64 compresso (se presente).
+    """
+    try:
+        user_id = g.user_id
+    except Exception:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    try:
+        # 1) calcolo settimana corrente (lun–dom)
+        today = datetime.utcnow().date()
+        week_start = today - timedelta(days=today.weekday())  # lunedì
+        week_days = [
+            (week_start + timedelta(days=i)).isoformat()
+            for i in range(7)
+        ]
+
+        # 2) prendo le piante con info + photo_base64 dalla repository
+        raw_rows = repo.get_watering_overview_for_user(user_id)
+
+        # 3) raggruppo per giorno (tenendo anche i giorni vuoti)
+        grouped = {d: [] for d in week_days}
+
+        for r in raw_rows:
+            next_due_str = r.get("next_due_at")
+            if not next_due_str:
+                continue
+
+            # "2025-03-10T09:00:00" -> "2025-03-10"
+            day_key = next_due_str[:10]
+
+            # se è un giorno della settimana corrente, aggiungo
+            if day_key in grouped:
+                grouped[day_key].append(r)
+
+        # 4) costruiamo la risposta finale
+        result = []
+        for day in week_days:
+            plants = grouped[day]
+            result.append({
+                "date": day,
+                "plants_count": len(plants),
+                "plants": plants,   # OGNI plant ha anche "photo_base64"
+            })
+
+        return jsonify(result), 200
+
+    except Exception as e:
+        print("[ERROR] /watering/overview:", e)
+        return jsonify({"error": str(e)}), 500
+
+
+
+# ========= Watering – L'UTENTE HA INNAFFIATO =========
+@api_blueprint.route("/plant/<plant_id>/watering/do", methods=["POST"])
+@require_jwt
+def plant_do_watering(plant_id: str):
+    """
+    L'utente segnala che ha appena innaffiato una pianta.
+
+    Body JSON atteso (minimo):
+    {
+      "amount_ml": 200,
+      "note": "un po' d’acqua in più oggi"  (opzionale),
+      "done_at": "2025-11-30T13:00:00"     (opzionale, ISO 8601; se assente = adesso)
+    }
+
+    Logica:
+    - chiama ReminderService.register_watering_and_schedule_next(
+        user_id=g.user_id,
+        plant_id=plant_id,
+        amount_ml=amount_ml,
+        note=note,
+        done_at=done_at
+      )
+    - questo:
+        * crea WateringLog reale
+        * aggiorna WateringPlan.next_due_at
+        * crea WateringLog "programmato" futuro
+        * crea nuovo Reminder
+    """
+    _ensure_uuid(plant_id, "plant_id")
+
+    payload = _parse_json_body() or {}
+
+    # amount_ml obbligatorio
+    amount_ml = payload.get("amount_ml")
+    if amount_ml is None:
+        return jsonify({"error": "Campo obbligatorio: amount_ml"}), 400
+
+    try:
+        amount_ml = int(amount_ml)
+    except (TypeError, ValueError):
+        return jsonify({"error": "amount_ml deve essere un intero"}), 400
+
+    note = payload.get("note") or None
+    done_at_raw = payload.get("done_at")
+    done_at = None
+
+    if done_at_raw:
+        # se il client manda una stringa ISO la parsifichiamo, altrimenti lasciamo None
+        if isinstance(done_at_raw, str):
+            try:
+                done_at = datetime.fromisoformat(done_at_raw)
+            except Exception:
+                return jsonify({"error": "done_at deve essere in formato ISO 8601"}), 400
+
+    # Verifica che l'utente possieda la pianta
+    with _session_ctx() as s:
+        if not s.get(UserPlant, (g.user_id, plant_id)):
+            return jsonify({"error": "Forbidden: non possiedi questa pianta"}), 403
+
+    # Usiamo il servizio ad alto livello che gestisce piano + log + reminder
+    res = reminder_service.register_watering_and_schedule_next(
+        user_id=str(g.user_id),
+        plant_id=plant_id,
+        amount_ml=amount_ml,
+        note=note,
+        done_at=done_at,
+    )
+
+    if not res.get("ok"):
+        return jsonify({"error": res.get("error", "Unable to register watering")}), 400
+
+    # Rispondiamo con qualche info utile al frontend
+    return jsonify(
+        {
+            "ok": True,
+            "plan_id": res.get("plan_id"),
+            "plant_id": res.get("plant_id"),
+            "last_watered_at": res.get("last_watered_at"),
+            "next_due_at": res.get("next_due_at"),
+            "interval_days": res.get("interval_days"),
+        }
+    ), 200
+
+
+@api_blueprint.route("/watering_plan/calendar-export", methods=["GET"])
+@require_jwt
+def watering_plan_calendar_export():
+    """
+    Esporta tutti i watering plan dell'utente loggato
+    in un formato comodo da usare come eventi calendario sul telefono.
+    """
+    user_id = g.user_id
+
+    with _session_ctx() as s:
+        # Join con Plant per avere il nome pianta
+        rows = (
+            s.query(WateringPlan, Plant)
+            .join(Plant, Plant.id == WateringPlan.plant_id)
+            .filter(WateringPlan.user_id == user_id)
+            .order_by(WateringPlan.next_due_at.asc())
+            .all()
+        )
+
+        events = []
+        for wp, plant in rows:
+            # titolo leggibile per il calendario
+            title = f"Water {plant.common_name or plant.scientific_name}"
+
+            events.append({
+                "id": str(wp.id),
+                "plant_id": str(plant.id),
+                "plant_name": plant.common_name or plant.scientific_name,
+                "title": title,
+
+                # quando parte il promemoria
+                "start": wp.next_due_at.isoformat(),  # es. 2025-11-23T09:00:00
+
+                # ogni quanti giorni si ripete
+                "interval_days": wp.interval_days,
+
+                # se vuoi farla usare per note/event description
+                "notes": wp.notes,
+            })
+
+        return jsonify(events), 200
+
+
+
 @api_blueprint.route("/reminder/all", methods=["GET"])
 @require_jwt
 def reminder_all():

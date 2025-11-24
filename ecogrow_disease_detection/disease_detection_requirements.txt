@@ -22,3 +22,4 @@ transformers>=4.44,<4.46
 peft>=0.17.1,<0.18.0
 huggingface-hub>=0.24.0,<1.0.0
 tqdm>=4.67.0
+

@@ -8,3 +8,4 @@ mkdir -p /app/artifacts/detectors /app/artifacts/pretrained "${U2NET_HOME:-/app/
 python /app/infra/warm_assets.py || true
 
 exec "$@"
+

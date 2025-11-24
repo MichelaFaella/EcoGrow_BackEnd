@@ -36,7 +36,6 @@ DEFAULT_IMAGE_EXTENSIONS = (".jpg", ".jpeg", ".png", ".bmp", ".tiff")
 os.environ.setdefault("KMP_DUPLICATE_LIB_OK", "TRUE")
 os.environ.setdefault("OMP_NUM_THREADS", "1")
 
-
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
 class DatasetCleaner:
@@ -109,6 +108,7 @@ class DatasetCleaner:
         for gid, paths in self.original_image_groups.items():
             for p in paths:
                 self.path_to_group[Path(p)] = gid
+
 
         
 

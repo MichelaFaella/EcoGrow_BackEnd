@@ -568,3 +568,4 @@ def predict_route():
         return jsonify({"error": f"Inference failed: {exc}"}), 500
 
     return jsonify({"status": "success", "data": result}), 200
+
