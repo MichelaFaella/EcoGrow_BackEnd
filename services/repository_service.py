@@ -14,7 +14,7 @@ from typing import List, Dict, Optional, Tuple
 from PIL import Image
 from sqlalchemy import select, func
 from models.base import SessionLocal
-from models.scripts.replay_changes import write_changes_upsert
+from models.scripts.replay_changes import write_changes_upsert, write_changes_delete
 from models.entities import (
     Plant,
     UserPlant,
@@ -25,7 +25,7 @@ from models.entities import (
     UserQuestionAnswer,
     WateringPlan,
     Reminder,
-    WateringLog,
+    WateringLog, Friendship, User,
 )
 
 
@@ -611,6 +611,125 @@ class RepositoryService:
             return out
 
     # =======================
+    # FRIENDSHIP
+    # =======================
+
+    def get_user_id_by_short(self, short_id: str) -> Optional[str]:
+        """
+        Restituisce l'ID completo dell'utente il cui UUID inizia con short_id.
+        short_id = prime 8 cifre dell'UUID.
+        """
+        print(f"[RepositoryService] get_user_id_by_short -> short_id={short_id}")
+
+        if not short_id or len(short_id) < 3:
+            return None
+
+        with self.Session() as s:
+            row = (
+                s.query(User)
+                .filter(User.id.like(f"{short_id}%"))
+                .first()
+            )
+
+            if not row:
+                print(f"[RepositoryService] No user found for short_id={short_id}")
+                return None
+
+            print(f"[RepositoryService] Found user: {row.id}")
+            return str(row.id)
+
+    def get_existing_friendship(self, user_a: str, user_b: str) -> Optional[Friendship]:
+        """
+        Controlla se una friendship esiste già in una delle due direzioni.
+        """
+        print(f"[RepositoryService] get_existing_friendship {user_a} <-> {user_b}")
+
+        with self.Session() as s:
+            fr = (
+                s.query(Friendship)
+                .filter(
+                    ((Friendship.user_id_a == user_a) & (Friendship.user_id_b == user_b)) |
+                    ((Friendship.user_id_a == user_b) & (Friendship.user_id_b == user_a))
+                )
+                .first()
+            )
+
+            if fr:
+                print(f"[RepositoryService] Existing friendship found: {fr.id}")
+            else:
+                print("[RepositoryService] No existing friendship")
+
+            return fr
+
+    def create_friendship(self, data: dict) -> Friendship:
+        """
+        Crea una friendship (senza controllare duplicati).
+        """
+        print(f"[RepositoryService] create_friendship data={data}")
+
+        with self.Session() as s:
+            fr = Friendship(**data)
+            s.add(fr)
+            s.commit()
+            s.refresh(fr)
+
+            write_changes_upsert("friendship", [{
+                "id": fr.id,
+                "user_id_a": fr.user_id_a,
+                "user_id_b": fr.user_id_b,
+                "status": fr.status,
+                "created_at": fr.created_at.isoformat() if fr.created_at else None,
+                "updated_at": fr.updated_at.isoformat() if fr.updated_at else None,
+            }])
+
+            print(f"[RepositoryService] Friendship created id={fr.id}")
+            return fr
+
+    def get_friendships_for_user(self, user_id: str):
+        """
+        Restituisce tutte le amicizie dove compare user_id.
+        """
+        print(f"[RepositoryService] get_friendships_for_user user_id={user_id}")
+
+        with self.Session() as s:
+            rows = (
+                s.query(Friendship)
+                .filter(
+                    (Friendship.user_id_a == user_id) |
+                    (Friendship.user_id_b == user_id)
+                )
+                .order_by(Friendship.created_at.desc())
+                .all()
+            )
+
+            print(f"[RepositoryService] Found {len(rows)} friendships.")
+            return rows
+
+    def get_friendship_by_id(self, fid: str) -> Optional[Friendship]:
+        print(f"[RepositoryService] get_friendship_by_id fid={fid}")
+        with self.Session() as s:
+            fr = s.get(Friendship, fid)
+            if fr:
+                print(f"[RepositoryService] Found friendship {fid}")
+            else:
+                print(f"[RepositoryService] Friendship {fid} NOT found")
+            return fr
+
+    def delete_friendship(self, fid: str) -> None:
+        print(f"[RepositoryService] delete_friendship fid={fid}")
+        with self.Session() as s:
+            fr = s.get(Friendship, fid)
+            if not fr:
+                print(f"[RepositoryService] Nothing to delete (not found)")
+                return
+
+            s.delete(fr)
+            s.commit()
+
+            write_changes_delete("friendship", fid)
+            print(f"[RepositoryService] Deleted friendship {fid}")
+
+    # =======================
     # QUESTIONARIO - scrittura
     # =======================
     def save_question_answers(self, user_id: str, answers: Dict[str, str]) -> None:
@@ -1042,3 +1161,4 @@ class RepositoryService:
                 )
 
             return result
+

@@ -58,9 +58,6 @@ UPLOAD_FOLDER = "uploads"
 image_service = ImageProcessingService()
 reminder_service = ReminderService()
 
-
-# disease_service = DiseaseRecognitionService()
-
 @api_blueprint.errorhandler(401)
 def auth_missing(e):
     return jsonify({"error": "Missing or invalid JWT token"}), 401
@@ -1503,58 +1500,178 @@ def user_plant_delete():
 
 
 # ========= Friendship =========
-@api_blueprint.route("/friendship/all", methods=["GET"])
-@require_jwt
-def friendship_all():
-    with _session_ctx() as s:
-        rows = s.query(Friendship).order_by(Friendship.created_at.desc()).all()
-        return jsonify([_serialize_instance(r) for r in rows]), 200
+# ============================
+#         FRIENDSHIP
+# ============================
 
+@api_blueprint.route("/friendship/summary", methods=["GET"])
+@require_jwt
+def friendship_summary():
+    user_id = g.user_id
+    print(f"[API] friendship_summary called by {user_id}")
+
+    repo = RepositoryService()
+
+    short_id = user_id.split("-")[0]
+
+    # Tutte le friendship dell'utente
+    rows = repo.get_friendships_for_user(user_id)
+
+    # Carichiamo info sugli amici
+    friends_out = []
+    user_cache = {}  # evita query duplicate
+
+    with repo.Session() as s:
+        for fr in rows:
+            friend_id = fr.user_id_b if fr.user_id_a == user_id else fr.user_id_a
+
+            if friend_id not in user_cache:
+                u = s.query(User).filter(User.id == friend_id).first()
+                user_cache[friend_id] = u
+
+            u = user_cache[friend_id]
+
+            friends_out.append({
+                "friendship_id": fr.id,
+                "user_id": friend_id,
+                "first_name": u.first_name if u else None,
+                "last_name": u.last_name if u else None,
+                "created_at": fr.created_at.isoformat() if fr.created_at else None,
+            })
+
+    print(f"[API] friendship_summary → returned {len(friends_out)} friends")
+
+    return jsonify({
+        "short_id": short_id,
+        "my_friends": friends_out
+    }), 200
+
+
+# ============================
+#   ADD FRIEND BY SHORT-ID
+# ============================
+
+@api_blueprint.route("/friendship/add-by-short", methods=["POST"])
+@require_jwt
+def friendship_add_by_short():
+    payload = _parse_json_body()
+    short_id = payload.get("short_id", "").strip()
+
+    print(f"[API] /friendship/add-by-short short_id={short_id}")
+
+    if not short_id or len(short_id) < 3:
+        return jsonify({"error": "Invalid short_id"}), 400
+
+    repo = RepositoryService()
+    current_user_id = g.user_id
+    print(f"[API] Current user = {current_user_id}")
+
+    # 1) trova user dal short id
+    target_user_id = repo.get_user_id_by_short(short_id)
+    print(f"[API] get_user_id_by_short → {target_user_id}")
+
+    if not target_user_id:
+        return jsonify({"error": "User not found"}), 404
+
+    if target_user_id == current_user_id:
+        return jsonify({"error": "You cannot add yourself"}), 400
+
+    # 2) esiste già una friendship?
+    existing = repo.get_existing_friendship(current_user_id, target_user_id)
+    if existing:
+        return jsonify({"error": "Friendship already exists"}), 409
+
+    # 3) crea friendship
+    data = {
+        "user_id_a": current_user_id,
+        "user_id_b": target_user_id,
+        "status": "accepted"
+    }
+
+    try:
+        fr = repo.create_friendship(data)
+        print(f"[API] Friendship created → {fr.id}")
+        return jsonify({"ok": True, "friendship_id": fr.id}), 201
+
+    except Exception as e:
+        print("[API] ERROR creating friendship:", e)
+        return jsonify({"error": "Could not create friendship"}), 500
+
+
+# ============================
+#      ADD FRIENDSHIP RAW
+# ============================
 
 @api_blueprint.route("/friendship/add", methods=["POST"])
 @require_jwt
 def friendship_add():
     payload = _parse_json_body()
+    repo = RepositoryService()
+
     data = _filter_fields_for_model(payload, Friendship)
     required = ["user_id_a", "user_id_b", "status"]
     missing = [k for k in required if not data.get(k)]
+
     if missing:
         return jsonify({"error": f"Required fields: {', '.join(missing)}"}), 400
-    with _session_ctx() as s:
-        fr = Friendship(**data)
-        s.add(fr)
-        _commit_or_409(s)
-        write_changes_upsert("friendship", [_serialize_instance(fr)])
-        return jsonify({"ok": True, "id": fr.id}), 201
 
+    try:
+        fr = repo.create_friendship(data)
+        print(f"[API] friendship_add → created {fr.id}")
+    except Exception as e:
+        print("[API] ERROR friendship_add:", e)
+        return jsonify({"error": "Could not create friendship"}), 500
+
+    return jsonify({"ok": True, "id": fr.id}), 201
+
+
+# ============================
+#     UPDATE FRIENDSHIP
+# ============================
 
 @api_blueprint.route("/friendship/update/<fid>", methods=["PATCH", "PUT"])
 @require_jwt
 def friendship_update(fid: str):
     _ensure_uuid(fid, "friendship_id")
     payload = _parse_json_body()
-    with _session_ctx() as s:
-        fr = s.get(Friendship, fid)
-        if not fr: return jsonify({"error": "Friendship not found"}), 404
-        for k, v in _filter_fields_for_model(payload, Friendship).items():
-            setattr(fr, k, v)
-        fr.updated_at = datetime.utcnow()
-        _commit_or_409(s)
-        write_changes_upsert("friendship", [_serialize_instance(fr)])
-        return jsonify({"ok": True, "id": fr.id}), 200
+    repo = RepositoryService()
 
+    fr = repo.get_friendship_by_id(fid)
+    if not fr:
+        return jsonify({"error": "Friendship not found"}), 404
+
+    try:
+        updated = repo.update_friendship(fid, payload)
+        print(f"[API] friendship_update → updated {fid}")
+    except Exception as e:
+        print("[API] ERROR updating friendship:", e)
+        return jsonify({"error": "Update error"}), 500
+
+    return jsonify({"ok": True, "id": fid}), 200
+
+
+# ============================
+#      DELETE FRIENDSHIP
+# ============================
 
 @api_blueprint.route("/friendship/delete/<fid>", methods=["DELETE"])
 @require_jwt
 def friendship_delete(fid: str):
     _ensure_uuid(fid, "friendship_id")
-    with _session_ctx() as s:
-        fr = s.get(Friendship, fid)
-        if fr:
-            s.delete(fr)
-            _commit_or_409(s)
-        write_changes_delete("friendship", fid)
-        return ("", 204)
+    repo = RepositoryService()
+
+    fr = repo.get_friendship_by_id(fid)
+    if not fr:
+        return jsonify({"error": "Friendship not found"}), 404
+
+    try:
+        repo.delete_friendship(fid)
+        print(f"[API] friendship_delete → removed {fid}")
+    except Exception as e:
+        print("[API] ERROR deleting friendship:", e)
+        return jsonify({"error": "Could not delete friendship"}), 500
+
+    return ("", 204)
 
 
 # ========= SharedPlant =========

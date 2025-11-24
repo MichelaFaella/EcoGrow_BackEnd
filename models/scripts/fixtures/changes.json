@@ -646,6 +646,25 @@
       "created_at": "2025-11-24T13:49:26",
       "updated_at": "2025-11-24T13:49:26",
       "id": "99e51ead-f07c-40f2-b980-1f14733ce137"
+    },
+    {
+      "id": "27047670-ff3d-4149-844a-dbd261074395",
+      "light_level": 5,
+      "size": "medium",
+      "created_at": "2025-11-24T15:25:43",
+      "water_level": 3,
+      "difficulty": 3,
+      "max_temp_c": 28,
+      "min_temp_c": 5,
+      "pests": null,
+      "common_name": "Rose",
+      "climate": "Temperate",
+      "updated_at": "2025-11-24T15:25:43",
+      "category": "Flowering shrub",
+      "family_id": "b9cbfcc6-ce18-47cd-ac15-3535712d8c45",
+      "origin": "Asia",
+      "use": "Garden plant, Cut flowers, Ornamental",
+      "scientific_name": "Rosa abietina"
     }
   ],
   "user_plant": [
@@ -809,6 +828,13 @@
       "nickname": null,
       "location_note": null,
       "since": "2025-11-24"
+    },
+    {
+      "user_id": "d2b805fd-5ac6-440b-b649-64af3cbd41ad",
+      "plant_id": "27047670-ff3d-4149-844a-dbd261074395",
+      "nickname": null,
+      "location_note": null,
+      "since": "2025-11-24"
     }
   ],
   "plant_photo": [
@@ -931,6 +957,28 @@
       "created_at": null,
       "order_index": 0,
       "id": "d9b310d0-d52c-4b51-be4f-78512222e32a"
+    },
+    {
+      "id": "193ba172-ae70-4ab5-b68f-869c1a6507b3",
+      "order_index": 0,
+      "caption": null,
+      "url": "193ba172-ae70-4ab5-b68f-869c1a6507b3.jpg",
+      "created_at": null,
+      "plant_id": "27047670-ff3d-4149-844a-dbd261074395"
+    }
+  ],
+  "friendship": [
+    {
+      "id": "84463c4f-a4b2-4353-a161-63e657b96806",
+      "_delete": true
+    },
+    {
+      "id": "1e8a4167-2c14-45c4-8a12-024db1ba45a0",
+      "user_id_a": "d2b805fd-5ac6-440b-b649-64af3cbd41ad",
+      "user_id_b": "8f12a3cc-2b47-4e8e-9cd3-7a5fe28d91c7",
+      "status": "accepted",
+      "created_at": "2025-11-24T20:20:17",
+      "updated_at": "2025-11-24T20:20:17"
     }
   ]
 }
