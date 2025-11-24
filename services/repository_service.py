@@ -793,9 +793,8 @@ class RepositoryService:
         else:
             interval_days = 3   # esempio: ogni 3 giorni di default
 
-        # 4) prima scadenza: domani all'ora scelta
         next_due = (now + timedelta(days=1)).replace(
-            hour=hour, minute=0, second=0, microsecond=0
+            hour=0, minute=0, second=0, microsecond=0
         )
 
         # 5) creo il WateringPlan
@@ -947,111 +946,99 @@ class RepositoryService:
     # =======================
     def get_watering_overview_for_user(self, user_id: str) -> List[Dict]:
         """
-        Restituisce una lista di piante dell'utente con:
-        - dati pianta
-        - watering_plan (next_due_at, interval_days, ecc.)
-        - ultimo watering_log (done_at, amount_ml, note)
-        - photo_base64 (compressa da PlantPhoto)
-
-        SOLO piante con next_due_at ENTRO la prossima settimana.
+        Restituisce TUTTI i log della settimana (7 giorni) per ogni pianta dell’utente:
+        - log reali (ora reale)
+        - log programmati (sempre a mezzanotte)
+        - la pianta NON sparisce mai
+        - frontend riceve done_at e amount_ml
         """
 
         now = datetime.utcnow()
-        week_limit = now + timedelta(days=7)
+        week_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        week_end = week_start + timedelta(days=7)
 
         with self.Session() as s:
-            rows = (
-                s.query(
-                    WateringPlan.id.label("plan_id"),
-                    WateringPlan.user_id,
-                    WateringPlan.plant_id,
-                    WateringPlan.next_due_at,
-                    WateringPlan.interval_days,
-                    WateringPlan.check_soil_moisture,
-                    WateringPlan.notes.label("plan_notes"),
-                    Plant.common_name,
-                    Plant.scientific_name,
-                    func.max(WateringLog.done_at).label("last_done_at"),
-                    func.max(WateringLog.amount_ml).label("last_amount_ml"),
-                )
+
+            # ----------------------------
+            # 1) Tutte le piante dell’utente
+            # ----------------------------
+            plants = (
+                s.query(WateringPlan, Plant)
                 .join(Plant, Plant.id == WateringPlan.plant_id)
-                .outerjoin(
-                    WateringLog,
-                    (WateringLog.user_id == WateringPlan.user_id)
-                    & (WateringLog.plant_id == WateringPlan.plant_id),
-                )
-                .filter(
-                    WateringPlan.user_id == user_id,
-                    WateringPlan.next_due_at <= week_limit,
-                )
-                .group_by(
-                    WateringPlan.id,
-                    WateringPlan.user_id,
-                    WateringPlan.plant_id,
-                    WateringPlan.next_due_at,
-                    WateringPlan.interval_days,
-                    WateringPlan.check_soil_moisture,
-                    WateringPlan.notes,
-                    Plant.common_name,
-                    Plant.scientific_name,
-                )
-                .order_by(WateringPlan.next_due_at.asc())
+                .filter(WateringPlan.user_id == user_id)
                 .all()
             )
 
-            result: List[Dict] = []
+            result = []
 
-            for r in rows:
-                plant_name = r.common_name or r.scientific_name or "Your plant"
+            for wp, plant in plants:
 
-                # ===== Ultimo log =====
-                last_log = (
+                # ----------------------------
+                # 2) tutti i log della settimana
+                # ----------------------------
+                logs = (
                     s.query(WateringLog)
                     .filter(
-                        WateringLog.user_id == r.user_id,
-                        WateringLog.plant_id == r.plant_id,
+                        WateringLog.user_id == user_id,
+                        WateringLog.plant_id == wp.plant_id,
+                        WateringLog.done_at >= week_start,
+                        WateringLog.done_at < week_end,
                     )
-                    .order_by(WateringLog.done_at.desc())
-                    .first()
+                    .order_by(WateringLog.done_at.asc())
+                    .all()
                 )
 
-                last_log_done_at = getattr(last_log, "done_at", None)
-                last_log_amount_ml = getattr(last_log, "amount_ml", None)
-                last_log_note = getattr(last_log, "note", None)
+                # ----------------------------
+                # 3) se NON esiste nessun log → crea quello programmato
+                # ----------------------------
+                if not logs:
+                    scheduled_dt = wp.next_due_at.replace(
+                        hour=0, minute=0, second=0, microsecond=0
+                    )
 
-                overdue = (
-                        r.next_due_at is not None and r.next_due_at < now
-                )
+                    scheduled_log = WateringLog(
+                        id=str(uuid.uuid4()),
+                        user_id=user_id,
+                        plant_id=wp.plant_id,
+                        done_at=scheduled_dt,
+                        amount_ml=150,  # dose base
+                        note="SCHEDULED",
+                    )
+                    s.add(scheduled_log)
+                    s.commit()
+                    logs = [scheduled_log]
 
-                # ===== Foto compressa: usa get_full_plant_info =====
-                photo_base64 = None
+                # ----------------------------
+                # 4) foto compressa
+                # ----------------------------
                 try:
-                    plant_info = self.get_full_plant_info(str(r.plant_id))
-                    if plant_info:
-                        photo_base64 = plant_info.get("photo_base64")
-                except Exception as e:
-                    print("[WARN] get_full_plant_info failed:", e)
+                    info = self.get_full_plant_info(str(wp.plant_id))
+                    photo_base64 = info.get("photo_base64")
+                except Exception:
                     photo_base64 = None
 
+                # ----------------------------
+                # 5) log → lista di dizionari
+                # ----------------------------
+                logs_dict = [
+                    {
+                        "done_at": log.done_at.isoformat(),
+                        "amount_ml": log.amount_ml,
+                        "note": log.note,
+                    }
+                    for log in logs
+                ]
+
+                # ----------------------------
+                # 6) output finale
+                # ----------------------------
                 result.append(
                     {
-                        "plant_id": str(r.plant_id),
-                        "plant_name": plant_name,
-                        "plan_id": str(r.plan_id),
-                        "next_due_at": r.next_due_at.isoformat()
-                        if r.next_due_at else None,
-                        "interval_days": int(r.interval_days),
-                        "check_soil_moisture": bool(r.check_soil_moisture),
-                        "plan_notes": r.plan_notes,
-                        "last_log_done_at": last_log_done_at.isoformat()
-                        if last_log_done_at else None,
-                        "last_log_amount_ml": int(last_log_amount_ml)
-                        if last_log_amount_ml is not None else None,
-                        "last_log_note": last_log_note,
-                        "overdue": overdue,
+                        "plant_id": str(wp.plant_id),
+                        "plant_name": plant.common_name or plant.scientific_name,
+                        "logs": logs_dict,
                         "photo_base64": photo_base64,
                     }
                 )
 
             return result
-

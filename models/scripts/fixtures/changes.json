@@ -475,6 +475,177 @@
       "category": "Fern",
       "family_id": "13a6ceee-6f0a-4ab6-b530-12a049ad2317",
       "updated_at": "2025-11-20T10:53:15"
+    },
+    {
+      "use": "Garden plant, Cut flowers, Ornamental",
+      "size": "medium",
+      "category": "Flowering shrub",
+      "common_name": "Rose",
+      "climate": "Temperate",
+      "family_id": "b9cbfcc6-ce18-47cd-ac15-3535712d8c45",
+      "difficulty": 3,
+      "created_at": "2025-11-24T11:38:25",
+      "origin": "Asia",
+      "min_temp_c": 5,
+      "max_temp_c": 28,
+      "pests": null,
+      "updated_at": "2025-11-24T11:38:25",
+      "light_level": 5,
+      "id": "a5caf0d1-008f-47ed-bb29-0abe8ef6de04",
+      "scientific_name": "Rosa lucieae",
+      "water_level": 3
+    },
+    {
+      "category": "Flowering shrub",
+      "common_name": "Rose",
+      "water_level": 3,
+      "scientific_name": "Rosa chinensis",
+      "updated_at": "2025-11-24T11:51:59",
+      "origin": "Asia",
+      "difficulty": 3,
+      "id": "48d01d2b-171d-4c0c-b4b3-bf3235faf2b9",
+      "max_temp_c": 28,
+      "family_id": "b9cbfcc6-ce18-47cd-ac15-3535712d8c45",
+      "use": "Garden plant, Cut flowers, Ornamental",
+      "light_level": 5,
+      "created_at": "2025-11-24T11:51:59",
+      "climate": "Temperate",
+      "pests": null,
+      "min_temp_c": 5,
+      "size": "medium"
+    },
+    {
+      "common_name": "Rose",
+      "climate": "Temperate",
+      "id": "aac0b5b1-ece5-4940-a17f-ea2afbd7c1f1",
+      "pests": null,
+      "use": "Garden plant, Cut flowers, Ornamental",
+      "origin": "Asia",
+      "light_level": 5,
+      "min_temp_c": 5,
+      "category": "Flowering shrub",
+      "max_temp_c": 28,
+      "updated_at": "2025-11-24T12:07:14",
+      "difficulty": 3,
+      "family_id": "b9cbfcc6-ce18-47cd-ac15-3535712d8c45",
+      "scientific_name": "Rosa lucieae",
+      "size": "medium",
+      "created_at": "2025-11-24T12:07:14",
+      "water_level": 3
+    },
+    {
+      "scientific_name": "Rosa lucieae",
+      "use": "Garden plant, Cut flowers, Ornamental",
+      "common_name": "Rose",
+      "category": "Flowering shrub",
+      "updated_at": "2025-11-24T12:12:36",
+      "light_level": 5,
+      "id": "7d8c2719-2e7e-483b-bb96-bd44549b8979",
+      "min_temp_c": 5,
+      "size": "medium",
+      "family_id": "b9cbfcc6-ce18-47cd-ac15-3535712d8c45",
+      "max_temp_c": 28,
+      "created_at": "2025-11-24T12:12:36",
+      "difficulty": 3,
+      "origin": "Asia",
+      "water_level": 3,
+      "pests": null,
+      "climate": "Temperate"
+    },
+    {
+      "scientific_name": "Rosa abietina",
+      "use": "Garden plant, Cut flowers, Ornamental",
+      "common_name": "Rose",
+      "category": "Flowering shrub",
+      "updated_at": "2025-11-24T12:18:21",
+      "light_level": 5,
+      "id": "ee444781-e2fe-431d-8047-53fcd5bdb5bb",
+      "min_temp_c": 5,
+      "size": "medium",
+      "family_id": "b9cbfcc6-ce18-47cd-ac15-3535712d8c45",
+      "max_temp_c": 28,
+      "created_at": "2025-11-24T12:18:21",
+      "difficulty": 3,
+      "origin": "Asia",
+      "water_level": 3,
+      "pests": null,
+      "climate": "Temperate"
+    },
+    {
+      "use": "Garden plant, Cut flowers, Ornamental",
+      "origin": "Asia",
+      "scientific_name": "Rosa lucieae",
+      "category": "Flowering shrub",
+      "water_level": 3,
+      "common_name": "Rose",
+      "difficulty": 3,
+      "max_temp_c": 28,
+      "min_temp_c": 5,
+      "pests": null,
+      "created_at": "2025-11-24T12:19:09",
+      "updated_at": "2025-11-24T12:19:09",
+      "family_id": "b9cbfcc6-ce18-47cd-ac15-3535712d8c45",
+      "size": "medium",
+      "id": "c3485e04-87d2-424a-8431-0608b203e67e",
+      "climate": "Temperate",
+      "light_level": 5
+    },
+    {
+      "use": "Garden plant, Cut flowers, Ornamental",
+      "origin": "Asia",
+      "scientific_name": "Rosa lucieae",
+      "category": "Flowering shrub",
+      "water_level": 3,
+      "common_name": "Rose",
+      "difficulty": 3,
+      "max_temp_c": 28,
+      "min_temp_c": 5,
+      "pests": null,
+      "created_at": "2025-11-24T12:26:24",
+      "updated_at": "2025-11-24T12:26:24",
+      "family_id": "b9cbfcc6-ce18-47cd-ac15-3535712d8c45",
+      "size": "medium",
+      "id": "655266b1-d3c9-4ddd-a29a-bfbb12c2f76e",
+      "climate": "Temperate",
+      "light_level": 5
+    },
+    {
+      "scientific_name": "Rosa abietina",
+      "light_level": 5,
+      "difficulty": 3,
+      "pests": null,
+      "origin": "Asia",
+      "use": "Garden plant, Cut flowers, Ornamental",
+      "category": "Flowering shrub",
+      "id": "b4107f10-1ef8-475f-b93e-b1384891edcb",
+      "climate": "Temperate",
+      "max_temp_c": 28,
+      "created_at": "2025-11-24T12:38:22",
+      "min_temp_c": 5,
+      "updated_at": "2025-11-24T12:38:22",
+      "size": "medium",
+      "family_id": "b9cbfcc6-ce18-47cd-ac15-3535712d8c45",
+      "common_name": "Rose",
+      "water_level": 3
+    },
+    {
+      "pests": null,
+      "size": "small",
+      "difficulty": 3,
+      "min_temp_c": 12,
+      "common_name": "Maindenhair",
+      "light_level": 4,
+      "origin": "Brazil",
+      "family_id": "13a6ceee-6f0a-4ab6-b530-12a049ad2317",
+      "water_level": 5,
+      "scientific_name": "Adiantum raddianum",
+      "max_temp_c": 30,
+      "category": "Fern",
+      "climate": "Tropical",
+      "use": "Potted plant, Ground cover, Table top",
+      "created_at": "2025-11-24T13:49:26",
+      "updated_at": "2025-11-24T13:49:26",
+      "id": "99e51ead-f07c-40f2-b980-1f14733ce137"
     }
   ],
   "user_plant": [
@@ -575,6 +746,69 @@
       "nickname": null,
       "location_note": null,
       "since": "2025-11-20"
+    },
+    {
+      "user_id": "d2b805fd-5ac6-440b-b649-64af3cbd41ad",
+      "plant_id": "a5caf0d1-008f-47ed-bb29-0abe8ef6de04",
+      "nickname": null,
+      "location_note": null,
+      "since": "2025-11-24"
+    },
+    {
+      "user_id": "d2b805fd-5ac6-440b-b649-64af3cbd41ad",
+      "plant_id": "48d01d2b-171d-4c0c-b4b3-bf3235faf2b9",
+      "nickname": null,
+      "location_note": null,
+      "since": "2025-11-24"
+    },
+    {
+      "user_id": "d2b805fd-5ac6-440b-b649-64af3cbd41ad",
+      "plant_id": "aac0b5b1-ece5-4940-a17f-ea2afbd7c1f1",
+      "nickname": null,
+      "location_note": null,
+      "since": "2025-11-24"
+    },
+    {
+      "user_id": "d2b805fd-5ac6-440b-b649-64af3cbd41ad",
+      "plant_id": "7d8c2719-2e7e-483b-bb96-bd44549b8979",
+      "nickname": null,
+      "location_note": null,
+      "since": "2025-11-24"
+    },
+    {
+      "user_id": "d2b805fd-5ac6-440b-b649-64af3cbd41ad",
+      "plant_id": "ee444781-e2fe-431d-8047-53fcd5bdb5bb",
+      "nickname": null,
+      "location_note": null,
+      "since": "2025-11-24"
+    },
+    {
+      "user_id": "d2b805fd-5ac6-440b-b649-64af3cbd41ad",
+      "plant_id": "c3485e04-87d2-424a-8431-0608b203e67e",
+      "nickname": null,
+      "location_note": null,
+      "since": "2025-11-24"
+    },
+    {
+      "user_id": "d2b805fd-5ac6-440b-b649-64af3cbd41ad",
+      "plant_id": "655266b1-d3c9-4ddd-a29a-bfbb12c2f76e",
+      "nickname": null,
+      "location_note": null,
+      "since": "2025-11-24"
+    },
+    {
+      "user_id": "d2b805fd-5ac6-440b-b649-64af3cbd41ad",
+      "plant_id": "b4107f10-1ef8-475f-b93e-b1384891edcb",
+      "nickname": null,
+      "location_note": null,
+      "since": "2025-11-24"
+    },
+    {
+      "user_id": "d2b805fd-5ac6-440b-b649-64af3cbd41ad",
+      "plant_id": "99e51ead-f07c-40f2-b980-1f14733ce137",
+      "nickname": null,
+      "location_note": null,
+      "since": "2025-11-24"
     }
   ],
   "plant_photo": [
@@ -625,6 +859,78 @@
       "id": "c710fb1d-b886-4f49-9742-0a7381ca326d",
       "plant_id": "0af31fbe-59a6-4bd6-996e-0cd3f0ac8e38",
       "caption": null
+    },
+    {
+      "url": "70fb5f6f-3b2d-4c18-aabd-903a5b43440a.jpg",
+      "created_at": null,
+      "plant_id": "a5caf0d1-008f-47ed-bb29-0abe8ef6de04",
+      "caption": null,
+      "id": "70fb5f6f-3b2d-4c18-aabd-903a5b43440a",
+      "order_index": 0
+    },
+    {
+      "order_index": 0,
+      "plant_id": "48d01d2b-171d-4c0c-b4b3-bf3235faf2b9",
+      "caption": null,
+      "id": "d925f536-cc29-430d-9094-6d924d62b67c",
+      "created_at": null,
+      "url": "d925f536-cc29-430d-9094-6d924d62b67c.jpg"
+    },
+    {
+      "plant_id": "aac0b5b1-ece5-4940-a17f-ea2afbd7c1f1",
+      "url": "93b98205-cad1-4734-82fb-6bec08cc2764.jpg",
+      "id": "93b98205-cad1-4734-82fb-6bec08cc2764",
+      "order_index": 0,
+      "created_at": null,
+      "caption": null
+    },
+    {
+      "id": "9b7624e2-51b8-40a4-b93b-4431d9c26889",
+      "plant_id": "7d8c2719-2e7e-483b-bb96-bd44549b8979",
+      "created_at": null,
+      "url": "9b7624e2-51b8-40a4-b93b-4431d9c26889.jpg",
+      "caption": null,
+      "order_index": 0
+    },
+    {
+      "id": "ef6dc211-7cc2-42b9-85ce-f9ccaae7c735",
+      "plant_id": "ee444781-e2fe-431d-8047-53fcd5bdb5bb",
+      "created_at": null,
+      "url": "ef6dc211-7cc2-42b9-85ce-f9ccaae7c735.jpg",
+      "caption": null,
+      "order_index": 0
+    },
+    {
+      "caption": null,
+      "created_at": null,
+      "url": "acef9541-70c1-443a-90ce-75b035d3da0b.jpg",
+      "plant_id": "c3485e04-87d2-424a-8431-0608b203e67e",
+      "id": "acef9541-70c1-443a-90ce-75b035d3da0b",
+      "order_index": 0
+    },
+    {
+      "caption": null,
+      "created_at": null,
+      "url": "3cd9fafd-d91a-4b0a-b0b9-aac97fd5d3b5.jpg",
+      "plant_id": "655266b1-d3c9-4ddd-a29a-bfbb12c2f76e",
+      "id": "3cd9fafd-d91a-4b0a-b0b9-aac97fd5d3b5",
+      "order_index": 0
+    },
+    {
+      "created_at": null,
+      "id": "6f36a626-80e7-4391-ae4b-195d55205ff4",
+      "url": "6f36a626-80e7-4391-ae4b-195d55205ff4.jpg",
+      "plant_id": "b4107f10-1ef8-475f-b93e-b1384891edcb",
+      "caption": null,
+      "order_index": 0
+    },
+    {
+      "plant_id": "99e51ead-f07c-40f2-b980-1f14733ce137",
+      "caption": null,
+      "url": "d9b310d0-d52c-4b51-be4f-78512222e32a.jpg",
+      "created_at": null,
+      "order_index": 0,
+      "id": "d9b310d0-d52c-4b51-be4f-78512222e32a"
     }
   ]
 }

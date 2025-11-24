@@ -78,7 +78,7 @@ class ReminderService:
                 # -------------------------------------------------
                 next_due_at = datetime.utcnow() + timedelta(days=interval_days)
                 next_due_at = next_due_at.replace(
-                    hour=hour,
+                    hour=0,
                     minute=0,
                     second=0,
                     microsecond=0,
@@ -134,7 +134,7 @@ class ReminderService:
                 #  un piano di emergenza + relativo log.
                 # -------------------------------------------------
                 fallback_next_due = datetime.utcnow().replace(
-                    hour=9,
+                    hour=0,
                     minute=0,
                     second=0,
                     microsecond=0,
@@ -352,37 +352,17 @@ class ReminderService:
     #          → crea log reale + aggiorna piano + nuovo log schedulato
     # ---------------------------------------------------------
     def register_watering_and_schedule_next(
-        self,
-        user_id: str,
-        plant_id: str,
-        amount_ml: int,
-        note: Optional[str] = None,
-        done_at: Optional[datetime] = None,
+            self,
+            user_id: str,
+            plant_id: str,
+            amount_ml: int,
+            note: Optional[str] = None,
+            done_at: Optional[datetime] = None,
     ) -> dict:
-        """
-        - Crea un WateringLog REALE (l'utente ha innaffiato ora)
-        - Gli ml di questa innaffiatura vengono dedotti dal piano:
-            * se esiste già un log precedente → copia amount_ml da quello
-            * altrimenti → calcola dose consigliata dal piano/plant
-          (il parametro amount_ml passato può ancora fare override per
-           questa singola innaffiatura, ma la dose base viene dal piano).
-        - Aggiorna il WateringPlan.next_due_at spostandolo avanti di interval_days
-          (se era in ritardo, lo porta più avanti finché è nel futuro)
-        - Crea un NUOVO WateringLog "programmato" per la prossima scadenza
-          con la stessa quantità ml usata nell’ultima innaffiatura
-        - Crea anche un nuovo Reminder collegato alla pianta
-
-        Ritorna un dict con info sul piano aggiornato e sulle date.
-        """
-
-        if done_at is None:
-            done_at = datetime.utcnow()
 
         with self._session() as s:
             try:
-                # =============================================
-                # 1) Carico il piano esistente per (user, plant)
-                # =============================================
+                # ===== 1) Recupero piano =====
                 plan = (
                     s.query(WateringPlan)
                     .filter(
@@ -391,96 +371,118 @@ class ReminderService:
                     )
                     .first()
                 )
-
                 if not plan:
-                    raise ValueError("No WateringPlan found for this user/plant")
+                    raise ValueError("No WateringPlan found")
 
-                # sicurezza su interval_days
                 interval_days = int(plan.interval_days or 3)
 
-                # =============================================
-                # 2) Carico pianta e ultimo log per derivare ML
-                # =============================================
+                # ===== 2) Ora reale e intervallo del giorno =====
+                now_real = done_at or datetime.utcnow()
+
+                today_midnight = now_real.replace(
+                    hour=0, minute=0, second=0, microsecond=0
+                )
+                tomorrow_midnight = today_midnight + timedelta(days=1)
+
+                # ===== 3) Pianta =====
                 plant = (
                     s.query(Plant)
                     .filter(Plant.id == plant_id)
                     .one_or_none()
                 )
 
-                last_log = (
+                # ===== 4) Ultimo log PRIMA di oggi (storico) =====
+                last_before_today = (
                     s.query(WateringLog)
                     .filter(
                         WateringLog.user_id == user_id,
                         WateringLog.plant_id == plant_id,
+                        WateringLog.done_at < today_midnight,
                     )
                     .order_by(WateringLog.done_at.desc())
                     .first()
                 )
 
-                if last_log and last_log.amount_ml is not None and last_log.amount_ml > 0:
-                    base_ml = int(last_log.amount_ml)
+                if last_before_today and last_before_today.amount_ml:
+                    base_ml = int(last_before_today.amount_ml)
                 else:
                     base_ml = self._estimate_amount_ml(plant, interval_days)
 
-                # Se il client passa un valore, lo usiamo come override
-                if amount_ml is not None:
-                    amount_to_use = int(amount_ml)
-                else:
-                    amount_to_use = base_ml
+                real_ml = amount_ml if amount_ml else base_ml
 
-                # =============================================
-                # 3) LOG REALE: l'utente ha appena innaffiato
-                # =============================================
+                # --------------------------------------------------
+                # 5) 🔥 Pulisci TUTTI i log di OGGI per quella pianta
+                #    (sia programmati che eventuali reali "strani")
+                # --------------------------------------------------
+                s.query(WateringLog).filter(
+                    WateringLog.user_id == user_id,
+                    WateringLog.plant_id == plant_id,
+                    WateringLog.done_at >= today_midnight,
+                    WateringLog.done_at < tomorrow_midnight,
+                ).delete(synchronize_session=False)
+
+                # --------------------------------------------------
+                # 6) Crea UN SOLO log REALE per oggi (ora vera)
+                # --------------------------------------------------
                 real_log = WateringLog(
                     id=str(uuid.uuid4()),
                     user_id=user_id,
                     plant_id=plant_id,
-                    done_at=done_at,
-                    amount_ml=amount_to_use,
+                    done_at=now_real,  # ORA REALE
+                    amount_ml=real_ml,
                     note=note or "User watering",
                 )
                 s.add(real_log)
 
-                # =============================================
-                # 4) Calcolo nuova next_due_at del piano
-                # =============================================
-                base = plan.next_due_at or done_at
-                next_due = base
-
-                # se il piano era "in ritardo", sposto in avanti
-                while next_due <= done_at:
-                    next_due = next_due + timedelta(days=interval_days)
-
+                # --------------------------------------------------
+                # 7) Calcola next_due_at (sempre mezzanotte del giorno futuro)
+                # --------------------------------------------------
+                next_due = today_midnight + timedelta(days=interval_days)
+                next_due = next_due.replace(
+                    hour=0, minute=0, second=0, microsecond=0
+                )
                 plan.next_due_at = next_due
 
-                # =============================================
-                # 5) Creo il NUOVO log "programmato" per la prossima volta
-                #    (slot futuro, amount_ml = stessa dose dell’ultima innaffiatura)
-                # =============================================
-                scheduled_log = WateringLog(
+                # --------------------------------------------------
+                # 8) Elimina eventuali log programmati DUPLICATI sulla nuova data
+                # --------------------------------------------------
+                s.query(WateringLog).filter(
+                    WateringLog.user_id == user_id,
+                    WateringLog.plant_id == plant_id,
+                    WateringLog.done_at == next_due,
+                ).delete(synchronize_session=False)
+
+                # --------------------------------------------------
+                # 9) Crea NUOVO log PROGRAMMATO per la prossima volta (mezzanotte)
+                #    → puoi scegliere se usare real_ml o una nuova stima
+                # --------------------------------------------------
+                scheduled_ml = real_ml  # oppure: self._estimate_amount_ml(plant, interval_days)
+
+                future_log = WateringLog(
                     id=str(uuid.uuid4()),
                     user_id=user_id,
                     plant_id=plant_id,
-                    done_at=next_due,           # data prevista futura
-                    amount_ml=amount_to_use,    # stessa quantità usata ora
-                    note=(
-                        f"SCHEDULED FROM PLAN "
-                        f"(interval_days={interval_days}, ml={amount_to_use})"
-                    ),
+                    done_at=next_due,  # SEMPRE MEZZANOTTE
+                    amount_ml=scheduled_ml,
+                    note="SCHEDULED FROM PLAN",
                 )
-                s.add(scheduled_log)
+                s.add(future_log)
 
-                # =============================================
-                # 6) Nuovo Reminder per la prossima scadenza
-                # =============================================
-                if plant is not None:
-                    title = (
-                        f"Water {plant.common_name or plant.scientific_name or 'your plant'}"
-                    )
-                else:
-                    title = "Water your plant"
+                # --------------------------------------------------
+                # 10) Reminder
+                # --------------------------------------------------
+                s.query(Reminder).filter(
+                    Reminder.user_id == user_id,
+                    Reminder.entity_type == "plant",
+                    Reminder.entity_id == plant_id,
+                ).delete(synchronize_session=False)
 
-                rem = Reminder(
+                title = (
+                    f"Water {plant.common_name or plant.scientific_name or 'your plant'}"
+                    if plant else "Water your plant"
+                )
+
+                new_rem = Reminder(
                     user_id=user_id,
                     title=title,
                     note=note,
@@ -490,27 +492,145 @@ class ReminderService:
                     entity_type="plant",
                     entity_id=plant_id,
                 )
-                s.add(rem)
+                s.add(new_rem)
 
-                # =============================================
-                # 7) Commit
-                # =============================================
-                s.commit()
-
+                # commit gestito dal context manager
                 return {
                     "ok": True,
-                    "plan_id": str(plan.id),
                     "plant_id": plant_id,
-                    "last_watered_at": done_at.isoformat(),
+                    "last_watered_at": now_real.isoformat(),
                     "next_due_at": next_due.isoformat(),
                     "interval_days": interval_days,
-                    "amount_ml_used": amount_to_use,
+                    "amount_ml_used": real_ml,
                 }
 
             except Exception as e:
                 s.rollback()
-                print("[ERROR] register_watering_and_schedule_next failed:", e)
+                print("[ERROR] register_watering_and_schedule_next:", e)
+                return {"ok": False, "error": str(e)}
+
+    # ---------------------------------------------------------
+    #  PUBLIC: Annulla l’annaffiatura di oggi
+    # ---------------------------------------------------------
+    def undo_watering(self, user_id: str, plant_id: str) -> dict:
+        """
+        Undo dell'annaffiatura di OGGI per una pianta:
+        - rimuove tutti i log di oggi (reali + eventuali programmati)
+        - rimuove i log futuri (scheduled) per quella pianta
+        - ricrea 1 log programmato oggi a mezzanotte
+        - ripristina next_due_at a oggi (mezzanotte)
+        """
+
+        with self._session() as s:
+            try:
+                # ===== 1) Recupero piano =====
+                plan = (
+                    s.query(WateringPlan)
+                    .filter(
+                        WateringPlan.user_id == user_id,
+                        WateringPlan.plant_id == plant_id,
+                    )
+                    .first()
+                )
+                if not plan:
+                    raise ValueError("No WateringPlan found")
+
+                interval_days = int(plan.interval_days or 3)
+
+                now = datetime.utcnow()
+                today_midnight = now.replace(
+                    hour=0, minute=0, second=0, microsecond=0
+                )
+                tomorrow_midnight = today_midnight + timedelta(days=1)
+
+                # ===== 2) Pianta =====
+                plant = (
+                    s.query(Plant)
+                    .filter(Plant.id == plant_id)
+                    .one_or_none()
+                )
+
+                # ===== 3) Elimina TUTTI i log di OGGI (qualsiasi nota/orario)
+                deleted_today = s.query(WateringLog).filter(
+                    WateringLog.user_id == user_id,
+                    WateringLog.plant_id == plant_id,
+                    WateringLog.done_at >= today_midnight,
+                    WateringLog.done_at < tomorrow_midnight,
+                ).delete(synchronize_session=False)
+
+                # ===== 4) Elimina log FUTURI della pianta (scheduled dopo oggi)
+                deleted_future = s.query(WateringLog).filter(
+                    WateringLog.user_id == user_id,
+                    WateringLog.plant_id == plant_id,
+                    WateringLog.done_at >= tomorrow_midnight,
+                ).delete(synchronize_session=False)
+
+                # ===== 5) Trova ultimo log PRIMA di oggi per dosaggio
+                prev_log = (
+                    s.query(WateringLog)
+                    .filter(
+                        WateringLog.user_id == user_id,
+                        WateringLog.plant_id == plant_id,
+                        WateringLog.done_at < today_midnight,
+                    )
+                    .order_by(WateringLog.done_at.desc())
+                    .first()
+                )
+
+                if prev_log and prev_log.amount_ml:
+                    scheduled_ml = int(prev_log.amount_ml)
+                else:
+                    scheduled_ml = self._estimate_amount_ml(plant, interval_days)
+
+                # ===== 6) Ricrea log programmato a MEZZANOTTE DI OGGI
+                scheduled_log = WateringLog(
+                    id=str(uuid.uuid4()),
+                    user_id=user_id,
+                    plant_id=plant_id,
+                    done_at=today_midnight,
+                    amount_ml=scheduled_ml,
+                    note="SCHEDULED FROM PLAN (UNDO)",
+                )
+                s.add(scheduled_log)
+
+                # ===== 7) next_due_at = oggi a mezzanotte
+                plan.next_due_at = today_midnight
+
+                # ===== 8) Reset reminder
+                s.query(Reminder).filter(
+                    Reminder.user_id == user_id,
+                    Reminder.entity_type == "plant",
+                    Reminder.entity_id == plant_id,
+                ).delete(synchronize_session=False)
+
+                title = (
+                    f"Water {plant.common_name or plant.scientific_name or 'your plant'}"
+                    if plant else "Water your plant"
+                )
+
+                new_rem = Reminder(
+                    user_id=user_id,
+                    title=title,
+                    note=None,
+                    scheduled_at=today_midnight,
+                    done_at=None,
+                    recurrence_rrule=None,
+                    entity_type="plant",
+                    entity_id=plant_id,
+                )
+                s.add(new_rem)
+
                 return {
-                    "ok": False,
-                    "error": str(e),
+                    "ok": True,
+                    "plant_id": plant_id,
+                    "restored_to": today_midnight.isoformat(),
+                    "deleted_today_logs": deleted_today,
+                    "deleted_future_logs": deleted_future,
                 }
+
+            except Exception as e:
+                s.rollback()
+                print("[ERROR undo_watering]:", e)
+                return {"ok": False, "error": str(e)}
+
+

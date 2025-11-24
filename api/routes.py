@@ -1964,11 +1964,10 @@ def questionnaire_submit_answers():
 @require_jwt
 def watering_overview():
     """
-    Restituisce una settimana completa (lun–dom) a partire da oggi.
-    Ogni giorno contiene:
-    - tutte le piante con next_due_at = giorno
-    - o una lista vuota
-    Le piante hanno già photo_base64 compresso (se presente).
+    Restituisce una settimana (lun→dom).
+    Una pianta compare SOLO NEI GIORNI CORRETTI:
+      - giorno di next_due_at
+      - oppure giorno dei log (done_at)
     """
     try:
         user_id = g.user_id
@@ -1976,40 +1975,80 @@ def watering_overview():
         return jsonify({"error": "Unauthorized"}), 401
 
     try:
-        # 1) calcolo settimana corrente (lun–dom)
         today = datetime.utcnow().date()
-        week_start = today - timedelta(days=today.weekday())  # lunedì
-        week_days = [
-            (week_start + timedelta(days=i)).isoformat()
-            for i in range(7)
-        ]
+        week_start = today - timedelta(days=today.weekday())
+        days = [(week_start + timedelta(days=i)) for i in range(7)]
 
-        # 2) prendo le piante con info + photo_base64 dalla repository
-        raw_rows = repo.get_watering_overview_for_user(user_id)
+        # ----------------------------------------
+        # 1) Otteniamo tutte le piante con info
+        # ----------------------------------------
+        plants = repo.get_watering_overview_for_user(user_id)
 
-        # 3) raggruppo per giorno (tenendo anche i giorni vuoti)
-        grouped = {d: [] for d in week_days}
+        # ----------------------------------------
+        # 2) Otteniamo tutti i log della settimana
+        # ----------------------------------------
+        week_start_dt = datetime.combine(week_start, datetime.min.time())
+        week_end_dt = week_start_dt + timedelta(days=7)
 
-        for r in raw_rows:
-            next_due_str = r.get("next_due_at")
-            if not next_due_str:
-                continue
+        with SessionLocal() as s:
+            logs = (
+                s.query(WateringLog)
+                .filter(
+                    WateringLog.user_id == user_id,
+                    WateringLog.done_at >= week_start_dt,
+                    WateringLog.done_at < week_end_dt,
+                )
+                .all()
+            )
 
-            # "2025-03-10T09:00:00" -> "2025-03-10"
-            day_key = next_due_str[:10]
+        # Raggruppiamo log per giorno e plant_id
+        logs_by_day = {}
+        for d in days:
+            logs_by_day[d.isoformat()] = {}
 
-            # se è un giorno della settimana corrente, aggiungo
-            if day_key in grouped:
-                grouped[day_key].append(r)
+        for log in logs:
+            day_key = log.done_at.date().isoformat()
+            pid = str(log.plant_id)
+            logs_by_day[day_key].setdefault(pid, [])
+            logs_by_day[day_key][pid].append({
+                "done_at": log.done_at.isoformat(),
+                "amount_ml": log.amount_ml,
+                "note": log.note,
+            })
 
-        # 4) costruiamo la risposta finale
+        # ----------------------------------------
+        # 3) Costruiamo settimana → solo giorni corretti
+        # ----------------------------------------
         result = []
-        for day in week_days:
-            plants = grouped[day]
+
+        for d in days:
+            day_key = d.isoformat()
+            plants_today = []
+
+            for p in plants:
+                pid = p["plant_id"]
+
+                appears = False
+
+                # A) next_due_at coincide con il giorno
+                next_due = p.get("next_due_at")
+                if next_due and next_due[:10] == day_key:
+                    appears = True
+
+                # B) esiste un log per quel giorno
+                if pid in logs_by_day.get(day_key, {}):
+                    appears = True
+
+                if appears:
+                    plants_today.append({
+                        **p,
+                        "logs_today": logs_by_day[day_key].get(pid, [])
+                    })
+
             result.append({
-                "date": day,
-                "plants_count": len(plants),
-                "plants": plants,   # OGNI plant ha anche "photo_base64"
+                "date": day_key,
+                "plants_count": len(plants_today),
+                "plants": plants_today,
             })
 
         return jsonify(result), 200
@@ -2019,47 +2058,27 @@ def watering_overview():
         return jsonify({"error": str(e)}), 500
 
 
-
 # ========= Watering – L'UTENTE HA INNAFFIATO =========
 @api_blueprint.route("/plant/<plant_id>/watering/do", methods=["POST"])
 @require_jwt
 def plant_do_watering(plant_id: str):
-    """
-    L'utente segnala che ha appena innaffiato una pianta.
+    print(f"[WATERING][DO] Called for plant_id={plant_id}")
 
-    Body JSON atteso (minimo):
-    {
-      "amount_ml": 200,
-      "note": "un po' d’acqua in più oggi"  (opzionale),
-      "done_at": "2025-11-30T13:00:00"     (opzionale, ISO 8601; se assente = adesso)
-    }
-
-    Logica:
-    - chiama ReminderService.register_watering_and_schedule_next(
-        user_id=g.user_id,
-        plant_id=plant_id,
-        amount_ml=amount_ml,
-        note=note,
-        done_at=done_at
-      )
-    - questo:
-        * crea WateringLog reale
-        * aggiorna WateringPlan.next_due_at
-        * crea WateringLog "programmato" futuro
-        * crea nuovo Reminder
-    """
     _ensure_uuid(plant_id, "plant_id")
 
     payload = _parse_json_body() or {}
+    print(f"[WATERING][DO] Payload received: {payload}")
 
     # amount_ml obbligatorio
     amount_ml = payload.get("amount_ml")
     if amount_ml is None:
+        print("[WATERING][DO] Missing amount_ml.")
         return jsonify({"error": "Campo obbligatorio: amount_ml"}), 400
 
     try:
         amount_ml = int(amount_ml)
     except (TypeError, ValueError):
+        print("[WATERING][DO] amount_ml is not an integer.")
         return jsonify({"error": "amount_ml deve essere un intero"}), 400
 
     note = payload.get("note") or None
@@ -2067,19 +2086,22 @@ def plant_do_watering(plant_id: str):
     done_at = None
 
     if done_at_raw:
-        # se il client manda una stringa ISO la parsifichiamo, altrimenti lasciamo None
+        print(f"[WATERING][DO] Parsing done_at: {done_at_raw}")
         if isinstance(done_at_raw, str):
             try:
                 done_at = datetime.fromisoformat(done_at_raw)
             except Exception:
+                print("[WATERING][DO] Invalid ISO format for done_at.")
                 return jsonify({"error": "done_at deve essere in formato ISO 8601"}), 400
 
     # Verifica che l'utente possieda la pianta
     with _session_ctx() as s:
         if not s.get(UserPlant, (g.user_id, plant_id)):
+            print(f"[WATERING][DO] Forbidden: user {g.user_id} does not own plant {plant_id}.")
             return jsonify({"error": "Forbidden: non possiedi questa pianta"}), 403
 
-    # Usiamo il servizio ad alto livello che gestisce piano + log + reminder
+    print(f"[WATERING][DO] Registering watering for user={g.user_id}, plant={plant_id}")
+
     res = reminder_service.register_watering_and_schedule_next(
         user_id=str(g.user_id),
         plant_id=plant_id,
@@ -2089,9 +2111,11 @@ def plant_do_watering(plant_id: str):
     )
 
     if not res.get("ok"):
+        print(f"[WATERING][DO] Error from service: {res}")
         return jsonify({"error": res.get("error", "Unable to register watering")}), 400
 
-    # Rispondiamo con qualche info utile al frontend
+    print(f"[WATERING][DO] Watering registered successfully: {res}")
+
     return jsonify(
         {
             "ok": True,
@@ -2102,6 +2126,148 @@ def plant_do_watering(plant_id: str):
             "interval_days": res.get("interval_days"),
         }
     ), 200
+
+
+@api_blueprint.route("/plant/<plant_id>/watering/undo", methods=["POST"])
+@require_jwt
+def plant_undo_watering(plant_id):
+    user_id = str(g.user_id)
+    print(f"[UNDO][PLANT] plant_id={plant_id}, user_id={user_id}")
+
+    with _session_ctx() as s:
+
+        now = datetime.utcnow()
+        today_midnight = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        tomorrow_midnight = today_midnight + timedelta(days=1)
+
+        print(f"[UNDO] Today range: {today_midnight} → {tomorrow_midnight}")
+
+        # ---------------------------------------------------
+        # 1) Trova SOLO il log REALE di oggi (ora ≠ 00:00)
+        # ---------------------------------------------------
+        real_log = (
+            s.query(WateringLog)
+            .filter(
+                WateringLog.user_id == user_id,
+                WateringLog.plant_id == plant_id,
+                WateringLog.done_at >= today_midnight,
+                WateringLog.done_at < tomorrow_midnight,
+                WateringLog.done_at != today_midnight
+            )
+            .first()
+        )
+
+        if not real_log:
+            print("[UNDO] No REAL log to undo.")
+            return jsonify({"error": "Nessun watering da annullare"}), 400
+
+        print(f"[UNDO] Removing REAL log: {real_log.done_at}")
+        s.delete(real_log)
+
+        # ---------------------------------------------------
+        # 2) Cancella TUTTI i log FUTURI della pianta
+        # ---------------------------------------------------
+        future_logs = (
+            s.query(WateringLog)
+            .filter(
+                WateringLog.user_id == user_id,
+                WateringLog.plant_id == plant_id,
+                WateringLog.done_at >= tomorrow_midnight
+            )
+            .all()
+        )
+
+        for fl in future_logs:
+            print(f"[UNDO] Removing FUTURE log: {fl.done_at}")
+            s.delete(fl)
+
+        # ---------------------------------------------------
+        # 3) Recupera piano
+        # ---------------------------------------------------
+        plan = (
+            s.query(WateringPlan)
+            .filter(
+                WateringPlan.user_id == user_id,
+                WateringPlan.plant_id == plant_id
+            )
+            .first()
+        )
+
+        if not plan:
+            print("[UNDO] No plan found.")
+            s.rollback()
+            return jsonify({"error": "Nessun piano trovato"}), 400
+
+        interval_days = int(plan.interval_days or 3)
+
+        # ---------------------------------------------------
+        # 4) Calcolo ml per log programmato
+        # ---------------------------------------------------
+        plant_obj = s.query(Plant).filter(Plant.id == plant_id).one_or_none()
+        scheduled_ml = 150  # fallback base
+
+        if plant_obj is not None:
+            ml = 150
+            wl = int(plant_obj.water_level or 3)
+            if wl <= 2:
+                ml = int(ml * 0.8)
+            elif wl >= 4:
+                ml = int(ml * 1.2)
+            scheduled_ml = max(50, ml)
+
+        # ---------------------------------------------------
+        # 5) Ricrea log programmato a mezzanotte (00:00)
+        # ---------------------------------------------------
+        print(f"[UNDO] Creating SCHEDULED log at midnight {today_midnight}")
+
+        new_sched = WateringLog(
+            id=str(uuid.uuid4()),
+            user_id=user_id,
+            plant_id=plant_id,
+            done_at=today_midnight,
+            amount_ml=scheduled_ml,
+            note="SCHEDULED FROM PLAN (UNDO)",
+        )
+        s.add(new_sched)
+
+        # ---------------------------------------------------
+        # 6) next_due_at = oggi a mezzanotte
+        # ---------------------------------------------------
+        plan.next_due_at = today_midnight
+        print(f"[UNDO] next_due_at reset to {today_midnight}")
+
+        # ---------------------------------------------------
+        # 7) Ricrea reminder
+        # ---------------------------------------------------
+        s.query(Reminder).filter(
+            Reminder.user_id == user_id,
+            Reminder.entity_type == "plant",
+            Reminder.entity_id == plant_id
+        ).delete()
+
+        new_rem = Reminder(
+            user_id=user_id,
+            title="Water your plant",
+            note=None,
+            scheduled_at=today_midnight,
+            done_at=None,
+            recurrence_rrule=None,
+            entity_type="plant",
+            entity_id=plant_id,
+        )
+        s.add(new_rem)
+
+        # ---------------------------------------------------
+        # 8) Commit finale
+        # ---------------------------------------------------
+        s.commit()
+
+        print("[UNDO] Completed successfully.")
+
+        return jsonify({
+            "ok": True,
+            "new_next_due_at": today_midnight.isoformat()
+        })
 
 
 @api_blueprint.route("/watering_plan/calendar-export", methods=["GET"])
