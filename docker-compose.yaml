@@ -48,6 +48,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      model:
+        condition: service_healthy
     restart: unless-stopped
     command: python app.py
     volumes:
@@ -67,6 +69,12 @@ services:
       ECOGROW_MODEL_CACHE: /app/artifacts/pretrained
     ports:
       - "8001:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 5s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
     restart: unless-stopped
     volumes:
       - ./ecogrow_disease_detection/artifacts/pretrained:/app/artifacts/pretrained
