@@ -141,12 +141,16 @@ class Plant(Base):
         secondary="user_plant",
         back_populates="plants",
         lazy="selectin",
+        viewonly=True,          # non crea/modifica user_plant, solo legge
+        overlaps="user_links",  # dice a SQLAlchemy che condivide le stesse FK
     )
 
+    # Link “vero” utente–pianta (tabella di join con campi extra)
     user_links: Mapped[List["UserPlant"]] = relationship(
         back_populates="plant",
         lazy="selectin",
         cascade="all, delete-orphan",
+        overlaps="owners",      # stessa sorgente dati di owners
     )
 
     watering_plans: Mapped[List["WateringPlan"]] = relationship(
@@ -198,8 +202,8 @@ class Disease(Base):
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=gen_uuid)
     name: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
     description: Mapped[str] = mapped_column(Text, nullable=False)
-    treatment: Mapped[Optional[str]] = mapped_column(Text)
-
+    symptoms: Mapped[Optional[dict]] = mapped_column(MySQLJSON)   # es. ["dark lesions","yellow leaves",...]
+    cure_tips: Mapped[Optional[dict]] = mapped_column(MySQLJSON)  # es. ["Remove and destroy...","Improve air...", ...]
     plants: Mapped[List["PlantDisease"]] = relationship(
         back_populates="disease",
         cascade="all, delete-orphan",
@@ -257,12 +261,16 @@ class User(Base):
         secondary="user_plant",
         back_populates="owners",
         lazy="selectin",
+        viewonly=True,          # anche qui solo lettura
+        overlaps="user_links",  # condivide le stesse FK di user_links
     )
 
+    # Link “vero” utente–pianta (tabella di join con campi extra)
     user_links: Mapped[List["UserPlant"]] = relationship(
         back_populates="user",
         lazy="selectin",
         cascade="all, delete-orphan",
+        overlaps="plants,owners",
     )
 
     watering_plans: Mapped[List["WateringPlan"]] = relationship(
@@ -333,11 +341,13 @@ class UserPlant(Base):
     user: Mapped["User"] = relationship(
         back_populates="user_links",
         lazy="selectin",
+        overlaps="plants,owners",
     )
 
     plant: Mapped["Plant"] = relationship(
         back_populates="user_links",
         lazy="selectin",
+        overlaps="plants,owners",
     )
 
 

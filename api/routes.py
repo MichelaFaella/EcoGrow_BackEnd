@@ -54,9 +54,17 @@ from models.entities import (
 api_blueprint = Blueprint("api", __name__)
 repo = RepositoryService()
 REFRESH_TTL_DAYS = int(os.getenv("REFRESH_TTL_DAYS", "90"))
+DISEASE_PROB_THRESHOLD = float(os.getenv("DISEASE_PROB_THRESHOLD", "0.80"))
 UPLOAD_FOLDER = "uploads"
 MODEL_PREDICT_URL = os.getenv("MODEL_URL", "http://model:8000/predict")
 MODEL_TIMEOUT = float(os.getenv("MODEL_TIMEOUT", "15"))
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+PLANT_DISEASE_DETAILS_PATH = os.path.join(BASE_DIR, "plant_disease_details.json")
+try:
+    with open(PLANT_DISEASE_DETAILS_PATH, "r", encoding="utf-8") as f:
+        PLANT_DISEASE_DETAILS = json.load(f)
+except FileNotFoundError:
+    PLANT_DISEASE_DETAILS = {}
 
 image_service = ImageProcessingService()
 reminder_service = ReminderService()
@@ -590,7 +598,7 @@ def _plant_to_dict(p: Plant) -> dict:
         "author_id": getattr(p, "author_id", None),
         "created_at": getattr(p, "created_at", None),
         "updated_at": getattr(p, "updated_at", None),
-        # add any FK here, e.g. "family_id": getattr(p, "family_id", None),
+        "family_id": getattr(p, "family_id", None),
     }
 
 
@@ -645,7 +653,6 @@ def ping():
     return jsonify(ping="pong")
 
 
-
 @api_blueprint.route("/ai/model/disease-detection", methods=["POST"])
 def ai_model_disease_detection():
     if "image" not in request.files:
@@ -661,7 +668,7 @@ def ai_model_disease_detection():
         return jsonify({"error": str(exc)}), 400
 
     family = request.values.get("family") or (body.get("family") if isinstance(body, dict) else None)
-    disease_suggestions = []
+    disease_suggestions: list[str] = []
     if request.values:
         disease_suggestions.extend([v for v in request.values.getlist("disease_suggestions") if v])
     if isinstance(body, dict):
@@ -670,8 +677,9 @@ def ai_model_disease_detection():
             disease_suggestions.extend([str(v) for v in raw if v is not None])
 
     try:
-        result = _call_model_service(
-            request.files["image"],
+        # 👉 ora usi il service
+        result = image_service.disease_detection_raw(
+            image_file=request.files["image"],
             unknown_threshold=unknown_threshold,
             family=family,
             disease_suggestions=disease_suggestions or None,
@@ -1327,6 +1335,155 @@ def disease_delete(did: str):
             _commit_or_409(s)
         write_changes_delete("disease", did)
         return ("", 204)
+
+
+@api_blueprint.route("/ai/model/check-plant-disease", methods=["POST"])
+@require_jwt
+def ai_model_check_plant_disease():
+    if "image" not in request.files:
+        return jsonify({"error": "Missing 'image' file in request."}), 400
+
+    body = request.get_json(silent=True) if request.is_json else None
+
+    # 1) unknown_threshold come nell'altro endpoint
+    try:
+        raw_thr = request.values.get("unknown_threshold")
+        if raw_thr is None and isinstance(body, dict):
+            raw_thr = body.get("unknown_threshold")
+        unknown_threshold = _parse_unknown_threshold(raw_thr)
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 400
+
+    # 2) family
+    family = request.values.get("family") or (body.get("family") if isinstance(body, dict) else None)
+
+    # 3) disease_suggestions
+    disease_suggestions: list[str] = []
+    if request.values:
+        disease_suggestions.extend([v for v in request.values.getlist("disease_suggestions") if v])
+    if isinstance(body, dict):
+        raw = body.get("disease_suggestions")
+        if isinstance(raw, list):
+            disease_suggestions.extend([str(v) for v in raw if v is not None])
+
+    # 4) plant_id dal body (form o JSON)
+    plant_id = request.values.get("plant_id") or (body.get("plant_id") if isinstance(body, dict) else None)
+    if not plant_id:
+        return jsonify({"error": "Missing 'plant_id' in request."}), 400
+
+    _ensure_uuid(plant_id, "plant_id")
+
+    with _session_ctx() as s:
+        # Controllo pianta
+        plant = s.get(Plant, plant_id)
+        if not plant:
+            return jsonify({"error": "Plant not found"}), 404
+
+        # Controllo che l'utente la possieda
+        if not s.get(UserPlant, (g.user_id, plant_id)):
+            return jsonify({"error": "Forbidden: you do not own this plant"}), 403
+
+        # Se family non è passato, prendo dal DB
+        if not family and plant.family:
+            family = plant.family.name
+
+        # 5) Chiamata al servizio di disease recognition
+        try:
+            raw_result, label, prob = image_service.disease_detection_top_class(
+                image_file=request.files["image"],
+                unknown_threshold=unknown_threshold,
+                family=family,
+                disease_suggestions=disease_suggestions or None,
+            )
+        except ValueError as exc:
+            return jsonify({"error": str(exc)}), 400
+        except Exception as exc:  # noqa: BLE001
+            current_app.logger.exception("Disease model failed: %s", exc)
+            return jsonify({"error": f"Inference failed: {exc}"}), 502
+
+        # Caso esplicito healthy -> non salvo niente
+        if label == "healthy":
+            return jsonify({
+                "plant_id": plant_id,
+                "status": "healthy_plant",
+                "threshold": DISEASE_PROB_THRESHOLD,
+                "top_prediction": {
+                    "label": label,
+                    "probability": prob,
+                },
+                "model_raw": raw_result,
+            }), 200
+
+        # 6) Dettagli malattia dal JSON a partire da family + label
+        fam_key = family or (plant.family.name if plant.family else None)
+        disease_info = None
+        if fam_key and fam_key in PLANT_DISEASE_DETAILS:
+            disease_info = PLANT_DISEASE_DETAILS[fam_key].get(label)
+
+        if not disease_info:
+            disease_info = {
+                "name": label,
+                "description": f"Disease detected by AI model ({label})",
+                "cure_tips": None,
+            }
+
+        # 7) Upsert Disease
+        disease = (
+            s.query(Disease)
+            .filter(Disease.name == disease_info["name"])
+            .one_or_none()
+        )
+        if not disease:
+            cure_tips = disease_info.get("cure_tips")
+            if isinstance(cure_tips, list):
+                treatment_text = "\n".join(cure_tips)
+            else:
+                treatment_text = cure_tips
+
+            disease = Disease(
+                name=disease_info["name"],
+                description=disease_info["description"],
+                treatment=treatment_text,
+            )
+            s.add(disease)
+            s.flush()
+            write_changes_upsert("disease", [_serialize_instance(disease)])
+
+        # 8) PlantDisease: solo la top class
+        severity = int(round(prob * 100))
+        status = "confirmed" if prob >= DISEASE_PROB_THRESHOLD else "suspected"
+
+        pd = PlantDisease(
+            plant_id=plant_id,
+            disease_id=disease.id,
+            detected_at=datetime.utcnow().date(),
+            severity=severity,
+            notes=f"Detected by AI disease model (raw_label={label}, prob={prob:.3f})",
+            status=status,
+        )
+        s.add(pd)
+        _commit_or_409(s)
+        write_changes_upsert("plant_disease", [_serialize_instance(pd)])
+
+        plant_status = "sick_plant" if prob >= DISEASE_PROB_THRESHOLD else "healthy_plant"
+
+        return jsonify({
+            "plant_id": plant_id,
+            "status": plant_status,
+            "threshold": DISEASE_PROB_THRESHOLD,
+            "top_prediction": {
+                "label": label,
+                "probability": prob,
+            },
+            "disease": {
+                "id": disease.id,
+                "name": disease.name,
+                "status": status,
+                "severity": severity,
+            },
+            "model_raw": raw_result,
+        }), 200
+
 
 
 # ========= PlantDisease =========

@@ -6,7 +6,7 @@ from typing import Dict, List, Any, Optional
 from datetime import datetime, date  
 from sqlalchemy.orm import Session
 from sqlalchemy.dialects.mysql import insert as mysql_insert
-
+import uuid
 from models.base import SessionLocal
 from models.entities import (
     Family, Plant, PlantPhoto,
@@ -46,6 +46,14 @@ CHANGES_PATH = Path(os.getenv("CHANGES_PATH", str(DEFAULT_CHANGES)))
 # -------------------------
 def _ensure_parent(p: Path) -> None:
     p.parent.mkdir(parents=True, exist_ok=True)
+
+def _stable_disease_id(name: str) -> str:
+    """
+    UUID deterministico basato sul nome della malattia.
+    Così non creiamo nuovi id ad ogni riavvio.
+    """
+    base = f"ecogrow-disease::{name.strip().lower()}"
+    return str(uuid.uuid5(uuid.NAMESPACE_DNS, base))
 
 def _json_default(o):
     if isinstance(o, (datetime, date)):
@@ -286,3 +294,153 @@ def seed_from_changes(path: str | Path | None = None) -> int:
 
     logger.info(f"[seed] total applied: {total} from {p}")
     return total
+
+def seed_disease_definitions_from_file(path: str | Path | None = None) -> int:
+    """
+    Legge il file utils/plant_disease.txt (JSON, organizzato per famiglie) e fa:
+      - upsert nella tabella 'disease'
+      - upsert anche in changes.json (tabella 'disease')
+
+    Ritorna il numero di righe DB applicate.
+    """
+    # 1) Risolvi il path del file
+    if path is not None:
+        p = Path(path)
+    else:
+        root = Path(__file__).resolve().parents[2]  # /app
+        txt = root / "utils" / "plant_disease.txt"
+        json_alt = root / "utils" / "plant_disease.json"
+        details_alt = root / "utils" / "plant_disease_details.json"
+
+        if txt.exists():
+            p = txt
+        elif json_alt.exists():
+            p = json_alt
+        elif details_alt.exists():
+            p = details_alt
+        else:
+            logger.info("[seed_diseases] no plant_disease file found under utils/, skipping")
+            return 0
+
+    if not p.exists():
+        logger.info(f"[seed_diseases] file not found: {p}, skipping")
+        return 0
+
+    # 2) Carica il JSON
+    try:
+        raw = p.read_text(encoding="utf-8")
+        payload = json.loads(raw)
+    except Exception as e:
+        logger.error(f"[seed_diseases] cannot parse JSON from {p}: {e}")
+        return 0
+
+    if not isinstance(payload, dict):
+        logger.error(f"[seed_diseases] invalid structure in {p}: expected object at top-level")
+        return 0
+
+    # 3) Aggrega per nome malattia (Healthy, Anthracnose, ...)
+    aggregated: Dict[str, Dict[str, Any]] = {}
+
+    for family_name, diseases in payload.items():
+        if not isinstance(diseases, dict):
+            continue
+
+        for key, info in diseases.items():
+            if not isinstance(info, dict):
+                continue
+
+            # nel JSON il campo può essere "name" o dedotto dalla chiave
+            name = str(info.get("name") or key).strip()
+            if not name:
+                continue
+
+            description = (info.get("description") or "").strip()
+            symptoms = info.get("symptoms") or []
+            cure_tips = info.get("cure_tips") or []
+
+            # normalizza i symptoms in lista di stringhe
+            norm_symptoms: List[str] = []
+            if isinstance(symptoms, str):
+                norm_symptoms = [symptoms]
+            elif isinstance(symptoms, list):
+                for s in symptoms:
+                    if isinstance(s, dict):
+                        val = s.get("name") or s.get("label") or s.get("value")
+                    else:
+                        val = s
+                    if val:
+                        val_str = str(val).strip()
+                        if val_str:
+                            norm_symptoms.append(val_str)
+
+            # normalizza i cure_tips in lista di stringhe
+            norm_cure_tips: List[str] = []
+            if isinstance(cure_tips, str):
+                norm_cure_tips = [cure_tips]
+            elif isinstance(cure_tips, list):
+                for c in cure_tips:
+                    if c:
+                        c_str = str(c).strip()
+                        if c_str:
+                            norm_cure_tips.append(c_str)
+
+            ag = aggregated.setdefault(
+                name,
+                {
+                    "descriptions": set(),
+                    "families": set(),
+                    "symptoms": set(),
+                    "cure_tips": set(),
+                },
+            )
+
+            if description:
+                ag["descriptions"].add(description)
+            ag["families"].add(str(family_name))
+
+            for s in norm_symptoms:
+                ag["symptoms"].add(s)
+
+            for c in norm_cure_tips:
+                ag["cure_tips"].add(c)
+
+    if not aggregated:
+        logger.info(f"[seed_diseases] no diseases found in {p}")
+        return 0
+
+    # 4) Costruisci le righe pronte per DB + changes.json
+    rows: List[Dict[str, Any]] = []
+
+    for name, ag in aggregated.items():
+        desc_list = [d for d in ag["descriptions"] if d]
+        base_desc = desc_list[0] if desc_list else f"{name} - disease affecting ornamental plants."
+
+        symptoms_list = sorted(ag["symptoms"])
+        cure_tips_list = sorted(ag["cure_tips"])
+
+        rows.append(
+            {
+                "id": _stable_disease_id(name),
+                "name": name,
+                "description": base_desc,
+                "symptoms": symptoms_list or None,
+                "cure_tips": cure_tips_list or None,
+            }
+        )
+
+    # 5) Upsert su DB (tabella disease)
+    applied_db = 0
+    with SessionLocal() as session:
+        for row in rows:
+            _upsert_db(session, Disease, row)
+            applied_db += 1
+        session.commit()
+
+    # 6) Upsert anche in changes.json (così il seed è riproducibile)
+    try:
+        write_changes_upsert("disease", rows)
+    except Exception as e:
+        logger.error(f"[seed_diseases] failed to update changes.json: {e}")
+
+    logger.info(f"[seed_diseases] applied {applied_db} disease rows from {p}")
+    return applied_db
