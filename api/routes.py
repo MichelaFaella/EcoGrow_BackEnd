@@ -28,7 +28,7 @@ import secrets
 from models.scripts.replay_changes import seed_from_changes, write_changes_delete, write_changes_upsert
 from models.base import SessionLocal
 from services.image_processing_service import ImageProcessingService
-#from services.reminder_service import ReminderService
+from services.reminder_service import ReminderService
 
 # Local application
 from services.repository_service import RepositoryService
@@ -59,10 +59,8 @@ MODEL_PREDICT_URL = os.getenv("MODEL_URL", "http://model:8000/predict")
 MODEL_TIMEOUT = float(os.getenv("MODEL_TIMEOUT", "15"))
 
 image_service = ImageProcessingService()
-#reminder_service = ReminderService()
+reminder_service = ReminderService()
 
-
-# disease_service = DiseaseRecognitionService()
 
 @api_blueprint.errorhandler(401)
 def auth_missing(e):
@@ -1630,84 +1628,301 @@ def user_plant_delete():
 
 
 # ========= Friendship =========
-@api_blueprint.route("/friendship/all", methods=["GET"])
-@require_jwt
-def friendship_all():
-    with _session_ctx() as s:
-        rows = s.query(Friendship).order_by(Friendship.created_at.desc()).all()
-        return jsonify([_serialize_instance(r) for r in rows]), 200
+# ============================
+#         FRIENDSHIP
+# ============================
 
+@api_blueprint.route("/friendship/summary", methods=["GET"])
+@require_jwt
+def friendship_summary():
+    user_id = g.user_id
+    print(f"[API] friendship_summary called by {user_id}")
+
+    repo = RepositoryService()
+
+    short_id = user_id.split("-")[0]
+
+    # Tutte le friendship dell'utente
+    rows = repo.get_friendships_for_user(user_id)
+
+    # Carichiamo info sugli amici
+    friends_out = []
+    user_cache = {}  # evita query duplicate
+
+    with repo.Session() as s:
+        for fr in rows:
+            friend_id = fr.user_id_b if fr.user_id_a == user_id else fr.user_id_a
+
+            if friend_id not in user_cache:
+                u = s.query(User).filter(User.id == friend_id).first()
+                user_cache[friend_id] = u
+
+            u = user_cache[friend_id]
+
+            friends_out.append({
+                "friendship_id": fr.id,
+                "user_id": friend_id,
+                "first_name": u.first_name if u else None,
+                "last_name": u.last_name if u else None,
+                "created_at": fr.created_at.isoformat() if fr.created_at else None,
+            })
+
+    print(f"[API] friendship_summary → returned {len(friends_out)} friends")
+
+    return jsonify({
+        "short_id": short_id,
+        "my_friends": friends_out
+    }), 200
+
+
+# ============================
+#   ADD FRIEND BY SHORT-ID
+# ============================
+
+@api_blueprint.route("/friendship/add-by-short", methods=["POST"])
+@require_jwt
+def friendship_add_by_short():
+    payload = _parse_json_body()
+    short_id = payload.get("short_id", "").strip()
+
+    print(f"[API] /friendship/add-by-short short_id={short_id}")
+
+    if not short_id or len(short_id) < 3:
+        return jsonify({"error": "Invalid short_id"}), 400
+
+    repo = RepositoryService()
+    current_user_id = g.user_id
+    print(f"[API] Current user = {current_user_id}")
+
+    # 1) trova user dal short id
+    target_user_id = repo.get_user_id_by_short(short_id)
+    print(f"[API] get_user_id_by_short → {target_user_id}")
+
+    if not target_user_id:
+        return jsonify({"error": "User not found"}), 404
+
+    if target_user_id == current_user_id:
+        return jsonify({"error": "You cannot add yourself"}), 400
+
+    # 2) esiste già una friendship?
+    existing = repo.get_existing_friendship(current_user_id, target_user_id)
+    if existing:
+        return jsonify({"error": "Friendship already exists"}), 409
+
+    # 3) crea friendship
+    data = {
+        "user_id_a": current_user_id,
+        "user_id_b": target_user_id,
+        "status": "accepted"
+    }
+
+    try:
+        fr = repo.create_friendship(data)
+        print(f"[API] Friendship created → {fr.id}")
+        return jsonify({"ok": True, "friendship_id": fr.id}), 201
+
+    except Exception as e:
+        print("[API] ERROR creating friendship:", e)
+        return jsonify({"error": "Could not create friendship"}), 500
+
+
+# ============================
+#      ADD FRIENDSHIP RAW
+# ============================
 
 @api_blueprint.route("/friendship/add", methods=["POST"])
 @require_jwt
 def friendship_add():
     payload = _parse_json_body()
+    repo = RepositoryService()
+
     data = _filter_fields_for_model(payload, Friendship)
     required = ["user_id_a", "user_id_b", "status"]
     missing = [k for k in required if not data.get(k)]
+
     if missing:
         return jsonify({"error": f"Required fields: {', '.join(missing)}"}), 400
-    with _session_ctx() as s:
-        fr = Friendship(**data)
-        s.add(fr)
-        _commit_or_409(s)
-        write_changes_upsert("friendship", [_serialize_instance(fr)])
-        return jsonify({"ok": True, "id": fr.id}), 201
 
+    try:
+        fr = repo.create_friendship(data)
+        print(f"[API] friendship_add → created {fr.id}")
+    except Exception as e:
+        print("[API] ERROR friendship_add:", e)
+        return jsonify({"error": "Could not create friendship"}), 500
+
+    return jsonify({"ok": True, "id": fr.id}), 201
+
+
+# ============================
+#     UPDATE FRIENDSHIP
+# ============================
 
 @api_blueprint.route("/friendship/update/<fid>", methods=["PATCH", "PUT"])
 @require_jwt
 def friendship_update(fid: str):
     _ensure_uuid(fid, "friendship_id")
     payload = _parse_json_body()
-    with _session_ctx() as s:
-        fr = s.get(Friendship, fid)
-        if not fr: return jsonify({"error": "Friendship not found"}), 404
-        for k, v in _filter_fields_for_model(payload, Friendship).items():
-            setattr(fr, k, v)
-        fr.updated_at = datetime.utcnow()
-        _commit_or_409(s)
-        write_changes_upsert("friendship", [_serialize_instance(fr)])
-        return jsonify({"ok": True, "id": fr.id}), 200
+    repo = RepositoryService()
 
+    fr = repo.get_friendship_by_id(fid)
+    if not fr:
+        return jsonify({"error": "Friendship not found"}), 404
+
+    try:
+        updated = repo.update_friendship(fid, payload)
+        print(f"[API] friendship_update → updated {fid}")
+    except Exception as e:
+        print("[API] ERROR updating friendship:", e)
+        return jsonify({"error": "Update error"}), 500
+
+    return jsonify({"ok": True, "id": fid}), 200
+
+
+# ============================
+#      DELETE FRIENDSHIP
+# ============================
 
 @api_blueprint.route("/friendship/delete/<fid>", methods=["DELETE"])
 @require_jwt
 def friendship_delete(fid: str):
     _ensure_uuid(fid, "friendship_id")
-    with _session_ctx() as s:
-        fr = s.get(Friendship, fid)
-        if fr:
-            s.delete(fr)
-            _commit_or_409(s)
-        write_changes_delete("friendship", fid)
-        return ("", 204)
+    repo = RepositoryService()
+
+    fr = repo.get_friendship_by_id(fid)
+    if not fr:
+        return jsonify({"error": "Friendship not found"}), 404
+
+    try:
+        repo.delete_friendship(fid)
+        print(f"[API] friendship_delete → removed {fid}")
+    except Exception as e:
+        print("[API] ERROR deleting friendship:", e)
+        return jsonify({"error": "Could not delete friendship"}), 500
+
+    return ("", 204)
 
 
 # ========= SharedPlant =========
 @api_blueprint.route("/shared_plant/all", methods=["GET"])
 @require_jwt
 def shared_plant_all():
+    """
+    Restituisce tutte le shared_plant dove l'utente è owner o recipient.
+
+    Output per ogni elemento:
+    {
+        "shared_id": "...",
+        "plant_id": "...",
+        "plant_name": "...",            # common_name o scientific_name
+        "nickname": "...",              # nickname dell'utente loggato (se esiste)
+        "friend_first_name": "...",
+        "friend_last_name": "...",
+        "photo_base64": "..."           # immagine compressa come per i reminder
+    }
+    """
+    user_id = g.user_id
+    repo = RepositoryService()
+
+    rows = repo.get_shared_plants_for_user(user_id)
+
+    out = []
     with _session_ctx() as s:
-        rows = s.query(SharedPlant).order_by(SharedPlant.created_at.desc()).all()
-        return jsonify([_serialize_instance(r) for r in rows]), 200
+        user_cache = {}
+
+        for sp in rows:
+            # --- plant info + foto compressa (come nei reminder) ---
+            plant = s.query(Plant).options(selectinload(Plant.photos),
+                                           selectinload(Plant.family)) \
+                .filter(Plant.id == sp.plant_id).first()
+
+            plant_name = None
+            photo_base64 = None
+            if plant:
+                serialized = _serialize_full_plant(plant)
+                plant_name = serialized.get("common_name") or serialized.get("scientific_name")
+                photo_base64 = serialized.get("photo_base64")
+
+            # --- nickname dell'utente loggato per quella pianta (se c'è) ---
+            up = s.get(UserPlant, (user_id, sp.plant_id))
+            nickname = up.nickname if up and up.nickname else None
+
+            # --- amico (owner/recipient opposto all'utente loggato) ---
+            friend_id = sp.recipient_user_id if sp.owner_user_id == user_id else sp.owner_user_id
+
+            if friend_id not in user_cache:
+                u = s.query(User).filter(User.id == friend_id).first()
+                user_cache[friend_id] = u
+            else:
+                u = user_cache[friend_id]
+
+            friend_first = u.first_name if u else None
+            friend_last = u.last_name if u else None
+
+            out.append({
+                "shared_id": str(sp.id),
+                "plant_id": str(sp.plant_id),
+                "plant_name": plant_name,
+                "nickname": nickname,
+                "friend_first_name": friend_first,
+                "friend_last_name": friend_last,
+                "photo_base64": photo_base64,
+            })
+
+    return jsonify(out), 200
 
 
 @api_blueprint.route("/shared_plant/add", methods=["POST"])
 @require_jwt
 def shared_plant_add():
+    """
+    Crea una nuova condivisione:
+    - owner = utente loggato (g.user_id)
+    - recipient = trovato tramite short_id
+    - plant_id passato dal frontend
+    """
     payload = _parse_json_body()
-    data = _filter_fields_for_model(payload, SharedPlant)
-    required = ["owner_user_id", "recipient_user_id", "plant_id"]
-    missing = [k for k in required if not data.get(k)]
-    if missing:
-        return jsonify({"error": f"Required fields: {', '.join(missing)}"}), 400
-    with _session_ctx() as s:
-        sp = SharedPlant(**data)
-        s.add(sp)
-        _commit_or_409(s)
-        write_changes_upsert("shared_plant", [_serialize_instance(sp)])
-        return jsonify({"ok": True, "id": sp.id}), 201
+    repo = RepositoryService()
+
+    plant_id = payload.get("plant_id")
+    short_id = payload.get("short_id")
+
+    if not plant_id or not short_id:
+        return jsonify({"error": "Missing plant_id or short_id"}), 400
+
+    owner_id = g.user_id
+
+    # Ricava recipient usando short-id
+    recipient_id = repo.get_user_id_by_short(short_id)
+    if not recipient_id:
+        return jsonify({"error": "Recipient not found"}), 404
+
+    if recipient_id == owner_id:
+        return jsonify({"error": "Cannot share with yourself"}), 400
+
+    # Controlla duplicati
+    existing = repo.get_shared_plants_for_user(owner_id)
+    for row in existing:
+        if (row.owner_user_id == owner_id and
+                row.recipient_user_id == recipient_id and
+                row.plant_id == plant_id and
+                row.ended_sharing_at is None):
+            return jsonify({"error": "Already shared"}), 409
+
+    # Crea la condivisione
+    data = {
+        "owner_user_id": owner_id,
+        "recipient_user_id": recipient_id,
+        "plant_id": plant_id,
+        "can_edit": True
+    }
+
+    try:
+        sp = repo.create_shared_plant(data)
+    except Exception as e:
+        print("[API] ERROR creating shared plant:", e)
+        return jsonify({"error": "Could not create shared plant"}), 500
+
+    return jsonify({"ok": True, "id": sp.id}), 201
 
 
 @api_blueprint.route("/shared_plant/update/<sid>", methods=["PATCH", "PUT"])
@@ -1715,27 +1930,29 @@ def shared_plant_add():
 def shared_plant_update(sid: str):
     _ensure_uuid(sid, "shared_plant_id")
     payload = _parse_json_body()
-    with _session_ctx() as s:
-        sp = s.get(SharedPlant, sid)
-        if not sp: return jsonify({"error": "SharedPlant not found"}), 404
-        for k, v in _filter_fields_for_model(payload, SharedPlant).items():
-            setattr(sp, k, v)
-        _commit_or_409(s)
-        write_changes_upsert("shared_plant", [_serialize_instance(sp)])
-        return jsonify({"ok": True, "id": sp.id}), 200
+    repo = RepositoryService()
+
+    # tieni solo i campi validi per SharedPlant
+    data = _filter_fields_for_model(payload, SharedPlant)
+
+    sp = repo.update_shared_plant(sid, data)
+    if not sp:
+        return jsonify({"error": "SharedPlant not found"}), 404
+
+    return jsonify({"ok": True, "id": sp.id}), 200
 
 
 @api_blueprint.route("/shared_plant/delete/<sid>", methods=["DELETE"])
 @require_jwt
 def shared_plant_delete(sid: str):
     _ensure_uuid(sid, "shared_plant_id")
-    with _session_ctx() as s:
-        sp = s.get(SharedPlant, sid)
-        if sp:
-            s.delete(sp)
-            _commit_or_409(s)
-        write_changes_delete("shared_plant", sid)
-        return ("", 204)
+    repo = RepositoryService()
+
+    ok = repo.delete_shared_plant(sid)
+    if not ok:
+        return jsonify({"error": "SharedPlant not found"}), 404
+
+    return ("", 204)
 
 
 # ========= WateringPlan =========
@@ -2091,11 +2308,10 @@ def questionnaire_submit_answers():
 @require_jwt
 def watering_overview():
     """
-    Restituisce una settimana completa (lun–dom) a partire da oggi.
-    Ogni giorno contiene:
-    - tutte le piante con next_due_at = giorno
-    - o una lista vuota
-    Le piante hanno già photo_base64 compresso (se presente).
+    Restituisce una settimana (lun→dom).
+    Una pianta compare SOLO NEI GIORNI CORRETTI:
+      - giorno di next_due_at
+      - oppure giorno dei log (done_at)
     """
     try:
         user_id = g.user_id
@@ -2103,40 +2319,80 @@ def watering_overview():
         return jsonify({"error": "Unauthorized"}), 401
 
     try:
-        # 1) calcolo settimana corrente (lun–dom)
         today = datetime.utcnow().date()
-        week_start = today - timedelta(days=today.weekday())  # lunedì
-        week_days = [
-            (week_start + timedelta(days=i)).isoformat()
-            for i in range(7)
-        ]
+        week_start = today - timedelta(days=today.weekday())
+        days = [(week_start + timedelta(days=i)) for i in range(7)]
 
-        # 2) prendo le piante con info + photo_base64 dalla repository
-        raw_rows = repo.get_watering_overview_for_user(user_id)
+        # ----------------------------------------
+        # 1) Otteniamo tutte le piante con info
+        # ----------------------------------------
+        plants = repo.get_watering_overview_for_user(user_id)
 
-        # 3) raggruppo per giorno (tenendo anche i giorni vuoti)
-        grouped = {d: [] for d in week_days}
+        # ----------------------------------------
+        # 2) Otteniamo tutti i log della settimana
+        # ----------------------------------------
+        week_start_dt = datetime.combine(week_start, datetime.min.time())
+        week_end_dt = week_start_dt + timedelta(days=7)
 
-        for r in raw_rows:
-            next_due_str = r.get("next_due_at")
-            if not next_due_str:
-                continue
+        with SessionLocal() as s:
+            logs = (
+                s.query(WateringLog)
+                .filter(
+                    WateringLog.user_id == user_id,
+                    WateringLog.done_at >= week_start_dt,
+                    WateringLog.done_at < week_end_dt,
+                )
+                .all()
+            )
 
-            # "2025-03-10T09:00:00" -> "2025-03-10"
-            day_key = next_due_str[:10]
+        # Raggruppiamo log per giorno e plant_id
+        logs_by_day = {}
+        for d in days:
+            logs_by_day[d.isoformat()] = {}
 
-            # se è un giorno della settimana corrente, aggiungo
-            if day_key in grouped:
-                grouped[day_key].append(r)
+        for log in logs:
+            day_key = log.done_at.date().isoformat()
+            pid = str(log.plant_id)
+            logs_by_day[day_key].setdefault(pid, [])
+            logs_by_day[day_key][pid].append({
+                "done_at": log.done_at.isoformat(),
+                "amount_ml": log.amount_ml,
+                "note": log.note,
+            })
 
-        # 4) costruiamo la risposta finale
+        # ----------------------------------------
+        # 3) Costruiamo settimana → solo giorni corretti
+        # ----------------------------------------
         result = []
-        for day in week_days:
-            plants = grouped[day]
+
+        for d in days:
+            day_key = d.isoformat()
+            plants_today = []
+
+            for p in plants:
+                pid = p["plant_id"]
+
+                appears = False
+
+                # A) next_due_at coincide con il giorno
+                next_due = p.get("next_due_at")
+                if next_due and next_due[:10] == day_key:
+                    appears = True
+
+                # B) esiste un log per quel giorno
+                if pid in logs_by_day.get(day_key, {}):
+                    appears = True
+
+                if appears:
+                    plants_today.append({
+                        **p,
+                        "logs_today": logs_by_day[day_key].get(pid, [])
+                    })
+
             result.append({
-                "date": day,
-                "plants_count": len(plants),
-                "plants": plants,   # OGNI plant ha anche "photo_base64"
+                "date": day_key,
+                "plants_count": len(plants_today),
+                "plants": plants_today,
             })
 
         return jsonify(result), 200
@@ -2146,47 +2402,27 @@ def watering_overview():
         return jsonify({"error": str(e)}), 500
 
 
-
 # ========= Watering – L'UTENTE HA INNAFFIATO =========
 @api_blueprint.route("/plant/<plant_id>/watering/do", methods=["POST"])
 @require_jwt
 def plant_do_watering(plant_id: str):
-    """
-    L'utente segnala che ha appena innaffiato una pianta.
+    print(f"[WATERING][DO] Called for plant_id={plant_id}")
 
-    Body JSON atteso (minimo):
-    {
-      "amount_ml": 200,
-      "note": "un po' d’acqua in più oggi"  (opzionale),
-      "done_at": "2025-11-30T13:00:00"     (opzionale, ISO 8601; se assente = adesso)
-    }
-
-    Logica:
-    - chiama ReminderService.register_watering_and_schedule_next(
-        user_id=g.user_id,
-        plant_id=plant_id,
-        amount_ml=amount_ml,
-        note=note,
-        done_at=done_at
-      )
-    - questo:
-        * crea WateringLog reale
-        * aggiorna WateringPlan.next_due_at
-        * crea WateringLog "programmato" futuro
-        * crea nuovo Reminder
-    """
     _ensure_uuid(plant_id, "plant_id")
 
     payload = _parse_json_body() or {}
+    print(f"[WATERING][DO] Payload received: {payload}")
 
     # amount_ml obbligatorio
     amount_ml = payload.get("amount_ml")
     if amount_ml is None:
+        print("[WATERING][DO] Missing amount_ml.")
         return jsonify({"error": "Campo obbligatorio: amount_ml"}), 400
 
     try:
         amount_ml = int(amount_ml)
     except (TypeError, ValueError):
+        print("[WATERING][DO] amount_ml is not an integer.")
         return jsonify({"error": "amount_ml deve essere un intero"}), 400
 
     note = payload.get("note") or None
@@ -2194,19 +2430,22 @@ def plant_do_watering(plant_id: str):
     done_at = None
 
     if done_at_raw:
-        # se il client manda una stringa ISO la parsifichiamo, altrimenti lasciamo None
+        print(f"[WATERING][DO] Parsing done_at: {done_at_raw}")
         if isinstance(done_at_raw, str):
             try:
                 done_at = datetime.fromisoformat(done_at_raw)
             except Exception:
+                print("[WATERING][DO] Invalid ISO format for done_at.")
                 return jsonify({"error": "done_at deve essere in formato ISO 8601"}), 400
 
     # Verifica che l'utente possieda la pianta
     with _session_ctx() as s:
         if not s.get(UserPlant, (g.user_id, plant_id)):
+            print(f"[WATERING][DO] Forbidden: user {g.user_id} does not own plant {plant_id}.")
             return jsonify({"error": "Forbidden: non possiedi questa pianta"}), 403
 
-    # Usiamo il servizio ad alto livello che gestisce piano + log + reminder
+    print(f"[WATERING][DO] Registering watering for user={g.user_id}, plant={plant_id}")
+
     res = reminder_service.register_watering_and_schedule_next(
         user_id=str(g.user_id),
         plant_id=plant_id,
@@ -2216,9 +2455,11 @@ def plant_do_watering(plant_id: str):
     )
 
     if not res.get("ok"):
+        print(f"[WATERING][DO] Error from service: {res}")
         return jsonify({"error": res.get("error", "Unable to register watering")}), 400
 
-    # Rispondiamo con qualche info utile al frontend
+    print(f"[WATERING][DO] Watering registered successfully: {res}")
+
     return jsonify(
         {
             "ok": True,
@@ -2229,6 +2470,148 @@ def plant_do_watering(plant_id: str):
             "interval_days": res.get("interval_days"),
         }
     ), 200
+
+
+@api_blueprint.route("/plant/<plant_id>/watering/undo", methods=["POST"])
+@require_jwt
+def plant_undo_watering(plant_id):
+    user_id = str(g.user_id)
+    print(f"[UNDO][PLANT] plant_id={plant_id}, user_id={user_id}")
+
+    with _session_ctx() as s:
+
+        now = datetime.utcnow()
+        today_midnight = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        tomorrow_midnight = today_midnight + timedelta(days=1)
+
+        print(f"[UNDO] Today range: {today_midnight} → {tomorrow_midnight}")
+
+        # ---------------------------------------------------
+        # 1) Trova SOLO il log REALE di oggi (ora ≠ 00:00)
+        # ---------------------------------------------------
+        real_log = (
+            s.query(WateringLog)
+            .filter(
+                WateringLog.user_id == user_id,
+                WateringLog.plant_id == plant_id,
+                WateringLog.done_at >= today_midnight,
+                WateringLog.done_at < tomorrow_midnight,
+                WateringLog.done_at != today_midnight
+            )
+            .first()
+        )
+
+        if not real_log:
+            print("[UNDO] No REAL log to undo.")
+            return jsonify({"error": "Nessun watering da annullare"}), 400
+
+        print(f"[UNDO] Removing REAL log: {real_log.done_at}")
+        s.delete(real_log)
+
+        # ---------------------------------------------------
+        # 2) Cancella TUTTI i log FUTURI della pianta
+        # ---------------------------------------------------
+        future_logs = (
+            s.query(WateringLog)
+            .filter(
+                WateringLog.user_id == user_id,
+                WateringLog.plant_id == plant_id,
+                WateringLog.done_at >= tomorrow_midnight
+            )
+            .all()
+        )
+
+        for fl in future_logs:
+            print(f"[UNDO] Removing FUTURE log: {fl.done_at}")
+            s.delete(fl)
+
+        # ---------------------------------------------------
+        # 3) Recupera piano
+        # ---------------------------------------------------
+        plan = (
+            s.query(WateringPlan)
+            .filter(
+                WateringPlan.user_id == user_id,
+                WateringPlan.plant_id == plant_id
+            )
+            .first()
+        )
+
+        if not plan:
+            print("[UNDO] No plan found.")
+            s.rollback()
+            return jsonify({"error": "Nessun piano trovato"}), 400
+
+        interval_days = int(plan.interval_days or 3)
+
+        # ---------------------------------------------------
+        # 4) Calcolo ml per log programmato
+        # ---------------------------------------------------
+        plant_obj = s.query(Plant).filter(Plant.id == plant_id).one_or_none()
+        scheduled_ml = 150  # fallback base
+
+        if plant_obj is not None:
+            ml = 150
+            wl = int(plant_obj.water_level or 3)
+            if wl <= 2:
+                ml = int(ml * 0.8)
+            elif wl >= 4:
+                ml = int(ml * 1.2)
+            scheduled_ml = max(50, ml)
+
+        # ---------------------------------------------------
+        # 5) Ricrea log programmato a mezzanotte (00:00)
+        # ---------------------------------------------------
+        print(f"[UNDO] Creating SCHEDULED log at midnight {today_midnight}")
+
+        new_sched = WateringLog(
+            id=str(uuid.uuid4()),
+            user_id=user_id,
+            plant_id=plant_id,
+            done_at=today_midnight,
+            amount_ml=scheduled_ml,
+            note="SCHEDULED FROM PLAN (UNDO)",
+        )
+        s.add(new_sched)
+
+        # ---------------------------------------------------
+        # 6) next_due_at = oggi a mezzanotte
+        # ---------------------------------------------------
+        plan.next_due_at = today_midnight
+        print(f"[UNDO] next_due_at reset to {today_midnight}")
+
+        # ---------------------------------------------------
+        # 7) Ricrea reminder
+        # ---------------------------------------------------
+        s.query(Reminder).filter(
+            Reminder.user_id == user_id,
+            Reminder.entity_type == "plant",
+            Reminder.entity_id == plant_id
+        ).delete()
+
+        new_rem = Reminder(
+            user_id=user_id,
+            title="Water your plant",
+            note=None,
+            scheduled_at=today_midnight,
+            done_at=None,
+            recurrence_rrule=None,
+            entity_type="plant",
+            entity_id=plant_id,
+        )
+        s.add(new_rem)
+
+        # ---------------------------------------------------
+        # 8) Commit finale
+        # ---------------------------------------------------
+        s.commit()
+
+        print("[UNDO] Completed successfully.")
+
+        return jsonify({
+            "ok": True,
+            "new_next_due_at": today_midnight.isoformat()
+        })
 
 
 @api_blueprint.route("/watering_plan/calendar-export", methods=["GET"])
@@ -2272,7 +2655,6 @@ def watering_plan_calendar_export():
             })
 
         return jsonify(events), 200
-
 
 
 @api_blueprint.route("/reminder/all", methods=["GET"])

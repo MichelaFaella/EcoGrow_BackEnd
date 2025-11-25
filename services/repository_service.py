@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import uuid
 import base64
 import json
 import os
@@ -13,7 +14,7 @@ from typing import List, Dict, Optional, Tuple
 from PIL import Image
 from sqlalchemy import select, func
 from models.base import SessionLocal
-from models.scripts.replay_changes import write_changes_upsert
+from models.scripts.replay_changes import write_changes_upsert, write_changes_delete
 from models.entities import (
     Plant,
     UserPlant,
@@ -24,6 +25,7 @@ from models.entities import (
     UserQuestionAnswer,
     WateringPlan,
     Reminder,
+    WateringLog, Friendship, User, SharedPlant,
 )
 
 
@@ -609,6 +611,285 @@ class RepositoryService:
             return out
 
     # =======================
+    # FRIENDSHIP
+    # =======================
+
+    def get_user_id_by_short(self, short_id: str) -> Optional[str]:
+        """
+        Restituisce l'ID completo dell'utente il cui UUID inizia con short_id.
+        short_id = prime 8 cifre dell'UUID.
+        """
+        print(f"[RepositoryService] get_user_id_by_short -> short_id={short_id}")
+
+        if not short_id or len(short_id) < 3:
+            return None
+
+        with self.Session() as s:
+            row = (
+                s.query(User)
+                .filter(User.id.like(f"{short_id}%"))
+                .first()
+            )
+
+            if not row:
+                print(f"[RepositoryService] No user found for short_id={short_id}")
+                return None
+
+            print(f"[RepositoryService] Found user: {row.id}")
+            return str(row.id)
+
+    def get_existing_friendship(self, user_a: str, user_b: str) -> Optional[Friendship]:
+        """
+        Controlla se una friendship esiste già in una delle due direzioni.
+        """
+        print(f"[RepositoryService] get_existing_friendship {user_a} <-> {user_b}")
+
+        with self.Session() as s:
+            fr = (
+                s.query(Friendship)
+                .filter(
+                    ((Friendship.user_id_a == user_a) & (Friendship.user_id_b == user_b)) |
+                    ((Friendship.user_id_a == user_b) & (Friendship.user_id_b == user_a))
+                )
+                .first()
+            )
+
+            if fr:
+                print(f"[RepositoryService] Existing friendship found: {fr.id}")
+            else:
+                print("[RepositoryService] No existing friendship")
+
+            return fr
+
+    def create_friendship(self, data: dict) -> Friendship:
+        """
+        Crea una friendship (senza controllare duplicati).
+        """
+        print(f"[RepositoryService] create_friendship data={data}")
+
+        with self.Session() as s:
+            fr = Friendship(**data)
+            s.add(fr)
+            s.commit()
+            s.refresh(fr)
+
+            write_changes_upsert("friendship", [{
+                "id": fr.id,
+                "user_id_a": fr.user_id_a,
+                "user_id_b": fr.user_id_b,
+                "status": fr.status,
+                "created_at": fr.created_at.isoformat() if fr.created_at else None,
+                "updated_at": fr.updated_at.isoformat() if fr.updated_at else None,
+            }])
+
+            print(f"[RepositoryService] Friendship created id={fr.id}")
+            return fr
+
+    def get_friendships_for_user(self, user_id: str):
+        """
+        Restituisce tutte le amicizie dove compare user_id.
+        """
+        print(f"[RepositoryService] get_friendships_for_user user_id={user_id}")
+
+        with self.Session() as s:
+            rows = (
+                s.query(Friendship)
+                .filter(
+                    (Friendship.user_id_a == user_id) |
+                    (Friendship.user_id_b == user_id)
+                )
+                .order_by(Friendship.created_at.desc())
+                .all()
+            )
+
+            print(f"[RepositoryService] Found {len(rows)} friendships.")
+            return rows
+
+    def get_friendship_by_id(self, fid: str) -> Optional[Friendship]:
+        print(f"[RepositoryService] get_friendship_by_id fid={fid}")
+        with self.Session() as s:
+            fr = s.get(Friendship, fid)
+            if fr:
+                print(f"[RepositoryService] Found friendship {fid}")
+            else:
+                print(f"[RepositoryService] Friendship {fid} NOT found")
+            return fr
+
+    def delete_friendship(self, fid: str) -> None:
+        print(f"[RepositoryService] delete_friendship fid={fid}")
+        with self.Session() as s:
+            fr = s.get(Friendship, fid)
+            if not fr:
+                print(f"[RepositoryService] Nothing to delete (not found)")
+                return
+
+            s.delete(fr)
+            s.commit()
+
+            write_changes_delete("friendship", fid)
+            print(f"[RepositoryService] Deleted friendship {fid}")
+
+    # ===========================
+    # SHARED_PLANT
+    # ===========================
+
+    def create_shared_plant(self, data: dict):
+        print(f"[RepositoryService] create_shared_plant data={data}")
+
+        with self.Session() as s:
+            sp = SharedPlant(**data)
+            s.add(sp)
+            s.commit()
+            s.refresh(sp)
+
+            write_changes_upsert("shared_plant", [{
+                "id": sp.id,
+                "owner_user_id": sp.owner_user_id,
+                "recipient_user_id": sp.recipient_user_id,
+                "plant_id": sp.plant_id,
+                "can_edit": sp.can_edit,
+                "created_at": sp.created_at.isoformat() if sp.created_at else None,
+                "ended_sharing_at": sp.ended_sharing_at.isoformat() if sp.ended_sharing_at else None,
+            }])
+
+            print(f"[RepositoryService] SharedPlant created id={sp.id}")
+            return sp
+
+    def get_shared_plant_by_id(self, sid: str) -> Optional[SharedPlant]:
+        print(f"[RepositoryService] get_shared_plant_by_id sid={sid}")
+        with self.Session() as s:
+            sp = s.get(SharedPlant, sid)
+            if sp:
+                print(f"[RepositoryService] Found shared plant {sid}")
+            else:
+                print(f"[RepositoryService] Shared plant {sid} NOT found")
+            return sp
+
+    def get_shared_plants_for_user(self, user_id: str):
+        """
+        Ritorna tutte le piante condivise dove l’utente è owner o recipient,
+        includendo:
+        - nome pianta
+        - nickname
+        - foto (base64)
+        - nome + cognome dell’amico
+        """
+        print(f"[RepositoryService] get_shared_plants_for_user user_id={user_id}")
+
+        with self.Session() as s:
+            shared = (
+                s.query(SharedPlant)
+                .filter(
+                    (SharedPlant.owner_user_id == user_id) |
+                    (SharedPlant.recipient_user_id == user_id)
+                )
+                .order_by(SharedPlant.created_at.desc())
+                .all()
+            )
+
+            print(f"[RepositoryService] Found {len(shared)} shared plants.")
+
+            out = []
+
+            for sp in shared:
+                # ---------------------------------------------------------
+                # 1. Identifica l'amico
+                # ---------------------------------------------------------
+                friend_id = (
+                    sp.recipient_user_id if sp.owner_user_id == user_id
+                    else sp.owner_user_id
+                )
+
+                friend = s.query(User).filter(User.id == friend_id).first()
+                first_name = friend.first_name if friend else None
+                last_name = friend.last_name if friend else None
+
+                # ---------------------------------------------------------
+                # 2. Info pianta
+                # ---------------------------------------------------------
+                plant = s.query(Plant).filter(Plant.id == sp.plant_id).first()
+                if plant:
+                    plant_name = plant.common_name or plant.scientific_name
+                    plant_nickname = plant.nickname
+                else:
+                    plant_name = None
+                    plant_nickname = None
+
+                # ---------------------------------------------------------
+                # 3. Foto pianta (primo elemento)
+                # ---------------------------------------------------------
+                photo = (
+                    s.query(PlantPhoto)
+                    .filter(PlantPhoto.plant_id == sp.plant_id)
+                    .order_by(PlantPhoto.created_at.asc())
+                    .first()
+                )
+
+                photo_b64 = photo.image if photo else None
+
+                # ---------------------------------------------------------
+                # OUTPUT
+                # ---------------------------------------------------------
+                out.append({
+                    "shared_id": str(sp.id),
+                    "plant_id": str(sp.plant_id),
+                    "owner_user_id": str(sp.owner_user_id),
+                    "recipient_user_id": str(sp.recipient_user_id),
+                    "can_edit": sp.can_edit,
+                    "created_at": sp.created_at.isoformat() if sp.created_at else None,
+
+                    # EXTRA
+                    "friend_first_name": first_name,
+                    "friend_last_name": last_name,
+                    "plant_name": plant_name,
+                    "plant_nickname": plant_nickname,
+                    "photo_base64": photo_b64,
+                })
+
+            return out
+
+    def update_shared_plant(self, sid: str, data: dict):
+        print(f"[RepositoryService] update_shared_plant sid={sid}, data={data}")
+        with self.Session() as s:
+            sp = s.get(SharedPlant, sid)
+            if not sp:
+                print("[RepositoryService] Shared plant not found")
+                return None
+
+            for k, v in data.items():
+                setattr(sp, k, v)
+
+            s.commit()
+
+            write_changes_upsert("shared_plant", [{
+                "id": sp.id,
+                "owner_user_id": sp.owner_user_id,
+                "recipient_user_id": sp.recipient_user_id,
+                "plant_id": sp.plant_id,
+                "can_edit": sp.can_edit,
+                "created_at": sp.created_at.isoformat() if sp.created_at else None,
+                "ended_sharing_at": sp.ended_sharing_at.isoformat() if sp.ended_sharing_at else None,
+            }])
+
+            return sp
+
+    def delete_shared_plant(self, sid: str) -> bool:
+        print(f"[RepositoryService] delete_shared_plant sid={sid}")
+
+        with self.Session() as s:
+            sp = s.get(SharedPlant, sid)
+            if not sp:
+                print("[RepositoryService] Nothing to delete (not found)")
+                return False
+
+            s.delete(sp)
+            s.commit()
+
+            write_changes_delete("shared_plant", sid)
+            print(f"[RepositoryService] Deleted shared plant {sid}")
+            return True
+
+    # =======================
     # QUESTIONARIO - scrittura
     # =======================
     def save_question_answers(self, user_id: str, answers: Dict[str, str]) -> None:
@@ -791,9 +1072,8 @@ class RepositoryService:
         else:
             interval_days = 3   # esempio: ogni 3 giorni di default
 
-        # 4) prima scadenza: domani all'ora scelta
         next_due = (now + timedelta(days=1)).replace(
-            hour=hour, minute=0, second=0, microsecond=0
+            hour=0, minute=0, second=0, microsecond=0
         )
 
         # 5) creo il WateringPlan
@@ -835,45 +1115,77 @@ class RepositoryService:
     # =======================
     def get_full_plant_info(self, plant_id: str) -> Optional[Dict]:
         """
-        Restituisce tutte le info della pianta + foto base64 compressa.
+        Restituisce tutte le info della pianta +
+        foto base64 compressa (se presente).
         """
         with self.Session() as s:
-            plant = s.query(Plant).filter(Plant.id == plant_id).first()
+            plant = (
+                s.query(Plant)
+                .filter(Plant.id == plant_id)
+                .first()
+            )
             if not plant:
                 return None
 
-            # Family
+            # ==========================
+            # FAMILY INFO
+            # ==========================
             family_name = None
             family_description = None
             if plant.family_id:
-                fam = s.query(Family).filter(Family.id == plant.family_id).first()
+                fam = (
+                    s.query(Family)
+                    .filter(Family.id == plant.family_id)
+                    .first()
+                )
                 if fam:
                     family_name = fam.name
                     family_description = getattr(fam, "description", None)
 
-            # Foto → Base64 compresso
+            # ==========================
+            # FOTO PIANTA
+            # ==========================
             photo_base64 = None
+
+            # prendiamo la prima foto (order_index)
             photo_row = (
                 s.query(PlantPhoto)
                 .filter(PlantPhoto.plant_id == plant_id)
-                .order_by(PlantPhoto.id.asc())
+                .order_by(PlantPhoto.order_index.asc())
                 .first()
             )
 
             if photo_row:
-                image_path = getattr(photo_row, "path", None)  # <-- CAMBIA QUI se diverso
-                if image_path and os.path.exists(image_path):
-                    img = Image.open(image_path)
+                # costruiamo path REALE del file
+                # es: uploads/<plant_id>/<filename>.jpg
+                base_dir = os.path.join("uploads", plant_id)
+                image_path = os.path.join(base_dir, photo_row.url)
 
-                    # Ridimensiona se molto grande
-                    img.thumbnail((800, 800), Image.Resampling.LANCZOS)
+                print("[DEBUG PHOTO] Image path:", image_path)
+                print("[DEBUG PHOTO] Exists? ->", os.path.exists(image_path))
 
-                    buffer = BytesIO()
-                    img.save(buffer, format="JPEG", quality=60, optimize=True)
-                    buffer.seek(0)
+                if os.path.exists(image_path):
+                    try:
+                        img = Image.open(image_path)
 
-                    photo_base64 = base64.b64encode(buffer.read()).decode("utf-8")
+                        # ridimensioniamo se molto grande
+                        img.thumbnail((800, 800), Image.Resampling.LANCZOS)
 
+                        buffer = BytesIO()
+                        img.save(buffer, format="JPEG", quality=60, optimize=True)
+                        buffer.seek(0)
+
+                        photo_base64 = base64.b64encode(buffer.read()).decode("utf-8")
+
+                    except Exception as e:
+                        print("[DEBUG PHOTO] ERROR opening/compressing image:", e)
+                        photo_base64 = None
+                else:
+                    print("[DEBUG PHOTO] File not found on disk.")
+
+            # ==========================
+            # RETURN INFO
+            # ==========================
             return {
                 "id": str(plant.id),
                 "scientific_name": plant.scientific_name,
@@ -907,3 +1219,106 @@ class RepositoryService:
                 .first()
             )
             return str(fam.id) if fam else None
+
+    # =======================
+    # WATERING PAGE - overview (settimanale)
+    # =======================
+    def get_watering_overview_for_user(self, user_id: str) -> List[Dict]:
+        """
+        Restituisce TUTTI i log della settimana (7 giorni) per ogni pianta dell’utente:
+        - log reali (ora reale)
+        - log programmati (sempre a mezzanotte)
+        - la pianta NON sparisce mai
+        - frontend riceve done_at e amount_ml
+        """
+
+        now = datetime.utcnow()
+        week_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+        week_end = week_start + timedelta(days=7)
+
+        with self.Session() as s:
+
+            # ----------------------------
+            # 1) Tutte le piante dell’utente
+            # ----------------------------
+            plants = (
+                s.query(WateringPlan, Plant)
+                .join(Plant, Plant.id == WateringPlan.plant_id)
+                .filter(WateringPlan.user_id == user_id)
+                .all()
+            )
+
+            result = []
+
+            for wp, plant in plants:
+
+                # ----------------------------
+                # 2) tutti i log della settimana
+                # ----------------------------
+                logs = (
+                    s.query(WateringLog)
+                    .filter(
+                        WateringLog.user_id == user_id,
+                        WateringLog.plant_id == wp.plant_id,
+                        WateringLog.done_at >= week_start,
+                        WateringLog.done_at < week_end,
+                    )
+                    .order_by(WateringLog.done_at.asc())
+                    .all()
+                )
+
+                # ----------------------------
+                # 3) se NON esiste nessun log → crea quello programmato
+                # ----------------------------
+                if not logs:
+                    scheduled_dt = wp.next_due_at.replace(
+                        hour=0, minute=0, second=0, microsecond=0
+                    )
+
+                    scheduled_log = WateringLog(
+                        id=str(uuid.uuid4()),
+                        user_id=user_id,
+                        plant_id=wp.plant_id,
+                        done_at=scheduled_dt,
+                        amount_ml=150,  # dose base
+                        note="SCHEDULED",
+                    )
+                    s.add(scheduled_log)
+                    s.commit()
+                    logs = [scheduled_log]
+
+                # ----------------------------
+                # 4) foto compressa
+                # ----------------------------
+                try:
+                    info = self.get_full_plant_info(str(wp.plant_id))
+                    photo_base64 = info.get("photo_base64")
+                except Exception:
+                    photo_base64 = None
+
+                # ----------------------------
+                # 5) log → lista di dizionari
+                # ----------------------------
+                logs_dict = [
+                    {
+                        "done_at": log.done_at.isoformat(),
+                        "amount_ml": log.amount_ml,
+                        "note": log.note,
+                    }
+                    for log in logs
+                ]
+
+                # ----------------------------
+                # 6) output finale
+                # ----------------------------
+                result.append(
+                    {
+                        "plant_id": str(wp.plant_id),
+                        "plant_name": plant.common_name or plant.scientific_name,
+                        "logs": logs_dict,
+                        "photo_base64": photo_base64,
+                    }
+                )
+
+            return result
+
