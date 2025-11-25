@@ -1,0 +1,9 @@
+# Model artifacts (heavy, generated)
+ecogrow_disease_detection/artifacts/pretrained/
+ecogrow_disease_detection/artifacts/u2net/
+__pycache__/
+*.pyc
+*.bin
+*.onnx
+*.pt 
+artifacts/

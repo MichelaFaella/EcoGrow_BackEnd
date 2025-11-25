@@ -4,7 +4,9 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     PIP_DEFAULT_TIMEOUT=1200 \
     PIP_RETRIES=20 \
-    PIP_DISABLE_PIP_VERSION_CHECK=1
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    U2NET_HOME=/app/artifacts/u2net \
+    ECOGROW_MODEL_CACHE=/app/artifacts/pretrained
 
 # librerie utili per build e Pillow (jpeg/zlib); poi le tieni perché leggere
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -28,4 +30,5 @@ RUN python -m pip install --upgrade pip && \
 COPY . /app
 
 EXPOSE 8000
+
 CMD ["gunicorn", "-w", "2", "-b", "0.0.0.0:8000", "app:create_app()"]

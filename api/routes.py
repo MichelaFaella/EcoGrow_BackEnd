@@ -9,6 +9,7 @@ import uuid
 from contextlib import contextmanager
 from datetime import datetime
 
+import requests
 from PIL import Image
 # Third-party
 from flask import Blueprint, jsonify, current_app, request, abort, g, url_for
@@ -54,6 +55,8 @@ api_blueprint = Blueprint("api", __name__)
 repo = RepositoryService()
 REFRESH_TTL_DAYS = int(os.getenv("REFRESH_TTL_DAYS", "90"))
 UPLOAD_FOLDER = "uploads"
+MODEL_PREDICT_URL = os.getenv("MODEL_URL", "http://model:8000/predict")
+MODEL_TIMEOUT = float(os.getenv("MODEL_TIMEOUT", "15"))
 
 image_service = ImageProcessingService()
 reminder_service = ReminderService()
@@ -487,6 +490,91 @@ def _commit_or_409(session):
         abort(500, description="Commit failed")
 
 
+def _parse_unknown_threshold(raw_value) -> float | None:
+    if raw_value is None:
+        return None
+    try:
+        value = float(raw_value)
+    except (TypeError, ValueError) as exc:  # noqa: BLE001
+        raise ValueError("unknown_threshold must be a float between 0 and 1.") from exc
+    if not 0.0 <= value <= 1.0:
+        raise ValueError("unknown_threshold must be between 0.0 and 1.0.")
+    return value
+
+
+def _call_model_service(
+    image_file,
+    *,
+    unknown_threshold: float | None = None,
+    family: str | None = None,
+    disease_suggestions: list[str] | None = None,
+) -> dict:
+    """Call the external model API or fall back to the inline service."""
+    inline = not MODEL_PREDICT_URL or MODEL_PREDICT_URL.lower() in {"inline", "local", "self"}
+
+    stream = getattr(image_file, "stream", image_file)
+    if hasattr(stream, "seek"):
+        stream.seek(0)
+    filename = getattr(image_file, "filename", None) or "upload.jpg"
+    mime = getattr(image_file, "mimetype", None) or getattr(image_file, "content_type", None) or "application/octet-stream"
+
+    if inline:
+        from ecogrow_disease_detection.model_inference_service import get_disease_inference_service
+
+        data = stream.read()
+        service = get_disease_inference_service()
+        result = service.predict_from_bytes(
+            data,
+            family=family,
+            disease_suggestions=disease_suggestions,
+            unknown_threshold=unknown_threshold,
+        )
+        return {"status": "success", "data": result}
+
+    files = {"image": (filename, stream, mime)}
+    data = []
+    if unknown_threshold is not None:
+        data.append(("unknown_threshold", str(unknown_threshold)))
+    if family:
+        data.append(("family", family))
+    if disease_suggestions:
+        for d in disease_suggestions:
+            data.append(("disease_suggestions", d))
+
+    try:
+        resp = requests.post(
+            MODEL_PREDICT_URL,
+            files=files,
+            data=data or None,
+            timeout=MODEL_TIMEOUT,
+        )
+    except requests.Timeout as exc:  # noqa: BLE001
+        raise RuntimeError("Model service timeout") from exc
+    except requests.RequestException as exc:  # noqa: BLE001
+        raise RuntimeError(f"Model service unreachable: {exc}") from exc
+
+    if resp.status_code >= 400:
+        # Try to surface error payload from model service
+        try:
+            payload = resp.json()
+        except Exception:
+            payload = None
+        message = ""
+        if isinstance(payload, dict):
+            message = payload.get("error") or payload.get("message") or str(payload)
+        elif payload:
+            message = str(payload)
+        raise RuntimeError(f"Model service error ({resp.status_code}): {message or resp.text}")
+
+    try:
+        payload = resp.json()
+    except ValueError as exc:  # noqa: BLE001
+        raise RuntimeError("Invalid JSON from model service") from exc
+    if not isinstance(payload, dict):
+        raise RuntimeError("Unexpected response format from model service")
+    return payload
+
+
 def _plant_to_dict(p: Plant) -> dict:
     """Serialize only the persistent fields you want in changes.json."""
     return {
@@ -555,6 +643,45 @@ def user_me():
 @api_blueprint.route("/ping", methods=["GET"])
 def ping():
     return jsonify(ping="pong")
+
+
+
+@api_blueprint.route("/ai/model/disease-detection", methods=["POST"])
+def ai_model_disease_detection():
+    if "image" not in request.files:
+        return jsonify({"error": "Missing 'image' file in request."}), 400
+
+    body = request.get_json(silent=True) if request.is_json else None
+    try:
+        raw_thr = request.values.get("unknown_threshold")
+        if raw_thr is None and isinstance(body, dict):
+            raw_thr = body.get("unknown_threshold")
+        unknown_threshold = _parse_unknown_threshold(raw_thr)
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 400
+
+    family = request.values.get("family") or (body.get("family") if isinstance(body, dict) else None)
+    disease_suggestions = []
+    if request.values:
+        disease_suggestions.extend([v for v in request.values.getlist("disease_suggestions") if v])
+    if isinstance(body, dict):
+        raw = body.get("disease_suggestions")
+        if isinstance(raw, list):
+            disease_suggestions.extend([str(v) for v in raw if v is not None])
+
+    try:
+        result = _call_model_service(
+            request.files["image"],
+            unknown_threshold=unknown_threshold,
+            family=family,
+            disease_suggestions=disease_suggestions or None,
+        )
+    except ValueError as exc:
+        return jsonify({"error": str(exc)}), 400
+    except Exception as exc:  # noqa: BLE001
+        return jsonify({"error": f"Inference failed: {exc}"}), 502
+
+    return jsonify(result), 200
 
 
 @api_blueprint.route("/families", methods=["GET"])
