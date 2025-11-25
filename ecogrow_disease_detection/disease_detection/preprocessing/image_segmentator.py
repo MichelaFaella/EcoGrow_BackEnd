@@ -2,12 +2,10 @@
 
 from __future__ import annotations
 
-import io
 from typing import Tuple
 
 import numpy as np
 from PIL import Image
-from rembg import remove
 
 __all__ = [
     "segment_plant_rgba",
@@ -23,20 +21,12 @@ def _ensure_rgba(img: Image.Image) -> Image.Image:
 
 
 def segment_plant_rgba(img_rgb: Image.Image) -> Image.Image:
-    """Return an RGBA image where the background has been removed using rembg."""
+    """Return an RGBA image; passthrough placeholder for background removal."""
 
     if img_rgb.mode != "RGB":
         img_rgb = img_rgb.convert("RGB")
 
-    segmented = remove(img_rgb)
-    if isinstance(segmented, Image.Image):
-        img_rgba = segmented
-    elif isinstance(segmented, bytes):
-        img_rgba = Image.open(io.BytesIO(segmented))
-    else:
-        img_rgba = Image.fromarray(segmented)
-
-    return _ensure_rgba(img_rgba)
+    return _ensure_rgba(img_rgb)
 
 
 def crop_to_alpha_bbox(img_rgba: Image.Image, pad: int | Tuple[int, int] = 0) -> Image.Image:

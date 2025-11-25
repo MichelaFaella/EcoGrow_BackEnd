@@ -105,7 +105,7 @@ def _resolve_pretrained_tag(model_name: str) -> str:
 
 MODEL_NAME = _resolve_model_name()
 PRETRAINED_TAG = _resolve_pretrained_tag(MODEL_NAME)
-SEGMENTATION_ENABLED = os.getenv("ECOGROW_SEGMENTATION", "1").lower() not in {"0", "false", "no"}
+SEGMENTATION_ENABLED = os.getenv("ECOGROW_SEGMENTATION", "0").lower() not in {"0", "false", "no"}
 PAYLOAD_DIR = Path(os.getenv("ECOGROW_PAYLOAD_DIR", "artifacts/detectors")).expanduser()
 DEVICE = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -286,7 +286,7 @@ class DiseaseInferenceService:
     ) -> None:
         self.device = device or DEVICE
         self.payload_dir = Path(payload_dir)
-        self.segment_fn = None#_build_segmenter(enable_segmentation)
+        self.segment_fn = _build_segmenter(enable_segmentation)
         self.detector_profile: Optional[LoadedDetectorProfile] = None
         self._load_detector_profile()
         self.default_unknown_threshold = float(default_unknown_threshold)
@@ -386,9 +386,7 @@ class DiseaseInferenceService:
     ) -> Dict[str, object]:
         if self.detector_profile is None:
             raise RuntimeError("No detector profiles available.")
-        print(f"family in run: {family}")
         restricted_diseases = self.restrict_diseases(family, disease_suggestions)
-        print(restricted_diseases)
         thr = self.default_unknown_threshold if unknown_threshold is None else float(unknown_threshold)
         profile_id = self.detector_profile.metadata.get("id", "default")
         prepared_image = self._prepare_image(image)
@@ -438,11 +436,9 @@ class DiseaseInferenceService:
         classes = getattr(self.detector_profile.detector, "classes", None) if self.detector_profile else None
         if not classes:
             return disease_suggestions
-        print(f"family: {family}, family in FAMILY_DISEASE_MAPPING: {family in FAMILY_DISEASE_MAPPING}")
         allowed = set(classes)
         if family:
             allowed &= set(FAMILY_DISEASE_MAPPING.get(family, allowed))
-            print(f"allowed: {allowed}")
         if disease_suggestions:
             allowed &= set(disease_suggestions)
 
@@ -568,4 +564,3 @@ def predict_route():
         return jsonify({"error": f"Inference failed: {exc}"}), 500
 
     return jsonify({"status": "success", "data": result}), 200
-

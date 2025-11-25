@@ -38,10 +38,9 @@ services:
       DB_ECHO: "false"
       CHANGES_PATH: "/app/models/scripts/fixtures/changes.json"
       UPLOAD_DIR: "/app/uploads"
-      U2NET_HOME: "/app/artifacts/u2net"
       ECOGROW_MODEL_CACHE: "/app/artifacts/pretrained"
       ECOGROW_PAYLOAD_DIR: "/app/artifacts/detectors"
-      ECOGROW_SEGMENTATION: "1"
+      ECOGROW_SEGMENTATION: "0"
       MODEL_URL: "http://model:8000/predict"
       PYTHONUNBUFFERED: "1"
     ports:
@@ -64,15 +63,13 @@ services:
       - .env
     environment:
       ECOGROW_PAYLOAD_DIR: /app/artifacts/detectors
-      ECOGROW_SEGMENTATION: "1"
+      ECOGROW_SEGMENTATION: "0"
       ECOGROW_MODEL_CACHE: /app/artifacts/pretrained
-      U2NET_HOME: /app/artifacts/u2net
     ports:
       - "8001:8000"
     restart: unless-stopped
     volumes:
       - ./ecogrow_disease_detection/artifacts/pretrained:/app/artifacts/pretrained
-      - ./ecogrow_disease_detection/artifacts/u2net:/app/artifacts/u2net
 
 volumes:
   db_data:

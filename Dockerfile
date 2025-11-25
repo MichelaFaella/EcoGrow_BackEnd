@@ -5,7 +5,6 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
     PIP_DEFAULT_TIMEOUT=1200 \
     PIP_RETRIES=20 \
     PIP_DISABLE_PIP_VERSION_CHECK=1 \
-    U2NET_HOME=/app/artifacts/u2net \
     ECOGROW_MODEL_CACHE=/app/artifacts/pretrained
 
 # librerie utili per build e Pillow (jpeg/zlib); poi le tieni perché leggere

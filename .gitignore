@@ -5,5 +5,7 @@ __pycache__/
 *.pyc
 *.bin
 *.onnx
-*.pt 
-artifacts/
+.venv/
+venv/
+.DS_Store
+**/.DS_Store

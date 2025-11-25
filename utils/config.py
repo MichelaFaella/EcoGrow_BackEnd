@@ -33,8 +33,7 @@ class Settings:
     ECOGROW_MODEL_CACHE: str = os.getenv("ECOGROW_MODEL_CACHE", "artifacts/pretrained")
     ECOGROW_CLIP_PRETRAINED: str = os.getenv("ECOGROW_CLIP_PRETRAINED", "")
     ECOGROW_PAYLOAD_DIR: str = os.getenv("ECOGROW_PAYLOAD_DIR", "artifacts/detectors")
-    ECOGROW_SEGMENTATION: bool = _bool_env("ECOGROW_SEGMENTATION", True)
-    U2NET_HOME: str = os.getenv("U2NET_HOME", "")
+    ECOGROW_SEGMENTATION: bool = _bool_env("ECOGROW_SEGMENTATION", False)
 
     @property
     def DB_URI(self) -> str:
