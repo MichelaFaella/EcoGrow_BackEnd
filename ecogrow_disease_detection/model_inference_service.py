@@ -156,9 +156,11 @@ def _build_clip_classifier_profile(
     if not classes:
         raise ValueError(f"Detector payload '{payload_path.name}' missing 'classes'.")
 
-    pretrained_tag = payload.get("pretrained_tag") or PRETRAINED_TAG
+    pretrained_tag = payload.get("pretrained_tag") 
     if pretrained_tag and Path(pretrained_tag).is_absolute() and not Path(pretrained_tag).exists():
-        pretrained_tag = PRETRAINED_TAG
+        pretrained_tag = None
+    if not pretrained_tag:
+        pretrained_tag = _resolve_pretrained_tag(MODEL_NAME)
 
     clip_model, preprocess, text_encoder = _init_clip_components(MODEL_NAME, pretrained_tag, device)
 
@@ -215,8 +217,6 @@ def _build_clip_classifier_profile(
         tokenized_prompts=tokenized_prompts,
         text_features=text_features,
     )
-
-
 
 
 def _build_convnext_profile(

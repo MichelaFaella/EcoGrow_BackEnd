@@ -28,7 +28,7 @@ import secrets
 from models.scripts.replay_changes import seed_from_changes, write_changes_delete, write_changes_upsert
 from models.base import SessionLocal
 from services.image_processing_service import ImageProcessingService
-from services.reminder_service import ReminderService
+#from services.reminder_service import ReminderService
 
 # Local application
 from services.repository_service import RepositoryService
@@ -59,7 +59,7 @@ MODEL_PREDICT_URL = os.getenv("MODEL_URL", "http://model:8000/predict")
 MODEL_TIMEOUT = float(os.getenv("MODEL_TIMEOUT", "15"))
 
 image_service = ImageProcessingService()
-reminder_service = ReminderService()
+#reminder_service = ReminderService()
 
 
 # disease_service = DiseaseRecognitionService()
