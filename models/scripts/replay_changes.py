@@ -6,7 +6,7 @@ from typing import Dict, List, Any, Optional
 from datetime import datetime, date  
 from sqlalchemy.orm import Session
 from sqlalchemy.dialects.mysql import insert as mysql_insert
-
+import uuid
 from models.base import SessionLocal
 from models.entities import (
     Family, Plant, PlantPhoto,
@@ -46,6 +46,14 @@ CHANGES_PATH = Path(os.getenv("CHANGES_PATH", str(DEFAULT_CHANGES)))
 # -------------------------
 def _ensure_parent(p: Path) -> None:
     p.parent.mkdir(parents=True, exist_ok=True)
+
+def _stable_disease_id(name: str) -> str:
+    """
+    UUID deterministico basato sul nome della malattia.
+    Così non creiamo nuovi id ad ogni riavvio.
+    """
+    base = f"ecogrow-disease::{name.strip().lower()}"
+    return str(uuid.uuid5(uuid.NAMESPACE_DNS, base))
 
 def _json_default(o):
     if isinstance(o, (datetime, date)):
@@ -286,3 +294,162 @@ def seed_from_changes(path: str | Path | None = None) -> int:
 
     logger.info(f"[seed] total applied: {total} from {p}")
     return total
+def seed_disease_definitions_from_file(path: str | Path | None = None) -> int:
+    """
+    Legge il file utils/plant_disease*.json (organizzato per famiglie) e fa:
+      - upsert nella tabella 'disease' (un disease per coppia family+disease)
+      - upsert anche in changes.json (tabella 'disease')
+
+    Ritorna il numero di righe DB applicate.
+    """
+    # 1) Risolvi il path del file
+    if path is not None:
+        p = Path(path)
+    else:
+        root = Path(__file__).resolve().parents[2]  # /app
+        txt = root / "utils" / "plant_disease.txt"
+        json_alt = root / "utils" / "plant_disease.json"
+        details_alt = root / "utils" / "plant_disease_details.json"
+
+        if txt.exists():
+            p = txt
+        elif json_alt.exists():
+            p = json_alt
+        elif details_alt.exists():
+            p = details_alt
+        else:
+            logger.info("[seed_diseases] no plant_disease file found under utils/, skipping")
+            return 0
+
+    if not p.exists():
+        logger.info(f"[seed_diseases] file not found: {p}, skipping")
+        return 0
+
+    # 2) Carica il JSON
+    try:
+        raw = p.read_text(encoding="utf-8")
+        payload = json.loads(raw)
+    except Exception as e:  # noqa: BLE001
+        logger.error(f"[seed_diseases] cannot parse JSON from {p}: {e}")
+        return 0
+
+    if not isinstance(payload, dict):
+        logger.error(f"[seed_diseases] invalid structure in {p}: expected object at top-level")
+        return 0
+
+    # 3) Costruisci le righe pronte per DB + changes.json
+    #    (una riga per coppia family_name + disease_name)
+    rows: List[Dict[str, Any]] = []
+
+    for family_name, diseases in payload.items():
+        if not isinstance(diseases, dict):
+            continue
+
+        fam_name_str = str(family_name).strip()
+        if not fam_name_str:
+            continue
+
+        for key, info in diseases.items():
+            if not isinstance(info, dict):
+                continue
+
+            # Nel JSON il campo può essere "name" o dedotto dalla chiave
+            name = str(info.get("name") or key).strip()
+            if not name:
+                continue
+
+            description = (info.get("description") or "").strip()
+            if not description:
+                description = f"{name} - disease affecting ornamental plants."
+
+            symptoms = info.get("symptoms") or []
+            cure_tips = info.get("cure_tips") or []
+
+            # normalizza i symptoms in lista di stringhe
+            norm_symptoms: List[str] = []
+            if isinstance(symptoms, str):
+                norm_symptoms = [symptoms]
+            elif isinstance(symptoms, list):
+                for s in symptoms:
+                    if isinstance(s, dict):
+                        val = s.get("name") or s.get("label") or s.get("value")
+                    else:
+                        val = s
+                    if val:
+                        val_str = str(val).strip()
+                        if val_str:
+                            norm_symptoms.append(val_str)
+
+            # normalizza i cure_tips in lista di stringhe
+            norm_cure_tips: List[str] = []
+            if isinstance(cure_tips, str):
+                norm_cure_tips = [cure_tips]
+            elif isinstance(cure_tips, list):
+                for c in cure_tips:
+                    if c:
+                        c_str = str(c).strip()
+                        if c_str:
+                            norm_cure_tips.append(c_str)
+
+            # Chiave stabile per questa coppia (family + disease)
+            stable_key = f"{fam_name_str}::{name}"
+
+            rows.append(
+                {
+                    "stable_key": stable_key,
+                    "family_name": fam_name_str,
+                    "name": name,
+                    "description": description,
+                    "symptoms": norm_symptoms or None,
+                    "cure_tips": norm_cure_tips or None,
+                }
+            )
+
+    if not rows:
+        logger.info(f"[seed_diseases] no diseases found in {p}")
+        return 0
+
+    # 4) Upsert su DB (tabella disease) + changes.json
+    applied_db = 0
+    db_rows_for_changes: List[Dict[str, Any]] = []
+
+    with SessionLocal() as session:
+        # Mappa nome family -> id
+        family_map: Dict[str, str] = {
+            f.name: f.id for f in session.query(Family).all()
+        }
+
+        for r in rows:
+            fam_name = r["family_name"]
+            fam_id = family_map.get(fam_name)
+            if not fam_id:
+                logger.warning(
+                    "[seed_diseases] family '%s' not found in DB; skipping disease '%s'",
+                    fam_name,
+                    r["name"],
+                )
+                continue
+
+            row_db = {
+                "id": _stable_disease_id(r["stable_key"]),
+                "name": r["name"],
+                "description": r["description"],
+                "symptoms": r["symptoms"],
+                "cure_tips": r["cure_tips"],
+                "family_id": fam_id,
+            }
+
+            _upsert_db(session, Disease, row_db)
+            applied_db += 1
+            db_rows_for_changes.append(row_db)
+
+        session.commit()
+
+    # 5) Upsert anche in changes.json (così il seed è riproducibile)
+    try:
+        write_changes_upsert("disease", db_rows_for_changes)
+    except Exception as e:  # noqa: BLE001
+        logger.error(f"[seed_diseases] failed to update changes.json: {e}")
+
+    logger.info(f"[seed_diseases] applied {applied_db} disease rows from {p}")
+    return applied_db

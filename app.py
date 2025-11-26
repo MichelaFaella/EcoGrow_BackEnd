@@ -6,7 +6,10 @@ from werkzeug.exceptions import HTTPException, BadRequest
 from flask import request
 from models.base import Base, engine
 import models.entities  # noqa: F401
-from models.scripts.replay_changes import seed_from_changes
+from models.scripts.replay_changes import (
+    seed_from_changes,
+    seed_disease_definitions_from_file,  # NEW
+)
 from api import api_blueprint
 
 
@@ -48,6 +51,15 @@ def create_app() -> Flask:
         # non bloccare l'avvio dell'API, logga l'errore
         app.logger.error("Replay changes failed: %s", e)
 
+    try:
+        diseases_applied = seed_disease_definitions_from_file()
+        app.logger.info(
+            "Seeded/updated %d disease definitions from plant_disease.*",
+            diseases_applied,
+        )
+    except Exception as e:
+        app.logger.error("Disease seed from plant_disease file failed: %s", e)
+        
     @app.get("/health")
     def health():
         return jsonify(status="ok")

@@ -4,7 +4,6 @@ ENV PYTHONUNBUFFERED=1 \
     PIP_NO_CACHE_DIR=1 \
     PYTHONPATH=/app \
     PORT=8000 \
-    U2NET_HOME=/app/artifacts/u2net \
     ECOGROW_MODEL_CACHE=/app/artifacts/pretrained
 
 WORKDIR /app
@@ -32,14 +31,13 @@ COPY infra/warm_assets.py /app/infra/warm_assets.py
 # (opzionali) artifacts baked nell'immagine
 COPY artifacts/detectors /app/artifacts/detectors
 COPY artifacts/pretrained /app/artifacts/pretrained
-COPY artifacts/u2net /app/artifacts/u2net
 
 # Crea le cartelle per cache/modelli
-RUN mkdir -p /app/artifacts/detectors /app/artifacts/pretrained "$U2NET_HOME"
+RUN mkdir -p /app/artifacts/detectors /app/artifacts/pretrained
 
 
 ENV ECOGROW_PAYLOAD_DIR=/app/artifacts/detectors \
-    ECOGROW_SEGMENTATION=1
+    ECOGROW_SEGMENTATION=0
 
 EXPOSE 8000
 
@@ -48,5 +46,4 @@ COPY infra/entrypoint_model.sh /app/infra/entrypoint_model.sh
 RUN chmod +x /app/infra/entrypoint_model.sh
 
 ENTRYPOINT ["/app/infra/entrypoint_model.sh"]
-CMD ["gunicorn", "--preload", "--bind", "0.0.0.0:8000", "model_inference_service:app"]
-
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "model_inference_service:app"]

@@ -1,0 +1,456 @@
+{
+  "Asparagaceae": {
+    "healthy": {
+      "disease": "Healthy",
+      "description": "Plant shows no signs of disease or nutrient deficiency; foliage is uniformly colored and turgid, growth is consistent with species expectations.",
+      "symptoms": [],
+      "cure_tips": [
+        "No treatment required; maintain regular good cultural practices such as proper watering and light."
+      ]
+    },
+    "anthracnose": {
+      "disease": "Anthracnose",
+      "description": "A fungal disease causing dark, sunken lesions on leaves, stems, or fruit; favours warm, wet conditions and can cause premature defoliation and disfigurement.",
+      "symptoms": [
+        { "name": "dark lesions" },
+        { "name": "yellow leaves" },
+        { "name": "dead patches" }
+      ],
+      "cure_tips": [
+        "Remove and destroy infected plant debris and heavily affected tissues to reduce inoculum.",
+        "Improve air circulation and avoid overhead watering to reduce leaf wetness.",
+        "Apply appropriate fungicides following label instructions during active infection."
+      ]
+    },
+    "leaf_withering": {
+      "disease": "Leaf Withering",
+      "description": "A symptom complex where leaves wilt and brown due to water stress, root problems, vascular disease, or environmental extremes; underlying causes must be diagnosed for correct treatment.",
+      "symptoms": [
+        { "name": "leaf wilting" },
+        { "name": "brown margins" },
+        { "name": "reduced vigor" }
+      ],
+      "cure_tips": [
+        "Check soil moisture and root health; correct under- or over-watering.",
+        "Inspect roots for rot or pests and repot into fresh, well-draining medium if needed.",
+        "Improve drainage and avoid waterlogged conditions; consider targeted fungicide if vascular fungi are suspected."
+      ]
+    },
+    "fungal_leaf_spot": {
+      "disease": "Fungal Leaf Spot",
+      "description": "Caused by various fungal pathogens producing small to large necrotic spots on leaves; spread is promoted by moisture and crowded plants, reducing photosynthetic area and vigor.",
+      "symptoms": [
+        { "name": "brown spots" },
+        { "name": "pale halos" },
+        { "name": "yellow leaves" }
+      ],
+      "cure_tips": [
+        "Remove affected leaves and dispose of them; do not compost infected material.",
+        "Space plants to increase airflow and avoid overhead watering.",
+        "Use registered fungicides when outbreaks are severe and follow label directions."
+      ]
+    },
+    "foliar_necrosis": {
+      "disease": "Foliar Necrosis",
+      "description": "Localized death of leaf tissue resulting from severe disease, chemical injury, or abiotic stress; appears as brown or black dead patches and can indicate systemic problems.",
+      "symptoms": [
+        { "name": "dead tissue" },
+        { "name": "chlorotic halo" },
+        { "name": "leaf loss" }
+      ],
+      "cure_tips": [
+        "Identify and eliminate the cause (chemical burn, nutrient imbalance, or pathogen).",
+        "Trim necrotic tissue and improve plant care such as water, light, and fertilization balance.",
+        "Treat confirmed infections with targeted fungicides or bactericides as appropriate."
+      ]
+    }
+  },
+
+  "Araceae": {
+    "healthy": {
+      "disease": "Healthy",
+      "description": "No visible disease signs; leaves are firm and evenly colored, and growth is consistent with normal species characteristics under current care.",
+      "symptoms": [],
+      "cure_tips": [
+        "Maintain stable moisture, moderate light, and inspect regularly for pests to keep plants healthy."
+      ]
+    },
+    "bacterial_wilt": {
+      "disease": "Bacterial Wilt",
+      "description": "A bacterial disease that blocks vascular tissue causing rapid wilting and plant collapse; often fatal and spread by contaminated soil, tools, or water.",
+      "symptoms": [
+        { "name": "sudden wilting" },
+        { "name": "stem ooze" },
+        { "name": "plant collapse" }
+      ],
+      "cure_tips": [
+        "Remove and destroy severely infected plants to prevent spread.",
+        "Avoid moving soil between plants and sterilize tools after use.",
+        "Practice crop rotation and use disease-free planting material where possible."
+      ]
+    },
+    "chlorosis": {
+      "disease": "Chlorosis",
+      "description": "Yellowing of leaf tissue due to insufficient chlorophyll from nutrient deficiencies, poor root health, or alkaline soils reducing nutrient availability.",
+      "symptoms": [
+        { "name": "yellow leaves" },
+        { "name": "pale foliage" },
+        { "name": "slow growth" }
+      ],
+      "cure_tips": [
+        "Test soil or substrate and correct pH if alkaline to improve nutrient uptake.",
+        "Apply micronutrient chelates such as iron when needed.",
+        "Improve root health by avoiding waterlogging and ensuring adequate drainage."
+      ]
+    },
+    "manganese_toxicity": {
+      "disease": "Manganese Toxicity",
+      "description": "Excess manganese accumulation in acidic or waterlogged soils causing leaf spotting, interveinal chlorosis, and reduced growth.",
+      "symptoms": [
+        { "name": "brown spots" },
+        { "name": "leaf bronzing" },
+        { "name": "stunted growth" }
+      ],
+      "cure_tips": [
+        "Adjust soil pH toward neutral and improve drainage.",
+        "Avoid manganese-containing fertilizers until levels normalize.",
+        "Apply balanced fertilization to correct nutrient imbalances."
+      ]
+    }
+  },
+
+  "Asteraceae": {
+    "healthy": {
+      "disease": "Healthy",
+      "description": "Plant appears vigorous with normal leaf color and flower production, showing no signs of disease or nutrient stress.",
+      "symptoms": [],
+      "cure_tips": [
+        "Continue good cultural practices: adequate watering, balanced fertilization, and monitoring for pests and diseases."
+      ]
+    },
+    "bacterial_leaf_spot": {
+      "disease": "Bacterial Leaf Spot",
+      "description": "Bacterial pathogens create water-soaked lesions that dry into tan or brown spots; spread by splashing water, contaminated tools, and infected transplants.",
+      "symptoms": [
+        { "name": "dark spots" },
+        { "name": "yellow halos" },
+        { "name": "leaf drop" }
+      ],
+      "cure_tips": [
+        "Remove infected foliage and avoid overhead irrigation.",
+        "Sterilize tools and use disease-free transplants.",
+        "Use copper-based bactericides as a protective measure during outbreaks."
+      ]
+    },
+    "septoria_leaf_spot": {
+      "disease": "Septoria Leaf Spot",
+      "description": "A fungal disease causing numerous small tan to brown leaf spots that thrive in wet, crowded conditions.",
+      "symptoms": [
+        { "name": "tan spots" },
+        { "name": "yellow leaves" },
+        { "name": "spore spread" }
+      ],
+      "cure_tips": [
+        "Remove infected leaves; improve spacing and airflow.",
+        "Avoid overhead watering and water early to encourage drying.",
+        "Apply appropriate fungicides when cultural controls are insufficient."
+      ]
+    }
+  },
+
+  "Malvaceae": {
+    "healthy": {
+      "disease": "Healthy",
+      "description": "No disease signs present; leaves, stems, and blooms show normal color and turgor.",
+      "symptoms": [],
+      "cure_tips": [
+        "Maintain balanced watering and fertilization; monitor regularly for pests."
+      ]
+    },
+    "blight": {
+      "disease": "Blight",
+      "description": "A rapid, severe disease causing extensive browning and dieback of foliage and stems.",
+      "symptoms": [
+        { "name": "leaf browning" },
+        { "name": "stem dieback" },
+        { "name": "necrotic tissue" }
+      ],
+      "cure_tips": [
+        "Prune and destroy affected tissues and improve airflow.",
+        "Reduce overhead irrigation and minimize splash.",
+        "Apply bactericides or fungicides when causal agent is identified."
+      ]
+    },
+    "foliar_necrosis": {
+      "disease": "Foliar Necrosis",
+      "description": "Localized death of leaf tissue caused by severe disease, chemical injury, or environmental stress.",
+      "symptoms": [
+        { "name": "brown patches" },
+        { "name": "dry tissue" },
+        { "name": "reduced vigor" }
+      ],
+      "cure_tips": [
+        "Identify and remove the cause; adjust cultural practices.",
+        "Trim necrotic tissue and maintain proper watering.",
+        "Treat pathogens with appropriate chemicals when confirmed."
+      ]
+    },
+    "sun_scorch": {
+      "disease": "Sun Scorch",
+      "description": "Tissue damage from excessive direct sunlight or sudden exposure.",
+      "symptoms": [
+        { "name": "bleached patches" },
+        { "name": "dry edges" },
+        { "name": "curled leaves" }
+      ],
+      "cure_tips": [
+        "Move plants gradually to higher light or provide shade.",
+        "Avoid sudden changes in exposure.",
+        "Keep plants well watered during heat spells."
+      ]
+    }
+  },
+
+  "Rosaceae": {
+    "healthy": {
+      "disease": "Healthy",
+      "description": "Plant displays expected vigor with healthy foliage and flower development.",
+      "symptoms": [],
+      "cure_tips": [
+        "Continue good cultural care and monitor for pests and diseases common in Rosaceae."
+      ]
+    },
+    "black_spot": {
+      "disease": "Black Spot",
+      "description": "A fungal disease causing round black spots with fringed edges on leaves.",
+      "symptoms": [
+        { "name": "black spots" },
+        { "name": "yellow leaves" },
+        { "name": "leaf drop" }
+      ],
+      "cure_tips": [
+        "Remove infected leaves; improve air movement.",
+        "Water at the base and avoid wetting foliage.",
+        "Use fungicidal sprays as recommended."
+      ]
+    },
+    "downy_mildew": {
+      "disease": "Downy Mildew",
+      "description": "Oomycetes producing fuzzy growth on leaf undersides, causing chlorosis and necrosis.",
+      "symptoms": [
+        { "name": "yellow patches" },
+        { "name": "fuzzy underside" },
+        { "name": "leaf curling" }
+      ],
+      "cure_tips": [
+        "Improve drainage and airflow; avoid overhead watering.",
+        "Remove affected leaves and sanitize tools.",
+        "Apply fungicides specific for oomycetes if needed."
+      ]
+    },
+    "generic_insect_damage": {
+      "disease": "Generic Insect Damage",
+      "description": "Damage caused by chewing or sucking insects producing holes, skeletonization, or distortion.",
+      "symptoms": [
+        { "name": "chewed leaves" },
+        { "name": "curled foliage" },
+        { "name": "sticky residue" }
+      ],
+      "cure_tips": [
+        "Inspect plants frequently and hand-remove larger pests.",
+        "Use insecticidal soaps or oils on soft-bodied pests.",
+        "Encourage beneficial predators or use targeted insecticides."
+      ]
+    },
+    "mosaic_virus": {
+      "disease": "Mosaic Virus",
+      "description": "Viral infections producing mottled patterns on leaves, reducing growth.",
+      "symptoms": [
+        { "name": "mottled leaves" },
+        { "name": "stunted growth" },
+        { "name": "poor flowering" }
+      ],
+      "cure_tips": [
+        "Remove infected plants to prevent spread.",
+        "Control insect vectors like aphids.",
+        "Use certified virus-free planting stock."
+      ]
+    },
+    "mildew": {
+      "disease": "Mildew",
+      "description": "Powdery or downy fungal infections forming white or gray growth on leaves.",
+      "symptoms": [
+        { "name": "white coating" },
+        { "name": "leaf curling" },
+        { "name": "bud deformity" }
+      ],
+      "cure_tips": [
+        "Promote airflow and avoid excess nitrogen.",
+        "Remove heavily infected tissue.",
+        "Apply suitable fungicides when needed."
+      ]
+    },
+    "rust": {
+      "disease": "Rust",
+      "description": "Fungal disease producing orange pustules on leaf undersides.",
+      "symptoms": [
+        { "name": "orange pustules" },
+        { "name": "yellow leaves" },
+        { "name": "leaf drop" }
+      ],
+      "cure_tips": [
+        "Remove infected leaves and alternate hosts.",
+        "Avoid overhead watering.",
+        "Apply fungicides when infections persist."
+      ]
+    },
+    "yellow_mosaic_virus": {
+      "disease": "Yellow Mosaic Virus",
+      "description": "A viral disease causing yellow mosaic patterns on leaves.",
+      "symptoms": [
+        { "name": "yellow mosaic" },
+        { "name": "stunted growth" },
+        { "name": "poor flowering" }
+      ],
+      "cure_tips": [
+        "Remove infected plants and control insect vectors.",
+        "Use virus-free stock.",
+        "Use barriers or mulches to reduce vector transmission."
+      ]
+    }
+  },
+
+  "Zingiberaceae": {
+    "healthy": {
+      "disease": "Healthy",
+      "description": "No visible signs of disease; foliage and rhizomes appear healthy.",
+      "symptoms": [],
+      "cure_tips": [
+        "Maintain balanced moisture, good drainage, and inspect rhizomes at planting."
+      ]
+    },
+    "aphids": {
+      "disease": "Aphids",
+      "description": "Small sap-sucking insects clustering on new growth.",
+      "symptoms": [
+        { "name": "insect clusters" },
+        { "name": "sticky honeydew" },
+        { "name": "curled leaves" }
+      ],
+      "cure_tips": [
+        "Wash off small infestations with water or remove by hand.",
+        "Use insecticidal soaps or oils as needed.",
+        "Encourage natural predators like ladybirds."
+      ]
+    },
+    "necrotic_fungal_lesion": {
+      "disease": "Necrotic Fungal Lesion",
+      "description": "Dead spots on leaves caused by fungal pathogens.",
+      "symptoms": [
+        { "name": "brown lesions" },
+        { "name": "dead patches" },
+        { "name": "reduced vigor" }
+      ],
+      "cure_tips": [
+        "Remove affected leaves and maintain good hygiene.",
+        "Improve spacing and reduce humidity.",
+        "Apply suitable fungicides when cultural measures fail."
+      ]
+    },
+    "foliar_necrosis": {
+      "disease": "Foliar Necrosis",
+      "description": "Death of leaf tissue due to pathogens or stress.",
+      "symptoms": [
+        { "name": "brown patches" },
+        { "name": "brittle tissue" },
+        { "name": "reduced vigor" }
+      ],
+      "cure_tips": [
+        "Correct cultural stresses and remove damaged tissue.",
+        "Improve drainage and avoid prolonged wetness.",
+        "Apply fungicides when fungal causes are confirmed."
+      ]
+    },
+    "fungal_leaf_spot": {
+      "disease": "Fungal Leaf Spot",
+      "description": "Foliar fungi producing discrete spots, spreading rapidly in moisture.",
+      "symptoms": [
+        { "name": "brown spots" },
+        { "name": "yellow leaves" },
+        { "name": "rapid spread" }
+      ],
+      "cure_tips": [
+        "Remove infected leaves and sanitize tools.",
+        "Increase spacing and water early to allow drying.",
+        "Apply registered fungicides when necessary."
+      ]
+    }
+  },
+
+  "Asphodelaceae": {
+    "healthy": {
+      "disease": "Healthy",
+      "description": "No disease symptoms observed; foliage shows normal color and form.",
+      "symptoms": [],
+      "cure_tips": [
+        "Maintain consistent care, avoid overwatering, and monitor for fungi and pests."
+      ]
+    },
+    "anthracnose": {
+      "disease": "Anthracnose",
+      "description": "Fungal disease producing dark sunken lesions on leaves or stems.",
+      "symptoms": [
+        { "name": "dark lesions" },
+        { "name": "yellow leaves" },
+        { "name": "premature drop" }
+      ],
+      "cure_tips": [
+        "Remove infected material and improve air circulation.",
+        "Avoid overhead watering and reduce leaf wetness.",
+        "Apply appropriate fungicides when needed."
+      ]
+    },
+    "generic_fungal_leaf_spot": {
+      "disease": "Generic Fungal Leaf Spot",
+      "description": "Multiple fungal pathogens causing discrete leaf spots.",
+      "symptoms": [
+        { "name": "dark spots" },
+        { "name": "yellow leaves" },
+        { "name": "necrotic areas" }
+      ],
+      "cure_tips": [
+        "Remove and discard infected leaves; avoid touching wet plants.",
+        "Improve airflow and water at the base.",
+        "Apply fungicides when outbreaks persist."
+      ]
+    },
+    "rust": {
+      "disease": "Rust",
+      "description": "Fungal infection producing rust-colored pustules on leaf undersides.",
+      "symptoms": [
+        { "name": "brown pustules" },
+        { "name": "yellow leaves" },
+        { "name": "leaf drop" }
+      ],
+      "cure_tips": [
+        "Remove infected leaves and avoid prolonged leaf wetness.",
+        "Improve airflow and reduce humidity.",
+        "Use fungicides effective against rust when required."
+      ]
+    },
+    "sun_scorch": {
+      "disease": "Sun Scorch",
+      "description": "Leaf damage due to excessive sunlight or sudden exposure.",
+      "symptoms": [
+        { "name": "bleached patches" },
+        { "name": "dry edges" },
+        { "name": "burned areas" }
+      ],
+      "cure_tips": [
+        "Acclimate plants gradually to higher light levels.",
+        "Ensure proper soil moisture during hot seasons.",
+        "Avoid sudden moves to full sunlight."
+      ]
+    }
+  }
+}
