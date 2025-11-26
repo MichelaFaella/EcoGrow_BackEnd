@@ -52,6 +52,10 @@ class Family(Base):
         lazy="selectin",
     )
 
+    diseases: Mapped[List["Disease"]] = relationship(
+        back_populates="family",
+        lazy="selectin",
+    )
 
 class SizeEnum(str, Enum):
     MINUSCULE = "minuscule"
@@ -59,6 +63,10 @@ class SizeEnum(str, Enum):
     MEDIUM = "medium"
     LARGE = "large"
     GIANT = "giant"
+    
+class HealthStatus(str, Enum):
+    HEALTHY = "healthy"
+    SICK = "sick"
 
 
 class Plant(Base):
@@ -187,7 +195,7 @@ class PlantPhoto(Base):
     url: Mapped[str] = mapped_column(Text, nullable=False)
     caption: Mapped[Optional[str]] = mapped_column(String(255))
     order_index: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
-    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
+    created_at: Mapped[datetime] = mapped_column(DateTime, nullable=True, default=datetime.utcnow)
 
     plant: Mapped["Plant"] = relationship(back_populates="photos")
 
@@ -200,15 +208,37 @@ class Disease(Base):
     __tablename__ = "disease"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=gen_uuid)
-    name: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
+
+    # 👇 tolto unique=True, perché la stessa malattia può esistere in famiglie diverse
+    name: Mapped[str] = mapped_column(String(255), nullable=False)
+
     description: Mapped[str] = mapped_column(Text, nullable=False)
     symptoms: Mapped[Optional[dict]] = mapped_column(MySQLJSON)   # es. ["dark lesions","yellow leaves",...]
     cure_tips: Mapped[Optional[dict]] = mapped_column(MySQLJSON)  # es. ["Remove and destroy...","Improve air...", ...]
+
+    # 🔗 collegamento alla Family
+    family_id: Mapped[Optional[str]] = mapped_column(
+        String(36),
+        ForeignKey("family.id", ondelete="SET NULL", onupdate="CASCADE"),
+        nullable=True,
+        index=True,
+    )
+
+    family: Mapped[Optional["Family"]] = relationship(
+        back_populates="diseases",
+        lazy="selectin",
+    )
+
     plants: Mapped[List["PlantDisease"]] = relationship(
         back_populates="disease",
         cascade="all, delete-orphan",
         passive_deletes=True,
         lazy="selectin",
+    )
+
+    __table_args__ = (
+        # stessa malattia non può comparire due volte nella stessa famiglia
+        Index("ix_disease_name_family", "name", "family_id", unique=True),
     )
 
 
@@ -348,6 +378,12 @@ class UserPlant(Base):
         back_populates="user_links",
         lazy="selectin",
         overlaps="plants,owners",
+    )
+        # 👇 nuovo campo
+    health_status: Mapped[str] = mapped_column(
+        String(20),
+        nullable=False,
+        default=HealthStatus.HEALTHY.value,  # oppure HealthStatus.HEALTHY.value se la vuoi "sana" di default
     )
 
 

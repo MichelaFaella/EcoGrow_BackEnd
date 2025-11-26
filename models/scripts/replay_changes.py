@@ -294,11 +294,10 @@ def seed_from_changes(path: str | Path | None = None) -> int:
 
     logger.info(f"[seed] total applied: {total} from {p}")
     return total
-
 def seed_disease_definitions_from_file(path: str | Path | None = None) -> int:
     """
-    Legge il file utils/plant_disease.txt (JSON, organizzato per famiglie) e fa:
-      - upsert nella tabella 'disease'
+    Legge il file utils/plant_disease*.json (organizzato per famiglie) e fa:
+      - upsert nella tabella 'disease' (un disease per coppia family+disease)
       - upsert anche in changes.json (tabella 'disease')
 
     Ritorna il numero di righe DB applicate.
@@ -330,7 +329,7 @@ def seed_disease_definitions_from_file(path: str | Path | None = None) -> int:
     try:
         raw = p.read_text(encoding="utf-8")
         payload = json.loads(raw)
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         logger.error(f"[seed_diseases] cannot parse JSON from {p}: {e}")
         return 0
 
@@ -338,23 +337,31 @@ def seed_disease_definitions_from_file(path: str | Path | None = None) -> int:
         logger.error(f"[seed_diseases] invalid structure in {p}: expected object at top-level")
         return 0
 
-    # 3) Aggrega per nome malattia (Healthy, Anthracnose, ...)
-    aggregated: Dict[str, Dict[str, Any]] = {}
+    # 3) Costruisci le righe pronte per DB + changes.json
+    #    (una riga per coppia family_name + disease_name)
+    rows: List[Dict[str, Any]] = []
 
     for family_name, diseases in payload.items():
         if not isinstance(diseases, dict):
+            continue
+
+        fam_name_str = str(family_name).strip()
+        if not fam_name_str:
             continue
 
         for key, info in diseases.items():
             if not isinstance(info, dict):
                 continue
 
-            # nel JSON il campo può essere "name" o dedotto dalla chiave
+            # Nel JSON il campo può essere "name" o dedotto dalla chiave
             name = str(info.get("name") or key).strip()
             if not name:
                 continue
 
             description = (info.get("description") or "").strip()
+            if not description:
+                description = f"{name} - disease affecting ornamental plants."
+
             symptoms = info.get("symptoms") or []
             cure_tips = info.get("cure_tips") or []
 
@@ -384,62 +391,64 @@ def seed_disease_definitions_from_file(path: str | Path | None = None) -> int:
                         if c_str:
                             norm_cure_tips.append(c_str)
 
-            ag = aggregated.setdefault(
-                name,
+            # Chiave stabile per questa coppia (family + disease)
+            stable_key = f"{fam_name_str}::{name}"
+
+            rows.append(
                 {
-                    "descriptions": set(),
-                    "families": set(),
-                    "symptoms": set(),
-                    "cure_tips": set(),
-                },
+                    "stable_key": stable_key,
+                    "family_name": fam_name_str,
+                    "name": name,
+                    "description": description,
+                    "symptoms": norm_symptoms or None,
+                    "cure_tips": norm_cure_tips or None,
+                }
             )
 
-            if description:
-                ag["descriptions"].add(description)
-            ag["families"].add(str(family_name))
-
-            for s in norm_symptoms:
-                ag["symptoms"].add(s)
-
-            for c in norm_cure_tips:
-                ag["cure_tips"].add(c)
-
-    if not aggregated:
+    if not rows:
         logger.info(f"[seed_diseases] no diseases found in {p}")
         return 0
 
-    # 4) Costruisci le righe pronte per DB + changes.json
-    rows: List[Dict[str, Any]] = []
-
-    for name, ag in aggregated.items():
-        desc_list = [d for d in ag["descriptions"] if d]
-        base_desc = desc_list[0] if desc_list else f"{name} - disease affecting ornamental plants."
-
-        symptoms_list = sorted(ag["symptoms"])
-        cure_tips_list = sorted(ag["cure_tips"])
-
-        rows.append(
-            {
-                "id": _stable_disease_id(name),
-                "name": name,
-                "description": base_desc,
-                "symptoms": symptoms_list or None,
-                "cure_tips": cure_tips_list or None,
-            }
-        )
-
-    # 5) Upsert su DB (tabella disease)
+    # 4) Upsert su DB (tabella disease) + changes.json
     applied_db = 0
+    db_rows_for_changes: List[Dict[str, Any]] = []
+
     with SessionLocal() as session:
-        for row in rows:
-            _upsert_db(session, Disease, row)
+        # Mappa nome family -> id
+        family_map: Dict[str, str] = {
+            f.name: f.id for f in session.query(Family).all()
+        }
+
+        for r in rows:
+            fam_name = r["family_name"]
+            fam_id = family_map.get(fam_name)
+            if not fam_id:
+                logger.warning(
+                    "[seed_diseases] family '%s' not found in DB; skipping disease '%s'",
+                    fam_name,
+                    r["name"],
+                )
+                continue
+
+            row_db = {
+                "id": _stable_disease_id(r["stable_key"]),
+                "name": r["name"],
+                "description": r["description"],
+                "symptoms": r["symptoms"],
+                "cure_tips": r["cure_tips"],
+                "family_id": fam_id,
+            }
+
+            _upsert_db(session, Disease, row_db)
             applied_db += 1
+            db_rows_for_changes.append(row_db)
+
         session.commit()
 
-    # 6) Upsert anche in changes.json (così il seed è riproducibile)
+    # 5) Upsert anche in changes.json (così il seed è riproducibile)
     try:
-        write_changes_upsert("disease", rows)
-    except Exception as e:
+        write_changes_upsert("disease", db_rows_for_changes)
+    except Exception as e:  # noqa: BLE001
         logger.error(f"[seed_diseases] failed to update changes.json: {e}")
 
     logger.info(f"[seed_diseases] applied {applied_db} disease rows from {p}")

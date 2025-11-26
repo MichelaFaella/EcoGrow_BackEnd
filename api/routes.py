@@ -54,10 +54,10 @@ from models.entities import (
 api_blueprint = Blueprint("api", __name__)
 repo = RepositoryService()
 REFRESH_TTL_DAYS = int(os.getenv("REFRESH_TTL_DAYS", "90"))
-DISEASE_PROB_THRESHOLD = float(os.getenv("DISEASE_PROB_THRESHOLD", "0.80"))
+DISEASE_PROB_THRESHOLD = float(os.getenv("DISEASE_PROB_THRESHOLD", "0.05"))
 UPLOAD_FOLDER = "uploads"
 MODEL_PREDICT_URL = os.getenv("MODEL_URL", "http://model:8000/predict")
-MODEL_TIMEOUT = float(os.getenv("MODEL_TIMEOUT", "15"))
+MODEL_TIMEOUT = float(os.getenv("MODEL_TIMEOUT", "30"))
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 PLANT_DISEASE_DETAILS_PATH = os.path.join(BASE_DIR, "plant_disease_details.json")
 try:
@@ -736,15 +736,16 @@ def get_all_plants():
 @require_jwt
 def get_user_sick_plants():
     """
-    Restituisce tutte le piante dell'utente che hanno almeno
-    una PlantDisease con status='confirmed'.
+    Restituisce tutte le piante dell'utente che hanno health_status='sick'
+    (campo su UserPlant).
 
-    Per ogni pianta ritorna anche l'ultima malattia confermata.
+    Per ogni pianta ritorna anche l'ultima PlantDisease con status='confirmed',
+    se presente.
     """
     user_id = g.user_id
 
     with _session_ctx() as s:
-        # Join su UserPlant -> Plant -> PlantDisease -> Disease
+        # Join UserPlant -> Plant, e poi PlantDisease/Disease per le malattie
         q = (
             s.query(
                 Plant,
@@ -754,13 +755,15 @@ def get_user_sick_plants():
                 Disease,
             )
             .join(UserPlant, UserPlant.plant_id == Plant.id)
-            .join(PlantDisease, PlantDisease.plant_id == Plant.id)
-            .join(Disease, Disease.id == PlantDisease.disease_id)
+            .outerjoin(PlantDisease, PlantDisease.plant_id == Plant.id)
+            .outerjoin(Disease, Disease.id == PlantDisease.disease_id)
             .filter(
                 UserPlant.user_id == user_id,
+                UserPlant.health_status == "sick",
                 PlantDisease.status == "confirmed",
             )
-            .order_by(PlantDisease.detected_at.desc().nulls_last())
+            # 👇 QUI: tolto .nulls_last(), che MySQL non supporta
+            .order_by(PlantDisease.detected_at.desc())
         )
 
         rows = q.all()
@@ -780,47 +783,36 @@ def get_user_sick_plants():
                     "location_note": location_note,
                 },
                 "last_disease": {
-                    "id": pd.id,
-                    "name": disease.name,
-                    "status": pd.status,
-                    "severity": pd.severity,
+                    "id": pd.id if pd else None,
+                    "name": disease.name if disease else None,
+                    "status": pd.status if pd else None,
+                    "severity": pd.severity if pd else None,
                     "detected_at": (
-                        pd.detected_at.isoformat() if pd.detected_at else None
+                        pd.detected_at.isoformat() if (pd and pd.detected_at) else None
                     ),
                 },
             }
 
         return jsonify(list(by_plant.values())), 200
 
+
 @api_blueprint.route("/user/plants/healthy", methods=["GET"])
 @require_jwt
 def get_user_healthy_plants():
     """
-    Restituisce tutte le piante dell'utente che NON hanno
-    alcuna PlantDisease con status='confirmed'.
+    Restituisce tutte le piante dell'utente che hanno health_status='healthy'
+    (campo su UserPlant).
     """
     user_id = g.user_id
 
     with _session_ctx() as s:
-        # Sottoquery: tutte le plant_id che hanno almeno una malattia confermata
-        sick_plant_ids_subq = (
-            s.query(PlantDisease.plant_id)
-            .join(Plant, Plant.id == PlantDisease.plant_id)
-            .join(UserPlant, UserPlant.plant_id == Plant.id)
-            .filter(
-                UserPlant.user_id == user_id,
-                PlantDisease.status == "confirmed",
-            )
-            .distinct()
-            .subquery()
-        )
-
-        # Tutte le piante dell'utente che NON sono in quella lista
         q = (
             s.query(Plant, UserPlant.nickname, UserPlant.location_note)
             .join(UserPlant, UserPlant.plant_id == Plant.id)
-            .filter(UserPlant.user_id == user_id)
-            .filter(~Plant.id.in_(sick_plant_ids_subq))
+            .filter(
+                UserPlant.user_id == user_id,
+                UserPlant.health_status == "healthy",
+            )
             .order_by(Plant.common_name, Plant.scientific_name)
         )
 
@@ -837,8 +829,6 @@ def get_user_healthy_plants():
             })
 
         return jsonify(result), 200
-
-
 
 @api_blueprint.route("/plant/full/<plant_id>", methods=["GET"])
 @require_jwt
@@ -1443,13 +1433,9 @@ def disease_delete(did: str):
         write_changes_delete("disease", did)
         return ("", 204)
 
-
 @api_blueprint.route("/ai/model/check-plant-disease", methods=["POST"])
 @require_jwt
 def ai_model_check_plant_disease():
-    if "image" not in request.files:
-        return jsonify({"error": "Missing 'image' file in request."}), 400
-
     body = request.get_json(silent=True) if request.is_json else None
 
     # 1) unknown_threshold come nell'altro endpoint
@@ -1461,10 +1447,10 @@ def ai_model_check_plant_disease():
     except ValueError as exc:
         return jsonify({"error": str(exc)}), 400
 
-    # 2) family
+    # 2) family (può arrivare dal client oppure dal DB più avanti)
     family = request.values.get("family") or (body.get("family") if isinstance(body, dict) else None)
 
-    # 3) disease_suggestions
+    # 3) disease_suggestions (form + JSON)
     disease_suggestions: list[str] = []
     if request.values:
         disease_suggestions.extend([v for v in request.values.getlist("disease_suggestions") if v])
@@ -1486,30 +1472,68 @@ def ai_model_check_plant_disease():
         if not plant:
             return jsonify({"error": "Plant not found"}), 404
 
-        # Controllo che l'utente la possieda
-        if not s.get(UserPlant, (g.user_id, plant_id)):
+        # Controllo che l'utente la possieda e recupero la UserPlant
+        up = s.get(UserPlant, (g.user_id, plant_id))
+        if not up:
             return jsonify({"error": "Forbidden: you do not own this plant"}), 403
 
         # Se family non è passato, prendo dal DB
         if not family and plant.family:
             family = plant.family.name
 
+        # --- Recupero dell'immagine ---
+        # Se il client manda una nuova immagine, uso quella;
+        # altrimenti uso la prima PlantPhoto salvata.
+        need_close = False
+        if "image" in request.files:
+            image_file = request.files["image"]
+        else:
+            photos = plant.photos or []
+            if not photos:
+                return jsonify({"error": "Plant has no photos to run disease detection"}), 400
+
+            photo = photos[0]  # prima foto (grazie all'order_by su relationship)
+            filename_only = os.path.basename(photo.url)
+
+            upload_root = current_app.config.get("UPLOAD_DIR") or UPLOAD_FOLDER
+            image_path = os.path.join(upload_root, plant_id, filename_only)
+
+            if not os.path.exists(image_path):
+                return jsonify({"error": "Image file not found on disk for this plant"}), 500
+
+            image_file = open(image_path, "rb")
+            need_close = True
+
         # 5) Chiamata al servizio di disease recognition
         try:
             raw_result, label, prob = image_service.disease_detection_top_class(
-                image_file=request.files["image"],
+                image_file=image_file,
                 unknown_threshold=unknown_threshold,
                 family=family,
                 disease_suggestions=disease_suggestions or None,
             )
         except ValueError as exc:
+            if need_close:
+                image_file.close()
             return jsonify({"error": str(exc)}), 400
         except Exception as exc:  # noqa: BLE001
+            if need_close:
+                image_file.close()
             current_app.logger.exception("Disease model failed: %s", exc)
             return jsonify({"error": f"Inference failed: {exc}"}), 502
+        finally:
+            if need_close:
+                image_file.close()
 
-        # Caso esplicito healthy -> non salvo niente
-        if label == "healthy":
+        # --- DECISIONE: è malata o no? ---
+        # Regola:
+        # - se label == "healthy" OR prob < DISEASE_PROB_THRESHOLD -> pianta considerata sana
+        #   (non inseriamo nulla in Disease/PlantDisease)
+        if label == "healthy" or prob < DISEASE_PROB_THRESHOLD:
+            # Aggiorno lo stato sulla UserPlant
+            up.health_status = "healthy"  # oppure HealthStatus.HEALTHY.value
+            _commit_or_409(s)
+
             return jsonify({
                 "plant_id": plant_id,
                 "status": "healthy_plant",
@@ -1520,6 +1544,11 @@ def ai_model_check_plant_disease():
                 },
                 "model_raw": raw_result,
             }), 200
+
+        # Da qui in poi:
+        # - label != "healthy"
+        # - prob >= DISEASE_PROB_THRESHOLD
+        # => malattia "significativa", la salviamo.
 
         # 6) Dettagli malattia dal JSON a partire da family + label
         fam_key = family or (plant.family.name if plant.family else None)
@@ -1556,9 +1585,9 @@ def ai_model_check_plant_disease():
             s.flush()
             write_changes_upsert("disease", [_serialize_instance(disease)])
 
-        # 8) PlantDisease: solo la top class
+        # 8) PlantDisease: SOLO se prob >= threshold
         severity = int(round(prob * 100))
-        status = "confirmed" if prob >= DISEASE_PROB_THRESHOLD else "suspected"
+        status = "confirmed"  # perché siamo sopra soglia
 
         pd = PlantDisease(
             plant_id=plant_id,
@@ -1569,14 +1598,16 @@ def ai_model_check_plant_disease():
             status=status,
         )
         s.add(pd)
+
+        # Aggiorno anche lo stato sulla UserPlant
+        up.health_status = "sick"  # oppure HealthStatus.SICK.value
+
         _commit_or_409(s)
         write_changes_upsert("plant_disease", [_serialize_instance(pd)])
 
-        plant_status = "sick_plant" if prob >= DISEASE_PROB_THRESHOLD else "healthy_plant"
-
         return jsonify({
             "plant_id": plant_id,
-            "status": plant_status,
+            "status": "sick_plant",
             "threshold": DISEASE_PROB_THRESHOLD,
             "top_prediction": {
                 "label": label,
@@ -1590,6 +1621,7 @@ def ai_model_check_plant_disease():
             },
             "model_raw": raw_result,
         }), 200
+
 
 
 
