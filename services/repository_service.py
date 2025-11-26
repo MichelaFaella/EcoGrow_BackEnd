@@ -25,7 +25,7 @@ from models.entities import (
     UserQuestionAnswer,
     WateringPlan,
     Reminder,
-    WateringLog, Friendship, User, SharedPlant,
+    WateringLog, Friendship, User, SharedPlant, Disease,
 )
 
 
@@ -279,13 +279,13 @@ class RepositoryService:
         raise ValueError("Formato non valido per 'since'")
 
     def ensure_user_plant_link(
-        self,
-        *,
-        user_id: str,
-        plant_id: str,
-        location_note: Optional[str] = None,
-        since: Optional[date | datetime | str] = None,
-        overwrite: bool = False,
+            self,
+            *,
+            user_id: str,
+            plant_id: str,
+            location_note: Optional[str] = None,
+            since: Optional[date | datetime | str] = None,
+            overwrite: bool = False,
     ) -> Dict:
         """
         Crea in modo idempotente la relazione user_plant (user_id, plant_id).
@@ -846,6 +846,49 @@ class RepositoryService:
 
             return out
 
+    def get_plant_basic_with_photo(self, plant_id: str):
+        """
+        Ritorna info base della pianta + prima foto in base64 (se esiste).
+        Usata per sick/healthy plants.
+        """
+        with self.Session() as s:
+            plant = s.query(Plant).filter(Plant.id == plant_id).first()
+            if not plant:
+                return None
+
+            # Foto
+            photo = (
+                s.query(PlantPhoto)
+                .filter(PlantPhoto.plant_id == plant_id)
+                .order_by(PlantPhoto.order_index.asc())
+                .first()
+            )
+
+            photo_b64 = None
+            if photo:
+                file_path = os.path.join("uploads", plant_id, photo.url)
+                if os.path.exists(file_path):
+                    try:
+                        with open(file_path, "rb") as f:
+                            photo_b64 = base64.b64encode(f.read()).decode("utf-8")
+                    except:
+                        pass
+
+            return {
+                "id": str(plant.id),
+                "scientific_name": plant.scientific_name,
+                "common_name": plant.common_name,
+                "photo_base64": photo_b64,
+                "family_id": plant.family_id,
+                "category": plant.category,
+                "climate": plant.climate,
+                "difficulty": plant.difficulty,
+                "origin": plant.origin,
+                "light_level": plant.light_level,
+                "min_temp_c": plant.min_temp_c,
+                "max_temp_c": plant.max_temp_c,
+            }
+
     def update_shared_plant(self, sid: str, data: dict):
         print(f"[RepositoryService] update_shared_plant sid={sid}, data={data}")
         with self.Session() as s:
@@ -1043,10 +1086,10 @@ class RepositoryService:
     # WATERING PLAN di default
     # =======================
     def create_default_watering_plan_for_plant(
-        self,
-        session,
-        user_id: str,
-        plant_id: str,
+            self,
+            session,
+            user_id: str,
+            plant_id: str,
     ):
         """
         Crea un WateringPlan di default per (user_id, plant_id)
@@ -1075,20 +1118,20 @@ class RepositoryService:
         now = datetime.utcnow()
 
         # 2) orario dalla Q2
-        if time_pref == 1:      # Morning (07-10)
+        if time_pref == 1:  # Morning (07-10)
             hour = 8
-        elif time_pref == 2:    # Lunch
+        elif time_pref == 2:  # Lunch
             hour = 13
-        elif time_pref == 3:    # Evening
+        elif time_pref == 3:  # Evening
             hour = 19
-        else:                   # I don't care
+        else:  # I don't care
             hour = 9
 
         # 3) intervallo giorni dalla Q1
-        if day_pref == 4:       # Every other day
+        if day_pref == 4:  # Every other day
             interval_days = 2
         else:
-            interval_days = 3   # esempio: ogni 3 giorni di default
+            interval_days = 3  # esempio: ogni 3 giorni di default
 
         next_due = (now + timedelta(days=1)).replace(
             hour=0, minute=0, second=0, microsecond=0
@@ -1339,4 +1382,49 @@ class RepositoryService:
                 )
 
             return result
+
+    def get_family_symptoms(self, family_id: str):
+        """
+        Restituisce una lista unica di sintomi per tutte le disease della famiglia.
+        Esclude:
+          - NULL
+          - liste vuote
+        Elimina duplicati mantenendo l’ordine.
+        """
+        print(f"[Repository] get_family_symptoms family_id={family_id}")
+
+        with self.Session() as s:
+            diseases = (
+                s.query(Disease)
+                .filter(Disease.family_id == family_id)
+                .order_by(Disease.name.asc())
+                .all()
+            )
+
+            seen = set()
+            result = []
+
+            for d in diseases:
+                raw = d.symptoms
+
+                if not raw:
+                    continue
+
+                # supporto JSON lista o dict
+                if isinstance(raw, list):
+                    items = [x for x in raw if x]
+                elif isinstance(raw, dict):
+                    items = [k for k, v in raw.items() if v]
+                else:
+                    items = []
+
+                for sym in items:
+                    if sym not in seen:
+                        seen.add(sym)
+                        result.append(sym)
+
+            return {
+                "family_id": family_id,
+                "symptoms": result,
+            }
 

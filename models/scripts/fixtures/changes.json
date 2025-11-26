@@ -716,6 +716,25 @@
       "id": "fbfcf54d-109f-479f-87b3-f83e05b1bbe1",
       "max_temp_c": 28,
       "scientific_name": "Spathiphyllum wallisii"
+    },
+    {
+      "size": "medium",
+      "climate": "Temperate",
+      "difficulty": 3,
+      "common_name": "Rose",
+      "origin": "Asia",
+      "max_temp_c": 28,
+      "family_id": "b9cbfcc6-ce18-47cd-ac15-3535712d8c45",
+      "scientific_name": "Rosa chinensis",
+      "updated_at": "2025-11-26T23:16:03",
+      "pests": null,
+      "use": "Garden plant, Cut flowers, Ornamental",
+      "water_level": 3,
+      "id": "c3d1ac84-db3c-4d3d-8da4-c06ab1b9f6f2",
+      "created_at": "2025-11-26T23:16:03",
+      "min_temp_c": 5,
+      "category": "Flowering shrub",
+      "light_level": 5
     }
   ],
   "plant_photo": [
@@ -750,6 +769,14 @@
       "created_at": null,
       "url": "1a7d1306-e204-4f81-84bb-7192d45c0cef.jpg",
       "id": "1a7d1306-e204-4f81-84bb-7192d45c0cef"
+    },
+    {
+      "plant_id": "c3d1ac84-db3c-4d3d-8da4-c06ab1b9f6f2",
+      "caption": null,
+      "order_index": 0,
+      "id": "52a9d4b5-1f14-49e6-b119-f4daa5dda72b",
+      "created_at": null,
+      "url": "52a9d4b5-1f14-49e6-b119-f4daa5dda72b.jpg"
     }
   ],
   "user_plant": [
@@ -775,6 +802,12 @@
     {
       "user_id": "4c183b19-54cc-4b71-a7cd-0dfcffadb76d",
       "plant_id": "9cdfa73c-e683-40d4-bb07-61df427250d9",
+      "location_note": null,
+      "since": "2025-11-26"
+    },
+    {
+      "user_id": "d2b805fd-5ac6-440b-b649-64af3cbd41ad",
+      "plant_id": "c3d1ac84-db3c-4d3d-8da4-c06ab1b9f6f2",
       "location_note": null,
       "since": "2025-11-26"
     }

@@ -737,17 +737,10 @@ def get_all_plants():
 @api_blueprint.route("/user/plants/sick", methods=["GET"])
 @require_jwt
 def get_user_sick_plants():
-    """
-    Restituisce tutte le piante dell'utente che hanno health_status='sick'
-    (campo su UserPlant).
-
-    Per ogni pianta ritorna anche l'ultima PlantDisease con status='confirmed',
-    se presente.
-    """
     user_id = g.user_id
 
     with _session_ctx() as s:
-        # Join UserPlant -> Plant, e poi PlantDisease/Disease per le malattie
+        # Query
         q = (
             s.query(
                 Plant,
@@ -763,25 +756,23 @@ def get_user_sick_plants():
                 UserPlant.health_status == "sick",
                 PlantDisease.status == "confirmed",
             )
-            # 👇 QUI: tolto .nulls_last(), che MySQL non supporta
             .order_by(PlantDisease.detected_at.desc())
         )
 
         rows = q.all()
 
-        # Vogliamo una sola entry per pianta: prendiamo la malattia più recente
         by_plant: dict[str, dict] = {}
+
         for plant, location_note, pd, disease in rows:
             if plant.id in by_plant:
-                continue  # abbiamo già preso la più recente grazie all'order_by
+                continue
+
+            # 🔥 INFO BASE + FOTO
+            base = repo.get_plant_basic_with_photo(plant.id)
+            base["location_note"] = location_note
 
             by_plant[plant.id] = {
-                "plant": {
-                    "id": plant.id,
-                    "scientific_name": plant.scientific_name,
-                    "common_name": getattr(plant, "common_name", None),
-                    "location_note": location_note,
-                },
+                "plant": base,
                 "last_disease": {
                     "id": pd.id if pd else None,
                     "name": disease.name if disease else None,
@@ -799,10 +790,6 @@ def get_user_sick_plants():
 @api_blueprint.route("/user/plants/healthy", methods=["GET"])
 @require_jwt
 def get_user_healthy_plants():
-    """
-    Restituisce tutte le piante dell'utente che hanno health_status='healthy'
-    (campo su UserPlant).
-    """
     user_id = g.user_id
 
     with _session_ctx() as s:
@@ -819,13 +806,13 @@ def get_user_healthy_plants():
         rows = q.all()
 
         result = []
+
         for plant, location_note in rows:
-            result.append({
-                "id": plant.id,
-                "scientific_name": plant.scientific_name,
-                "common_name": getattr(plant, "common_name", None),
-                "location_note": location_note,
-            })
+            # INFO BASE + FOTO
+            base = repo.get_plant_basic_with_photo(plant.id)
+            base["location_note"] = location_note
+
+            result.append(base)
 
         return jsonify(result), 200
 
@@ -1394,14 +1381,31 @@ def disease_all():
 @require_jwt
 def disease_add():
     payload = _parse_json_body()
+
+    # Filtra i campi ammessi dal modello Disease
     data = _filter_fields_for_model(payload, Disease)
+
+    # Controlli obbligatori
     if not data.get("name") or not data.get("description"):
         return jsonify({"error": "name and description required"}), 400
+
+    # Symptoms e cure_tips devono essere JSON → se stringa, parse
+    for field in ["symptoms", "cure_tips"]:
+        val = data.get(field)
+        if isinstance(val, str):  # se il client invia stringa JSON
+            try:
+                data[field] = json.loads(val)
+            except Exception:
+                return jsonify({"error": f"{field} must be valid JSON"}), 400
+
+    # Insert
     with _session_ctx() as s:
         d = Disease(**data)
         s.add(d)
         _commit_or_409(s)
+
         write_changes_upsert("disease", [_serialize_instance(d)])
+
         return jsonify({"ok": True, "id": d.id}), 201
 
 
@@ -1621,6 +1625,13 @@ def ai_model_check_plant_disease():
             },
             "model_raw": raw_result,
         }), 200
+
+
+@api_blueprint.route("/disease/symptoms/<family_id>", methods=["GET"])
+@require_jwt
+def get_disease_symptoms_by_family(family_id):
+    data = repo.get_family_symptoms(family_id)
+    return jsonify(data), 200
 
 
 # ========= PlantDisease =========
@@ -2199,10 +2210,10 @@ def shared_plant_add():
 
     for row in existing:
         if (
-            row["owner_user_id"] == owner_id and
-            row["recipient_user_id"] == recipient_id and
-            row["plant_id"] == plant_id and
-            row.get("ended_sharing_at") is None
+                row["owner_user_id"] == owner_id and
+                row["recipient_user_id"] == recipient_id and
+                row["plant_id"] == plant_id and
+                row.get("ended_sharing_at") is None
         ):
             print("[ERROR] Already shared")
             return jsonify({"error": "Already shared"}), 409
@@ -2278,7 +2289,6 @@ def shared_plant_delete(sid: str):
         return jsonify({"error": "SharedPlant not found or unauthorized"}), 404
 
     return ("", 204)
-
 
 
 # ========= WateringPlan =========
