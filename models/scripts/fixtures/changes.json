@@ -135,5 +135,668 @@
       "name": "Asphodelaceae",
       "id": "e7a9c4b2-8a58-4c0e-a3f3-4b10e1d4c9f2"
     }
+  ],
+  "disease": [
+    {
+      "id": "249509dc-fbbf-5ae3-b561-d70a7ceba4ba",
+      "name": "healthy",
+      "description": "Plant shows no signs of disease or nutrient deficiency; foliage is uniformly colored and turgid, growth is consistent with species expectations.",
+      "symptoms": null,
+      "cure_tips": [
+        "No treatment required; maintain regular good cultural practices such as proper watering and light."
+      ],
+      "family_id": "4fba4b56-94c3-41f3-91d2-84f1d612aa70"
+    },
+    {
+      "id": "792d981a-18c8-5b58-85ea-844f3bef7355",
+      "name": "anthracnose",
+      "description": "A fungal disease causing dark, sunken lesions on leaves, stems, or fruit; favours warm, wet conditions and can cause premature defoliation and disfigurement.",
+      "symptoms": [
+        "dark lesions",
+        "yellow leaves",
+        "dead patches"
+      ],
+      "cure_tips": [
+        "Remove and destroy infected plant debris and heavily affected tissues to reduce inoculum.",
+        "Improve air circulation and avoid overhead watering to reduce leaf wetness.",
+        "Apply appropriate fungicides following label instructions during active infection."
+      ],
+      "family_id": "4fba4b56-94c3-41f3-91d2-84f1d612aa70"
+    },
+    {
+      "id": "7276e94a-56cb-504a-91f7-d336682d8c45",
+      "name": "leaf_withering",
+      "description": "A symptom complex where leaves wilt and brown due to water stress, root problems, vascular disease, or environmental extremes; underlying causes must be diagnosed for correct treatment.",
+      "symptoms": [
+        "leaf wilting",
+        "brown margins",
+        "reduced vigor"
+      ],
+      "cure_tips": [
+        "Check soil moisture and root health; correct under- or over-watering.",
+        "Inspect roots for rot or pests and repot into fresh, well-draining medium if needed.",
+        "Improve drainage and avoid waterlogged conditions; consider targeted fungicide if vascular fungi are suspected."
+      ],
+      "family_id": "4fba4b56-94c3-41f3-91d2-84f1d612aa70"
+    },
+    {
+      "id": "5049a706-6917-5590-9e1d-1041e429f2f3",
+      "name": "fungal_leaf_spot",
+      "description": "Caused by various fungal pathogens producing small to large necrotic spots on leaves; spread is promoted by moisture and crowded plants, reducing photosynthetic area and vigor.",
+      "symptoms": [
+        "brown spots",
+        "pale halos",
+        "yellow leaves"
+      ],
+      "cure_tips": [
+        "Remove affected leaves and dispose of them; do not compost infected material.",
+        "Space plants to increase airflow and avoid overhead watering.",
+        "Use registered fungicides when outbreaks are severe and follow label directions."
+      ],
+      "family_id": "4fba4b56-94c3-41f3-91d2-84f1d612aa70"
+    },
+    {
+      "id": "db9c2928-81b1-56ec-89a8-547ae9cef6f3",
+      "name": "foliar_necrosis",
+      "description": "Localized death of leaf tissue resulting from severe disease, chemical injury, or abiotic stress; appears as brown or black dead patches and can indicate systemic problems.",
+      "symptoms": [
+        "dead tissue",
+        "chlorotic halo",
+        "leaf loss"
+      ],
+      "cure_tips": [
+        "Identify and eliminate the cause (chemical burn, nutrient imbalance, or pathogen).",
+        "Trim necrotic tissue and improve plant care such as water, light, and fertilization balance.",
+        "Treat confirmed infections with targeted fungicides or bactericides as appropriate."
+      ],
+      "family_id": "4fba4b56-94c3-41f3-91d2-84f1d612aa70"
+    },
+    {
+      "id": "000a2dec-d776-5222-b379-e325692ee921",
+      "name": "healthy",
+      "description": "No visible disease signs; leaves are firm and evenly colored, and growth is consistent with normal species characteristics under current care.",
+      "symptoms": null,
+      "cure_tips": [
+        "Maintain stable moisture, moderate light, and inspect regularly for pests to keep plants healthy."
+      ],
+      "family_id": "ddc38e06-6633-48eb-988e-af2579ef2b53"
+    },
+    {
+      "id": "69e06ac7-9d71-514d-96c1-13d95c18f395",
+      "name": "bacterial_wilt",
+      "description": "A bacterial disease that blocks vascular tissue causing rapid wilting and plant collapse; often fatal and spread by contaminated soil, tools, or water.",
+      "symptoms": [
+        "sudden wilting",
+        "stem ooze",
+        "plant collapse"
+      ],
+      "cure_tips": [
+        "Remove and destroy severely infected plants to prevent spread.",
+        "Avoid moving soil between plants and sterilize tools after use.",
+        "Practice crop rotation and use disease-free planting material where possible."
+      ],
+      "family_id": "ddc38e06-6633-48eb-988e-af2579ef2b53"
+    },
+    {
+      "id": "66b51af0-c8b2-52c9-82f2-0a1b0dbea673",
+      "name": "chlorosis",
+      "description": "Yellowing of leaf tissue due to insufficient chlorophyll from nutrient deficiencies, poor root health, or alkaline soils reducing nutrient availability.",
+      "symptoms": [
+        "yellow leaves",
+        "pale foliage",
+        "slow growth"
+      ],
+      "cure_tips": [
+        "Test soil or substrate and correct pH if alkaline to improve nutrient uptake.",
+        "Apply micronutrient chelates such as iron when needed.",
+        "Improve root health by avoiding waterlogging and ensuring adequate drainage."
+      ],
+      "family_id": "ddc38e06-6633-48eb-988e-af2579ef2b53"
+    },
+    {
+      "id": "c67b5dc2-3ad9-5cfe-85c7-cec37b9809df",
+      "name": "manganese_toxicity",
+      "description": "Excess manganese accumulation in acidic or waterlogged soils causing leaf spotting, interveinal chlorosis, and reduced growth.",
+      "symptoms": [
+        "brown spots",
+        "leaf bronzing",
+        "stunted growth"
+      ],
+      "cure_tips": [
+        "Adjust soil pH toward neutral and improve drainage.",
+        "Avoid manganese-containing fertilizers until levels normalize.",
+        "Apply balanced fertilization to correct nutrient imbalances."
+      ],
+      "family_id": "ddc38e06-6633-48eb-988e-af2579ef2b53"
+    },
+    {
+      "id": "a2f4c13a-b95c-58d3-9c9e-a719a035969c",
+      "name": "healthy",
+      "description": "Plant appears vigorous with normal leaf color and flower production, showing no signs of disease or nutrient stress.",
+      "symptoms": null,
+      "cure_tips": [
+        "Continue good cultural practices: adequate watering, balanced fertilization, and monitoring for pests and diseases."
+      ],
+      "family_id": "3f91821e-4b75-4ba8-b8c1-e28ad7459bad"
+    },
+    {
+      "id": "a838149a-7c75-504c-a776-565e439c066e",
+      "name": "bacterial_leaf_spot",
+      "description": "Bacterial pathogens create water-soaked lesions that dry into tan or brown spots; spread by splashing water, contaminated tools, and infected transplants.",
+      "symptoms": [
+        "dark spots",
+        "yellow halos",
+        "leaf drop"
+      ],
+      "cure_tips": [
+        "Remove infected foliage and avoid overhead irrigation.",
+        "Sterilize tools and use disease-free transplants.",
+        "Use copper-based bactericides as a protective measure during outbreaks."
+      ],
+      "family_id": "3f91821e-4b75-4ba8-b8c1-e28ad7459bad"
+    },
+    {
+      "id": "87e1218c-40c0-587f-b26b-251d04036020",
+      "name": "septoria_leaf_spot",
+      "description": "A fungal disease causing numerous small tan to brown leaf spots that thrive in wet, crowded conditions.",
+      "symptoms": [
+        "tan spots",
+        "yellow leaves",
+        "spore spread"
+      ],
+      "cure_tips": [
+        "Remove infected leaves; improve spacing and airflow.",
+        "Avoid overhead watering and water early to encourage drying.",
+        "Apply appropriate fungicides when cultural controls are insufficient."
+      ],
+      "family_id": "3f91821e-4b75-4ba8-b8c1-e28ad7459bad"
+    },
+    {
+      "id": "15480c80-3af9-5583-b8e5-acc841cc8f0b",
+      "name": "healthy",
+      "description": "No disease signs present; leaves, stems, and blooms show normal color and turgor.",
+      "symptoms": null,
+      "cure_tips": [
+        "Maintain balanced watering and fertilization; monitor regularly for pests."
+      ],
+      "family_id": "e9082b4c-5538-4250-b747-4943d9a447ec"
+    },
+    {
+      "id": "fdcfdb2b-d10a-5f4a-9221-df0d221236ce",
+      "name": "blight",
+      "description": "A rapid, severe disease causing extensive browning and dieback of foliage and stems.",
+      "symptoms": [
+        "leaf browning",
+        "stem dieback",
+        "necrotic tissue"
+      ],
+      "cure_tips": [
+        "Prune and destroy affected tissues and improve airflow.",
+        "Reduce overhead irrigation and minimize splash.",
+        "Apply bactericides or fungicides when causal agent is identified."
+      ],
+      "family_id": "e9082b4c-5538-4250-b747-4943d9a447ec"
+    },
+    {
+      "id": "12e76e76-05e1-5b82-86ef-93774cf157e6",
+      "name": "foliar_necrosis",
+      "description": "Localized death of leaf tissue caused by severe disease, chemical injury, or environmental stress.",
+      "symptoms": [
+        "brown patches",
+        "dry tissue",
+        "reduced vigor"
+      ],
+      "cure_tips": [
+        "Identify and remove the cause; adjust cultural practices.",
+        "Trim necrotic tissue and maintain proper watering.",
+        "Treat pathogens with appropriate chemicals when confirmed."
+      ],
+      "family_id": "e9082b4c-5538-4250-b747-4943d9a447ec"
+    },
+    {
+      "id": "b05c910d-ad29-5a88-a003-982147595026",
+      "name": "sun_scorch",
+      "description": "Tissue damage from excessive direct sunlight or sudden exposure.",
+      "symptoms": [
+        "bleached patches",
+        "dry edges",
+        "curled leaves"
+      ],
+      "cure_tips": [
+        "Move plants gradually to higher light or provide shade.",
+        "Avoid sudden changes in exposure.",
+        "Keep plants well watered during heat spells."
+      ],
+      "family_id": "e9082b4c-5538-4250-b747-4943d9a447ec"
+    },
+    {
+      "id": "fd714a90-97c0-539e-b415-d594b22334ec",
+      "name": "healthy",
+      "description": "Plant displays expected vigor with healthy foliage and flower development.",
+      "symptoms": null,
+      "cure_tips": [
+        "Continue good cultural care and monitor for pests and diseases common in Rosaceae."
+      ],
+      "family_id": "b9cbfcc6-ce18-47cd-ac15-3535712d8c45"
+    },
+    {
+      "id": "e04eb1cb-239d-58c3-827d-67adc8517d05",
+      "name": "black_spot",
+      "description": "A fungal disease causing round black spots with fringed edges on leaves.",
+      "symptoms": [
+        "black spots",
+        "yellow leaves",
+        "leaf drop"
+      ],
+      "cure_tips": [
+        "Remove infected leaves; improve air movement.",
+        "Water at the base and avoid wetting foliage.",
+        "Use fungicidal sprays as recommended."
+      ],
+      "family_id": "b9cbfcc6-ce18-47cd-ac15-3535712d8c45"
+    },
+    {
+      "id": "04a01348-6926-5e78-9cea-6d1660b765d8",
+      "name": "downy_mildew",
+      "description": "Oomycetes producing fuzzy growth on leaf undersides, causing chlorosis and necrosis.",
+      "symptoms": [
+        "yellow patches",
+        "fuzzy underside",
+        "leaf curling"
+      ],
+      "cure_tips": [
+        "Improve drainage and airflow; avoid overhead watering.",
+        "Remove affected leaves and sanitize tools.",
+        "Apply fungicides specific for oomycetes if needed."
+      ],
+      "family_id": "b9cbfcc6-ce18-47cd-ac15-3535712d8c45"
+    },
+    {
+      "id": "77729db7-a504-54c6-9837-65a1e81daa3b",
+      "name": "generic_insect_damage",
+      "description": "Damage caused by chewing or sucking insects producing holes, skeletonization, or distortion.",
+      "symptoms": [
+        "chewed leaves",
+        "curled foliage",
+        "sticky residue"
+      ],
+      "cure_tips": [
+        "Inspect plants frequently and hand-remove larger pests.",
+        "Use insecticidal soaps or oils on soft-bodied pests.",
+        "Encourage beneficial predators or use targeted insecticides."
+      ],
+      "family_id": "b9cbfcc6-ce18-47cd-ac15-3535712d8c45"
+    },
+    {
+      "id": "6c1027cd-2273-557c-91c6-63a5cbc4f3af",
+      "name": "mosaic_virus",
+      "description": "Viral infections producing mottled patterns on leaves, reducing growth.",
+      "symptoms": [
+        "mottled leaves",
+        "stunted growth",
+        "poor flowering"
+      ],
+      "cure_tips": [
+        "Remove infected plants to prevent spread.",
+        "Control insect vectors like aphids.",
+        "Use certified virus-free planting stock."
+      ],
+      "family_id": "b9cbfcc6-ce18-47cd-ac15-3535712d8c45"
+    },
+    {
+      "id": "a0b8753b-0e7a-58a5-b6f9-6e7f6323328e",
+      "name": "mildew",
+      "description": "Powdery or downy fungal infections forming white or gray growth on leaves.",
+      "symptoms": [
+        "white coating",
+        "leaf curling",
+        "bud deformity"
+      ],
+      "cure_tips": [
+        "Promote airflow and avoid excess nitrogen.",
+        "Remove heavily infected tissue.",
+        "Apply suitable fungicides when needed."
+      ],
+      "family_id": "b9cbfcc6-ce18-47cd-ac15-3535712d8c45"
+    },
+    {
+      "id": "784fca19-d6c2-52db-84f9-c2267c74bde5",
+      "name": "rust",
+      "description": "Fungal disease producing orange pustules on leaf undersides.",
+      "symptoms": [
+        "orange pustules",
+        "yellow leaves",
+        "leaf drop"
+      ],
+      "cure_tips": [
+        "Remove infected leaves and alternate hosts.",
+        "Avoid overhead watering.",
+        "Apply fungicides when infections persist."
+      ],
+      "family_id": "b9cbfcc6-ce18-47cd-ac15-3535712d8c45"
+    },
+    {
+      "id": "9e3e8a25-531e-51eb-963a-e6355428765e",
+      "name": "yellow_mosaic_virus",
+      "description": "A viral disease causing yellow mosaic patterns on leaves.",
+      "symptoms": [
+        "yellow mosaic",
+        "stunted growth",
+        "poor flowering"
+      ],
+      "cure_tips": [
+        "Remove infected plants and control insect vectors.",
+        "Use virus-free stock.",
+        "Use barriers or mulches to reduce vector transmission."
+      ],
+      "family_id": "b9cbfcc6-ce18-47cd-ac15-3535712d8c45"
+    },
+    {
+      "id": "d947b068-4961-5004-b5ce-74d4aa9f54ec",
+      "name": "healthy",
+      "description": "No visible signs of disease; foliage and rhizomes appear healthy.",
+      "symptoms": null,
+      "cure_tips": [
+        "Maintain balanced moisture, good drainage, and inspect rhizomes at planting."
+      ],
+      "family_id": "471e4906-8e4a-417b-a395-6bd42f117deb"
+    },
+    {
+      "id": "2990e9ba-67e5-5390-a100-1f66775ce710",
+      "name": "aphids",
+      "description": "Small sap-sucking insects clustering on new growth.",
+      "symptoms": [
+        "insect clusters",
+        "sticky honeydew",
+        "curled leaves"
+      ],
+      "cure_tips": [
+        "Wash off small infestations with water or remove by hand.",
+        "Use insecticidal soaps or oils as needed.",
+        "Encourage natural predators like ladybirds."
+      ],
+      "family_id": "471e4906-8e4a-417b-a395-6bd42f117deb"
+    },
+    {
+      "id": "95b1095e-68e8-5b12-a723-57b53725f6fd",
+      "name": "necrotic_fungal_lesion",
+      "description": "Dead spots on leaves caused by fungal pathogens.",
+      "symptoms": [
+        "brown lesions",
+        "dead patches",
+        "reduced vigor"
+      ],
+      "cure_tips": [
+        "Remove affected leaves and maintain good hygiene.",
+        "Improve spacing and reduce humidity.",
+        "Apply suitable fungicides when cultural measures fail."
+      ],
+      "family_id": "471e4906-8e4a-417b-a395-6bd42f117deb"
+    },
+    {
+      "id": "b1057c8c-1671-58c4-a29d-0fec23a11507",
+      "name": "foliar_necrosis",
+      "description": "Death of leaf tissue due to pathogens or stress.",
+      "symptoms": [
+        "brown patches",
+        "brittle tissue",
+        "reduced vigor"
+      ],
+      "cure_tips": [
+        "Correct cultural stresses and remove damaged tissue.",
+        "Improve drainage and avoid prolonged wetness.",
+        "Apply fungicides when fungal causes are confirmed."
+      ],
+      "family_id": "471e4906-8e4a-417b-a395-6bd42f117deb"
+    },
+    {
+      "id": "563eaa00-1c6e-5fa5-82e2-ae97fa19bebc",
+      "name": "fungal_leaf_spot",
+      "description": "Foliar fungi producing discrete spots, spreading rapidly in moisture.",
+      "symptoms": [
+        "brown spots",
+        "yellow leaves",
+        "rapid spread"
+      ],
+      "cure_tips": [
+        "Remove infected leaves and sanitize tools.",
+        "Increase spacing and water early to allow drying.",
+        "Apply registered fungicides when necessary."
+      ],
+      "family_id": "471e4906-8e4a-417b-a395-6bd42f117deb"
+    },
+    {
+      "id": "f8a95280-45ed-5194-8fd4-01a1dac78fdd",
+      "name": "healthy",
+      "description": "No disease symptoms observed; foliage shows normal color and form.",
+      "symptoms": null,
+      "cure_tips": [
+        "Maintain consistent care, avoid overwatering, and monitor for fungi and pests."
+      ],
+      "family_id": "e7a9c4b2-8a58-4c0e-a3f3-4b10e1d4c9f2"
+    },
+    {
+      "id": "f26e81fd-e948-548c-ba54-5ec7221a34e0",
+      "name": "anthracnose",
+      "description": "Fungal disease producing dark sunken lesions on leaves or stems.",
+      "symptoms": [
+        "dark lesions",
+        "yellow leaves",
+        "premature drop"
+      ],
+      "cure_tips": [
+        "Remove infected material and improve air circulation.",
+        "Avoid overhead watering and reduce leaf wetness.",
+        "Apply appropriate fungicides when needed."
+      ],
+      "family_id": "e7a9c4b2-8a58-4c0e-a3f3-4b10e1d4c9f2"
+    },
+    {
+      "id": "4b659deb-7921-5f10-8abd-7bf2bfb5c28e",
+      "name": "generic_fungal_leaf_spot",
+      "description": "Multiple fungal pathogens causing discrete leaf spots.",
+      "symptoms": [
+        "dark spots",
+        "yellow leaves",
+        "necrotic areas"
+      ],
+      "cure_tips": [
+        "Remove and discard infected leaves; avoid touching wet plants.",
+        "Improve airflow and water at the base.",
+        "Apply fungicides when outbreaks persist."
+      ],
+      "family_id": "e7a9c4b2-8a58-4c0e-a3f3-4b10e1d4c9f2"
+    },
+    {
+      "id": "df210f0a-64e4-57c5-bf3c-7137dae4e6b5",
+      "name": "rust",
+      "description": "Fungal infection producing rust-colored pustules on leaf undersides.",
+      "symptoms": [
+        "brown pustules",
+        "yellow leaves",
+        "leaf drop"
+      ],
+      "cure_tips": [
+        "Remove infected leaves and avoid prolonged leaf wetness.",
+        "Improve airflow and reduce humidity.",
+        "Use fungicides effective against rust when required."
+      ],
+      "family_id": "e7a9c4b2-8a58-4c0e-a3f3-4b10e1d4c9f2"
+    },
+    {
+      "id": "ae1296c6-d17e-5eb9-a439-74a94026e7d9",
+      "name": "sun_scorch",
+      "description": "Leaf damage due to excessive sunlight or sudden exposure.",
+      "symptoms": [
+        "bleached patches",
+        "dry edges",
+        "burned areas"
+      ],
+      "cure_tips": [
+        "Acclimate plants gradually to higher light levels.",
+        "Ensure proper soil moisture during hot seasons.",
+        "Avoid sudden moves to full sunlight."
+      ],
+      "family_id": "e7a9c4b2-8a58-4c0e-a3f3-4b10e1d4c9f2"
+    }
+  ],
+  "plant": [
+    {
+      "updated_at": "2025-11-26T13:29:23",
+      "max_temp_c": 30,
+      "light_level": 4,
+      "id": "9a3215c9-76f7-4ff3-ace6-931b594961ac",
+      "size": "small",
+      "category": "Fern",
+      "family_id": "13a6ceee-6f0a-4ab6-b530-12a049ad2317",
+      "origin": "Brazil",
+      "use": "Potted plant, Ground cover, Table top",
+      "water_level": 5,
+      "climate": "Tropical",
+      "pests": null,
+      "scientific_name": "Adiantum capillus-veneris",
+      "created_at": "2025-11-26T13:29:23",
+      "common_name": "Maindenhair",
+      "difficulty": 3,
+      "min_temp_c": 12
+    },
+    {
+      "common_name": "Rose",
+      "water_level": 3,
+      "created_at": "2025-11-26T15:05:17",
+      "light_level": 5,
+      "climate": "Temperate",
+      "id": "9bd9bca2-c3f4-45b3-9c9d-921888269bd6",
+      "family_id": "b9cbfcc6-ce18-47cd-ac15-3535712d8c45",
+      "updated_at": "2025-11-26T15:05:17",
+      "origin": "Asia",
+      "size": "medium",
+      "use": "Garden plant, Cut flowers, Ornamental",
+      "scientific_name": "Rosa lucieae",
+      "max_temp_c": 28,
+      "pests": null,
+      "difficulty": 3,
+      "min_temp_c": 5,
+      "category": "Flowering shrub"
+    },
+    {
+      "water_level": 5,
+      "size": "small",
+      "min_temp_c": 12,
+      "common_name": "Maindenhair",
+      "climate": "Tropical",
+      "difficulty": 3,
+      "updated_at": "2025-11-26T15:15:16",
+      "category": "Fern",
+      "created_at": "2025-11-26T15:15:16",
+      "use": "Potted plant, Ground cover, Table top",
+      "origin": "Brazil",
+      "light_level": 4,
+      "pests": null,
+      "family_id": "13a6ceee-6f0a-4ab6-b530-12a049ad2317",
+      "id": "9cdfa73c-e683-40d4-bb07-61df427250d9",
+      "max_temp_c": 30,
+      "scientific_name": "Adiantum raddianum"
+    },
+    {
+      "water_level": 5,
+      "size": "small",
+      "min_temp_c": 15,
+      "common_name": "Peace lily",
+      "climate": "Tropical",
+      "difficulty": 3,
+      "updated_at": "2025-11-26T15:16:12",
+      "category": "Spathiphyllum",
+      "created_at": "2025-11-26T15:16:12",
+      "use": "Table top, Tertiary",
+      "origin": "Cultivar",
+      "light_level": 4,
+      "pests": null,
+      "family_id": "ddc38e06-6633-48eb-988e-af2579ef2b53",
+      "id": "fbfcf54d-109f-479f-87b3-f83e05b1bbe1",
+      "max_temp_c": 28,
+      "scientific_name": "Spathiphyllum wallisii"
+    }
+  ],
+  "plant_photo": [
+    {
+      "id": "14536fef-68e7-4a90-b82f-8cbba4025f11",
+      "plant_id": "9a3215c9-76f7-4ff3-ace6-931b594961ac",
+      "order_index": 0,
+      "caption": null,
+      "created_at": null,
+      "url": "14536fef-68e7-4a90-b82f-8cbba4025f11.jpg"
+    },
+    {
+      "caption": null,
+      "created_at": null,
+      "id": "f4262032-7249-458b-be64-b5e0bd87bfc3",
+      "order_index": 0,
+      "url": "f4262032-7249-458b-be64-b5e0bd87bfc3.jpg",
+      "plant_id": "9bd9bca2-c3f4-45b3-9c9d-921888269bd6"
+    },
+    {
+      "caption": null,
+      "plant_id": "9cdfa73c-e683-40d4-bb07-61df427250d9",
+      "order_index": 0,
+      "created_at": null,
+      "url": "01f28db0-e039-4395-9de4-041940bd1a54.jpg",
+      "id": "01f28db0-e039-4395-9de4-041940bd1a54"
+    },
+    {
+      "caption": null,
+      "plant_id": "fbfcf54d-109f-479f-87b3-f83e05b1bbe1",
+      "order_index": 0,
+      "created_at": null,
+      "url": "1a7d1306-e204-4f81-84bb-7192d45c0cef.jpg",
+      "id": "1a7d1306-e204-4f81-84bb-7192d45c0cef"
+    }
+  ],
+  "user_plant": [
+    {
+      "user_id": "d2b805fd-5ac6-440b-b649-64af3cbd41ad",
+      "plant_id": "9a3215c9-76f7-4ff3-ace6-931b594961ac",
+      "nickname": null,
+      "location_note": null,
+      "since": "2025-11-26"
+    },
+    {
+      "user_id": "d2b805fd-5ac6-440b-b649-64af3cbd41ad",
+      "plant_id": "9cdfa73c-e683-40d4-bb07-61df427250d9",
+      "location_note": null,
+      "since": "2025-11-26"
+    },
+    {
+      "user_id": "d2b805fd-5ac6-440b-b649-64af3cbd41ad",
+      "plant_id": "fbfcf54d-109f-479f-87b3-f83e05b1bbe1",
+      "location_note": null,
+      "since": "2025-11-26"
+    },
+    {
+      "user_id": "4c183b19-54cc-4b71-a7cd-0dfcffadb76d",
+      "plant_id": "9cdfa73c-e683-40d4-bb07-61df427250d9",
+      "location_note": null,
+      "since": "2025-11-26"
+    }
+  ],
+  "shared_plant": [
+    {
+      "id": "5ba2af37-9854-417f-8069-52c1bf99762a",
+      "owner_user_id": "d2b805fd-5ac6-440b-b649-64af3cbd41ad",
+      "recipient_user_id": "51a98f63-6d60-46bb-8cc0-8fcd94514b15",
+      "plant_id": "9a3215c9-76f7-4ff3-ace6-931b594961ac",
+      "can_edit": true,
+      "created_at": "2025-11-26T14:27:20",
+      "ended_sharing_at": null
+    },
+    {
+      "id": "f86948af-23c1-43db-8342-34984b837198",
+      "owner_user_id": "d2b805fd-5ac6-440b-b649-64af3cbd41ad",
+      "recipient_user_id": "4c183b19-54cc-4b71-a7cd-0dfcffadb76d",
+      "plant_id": "9cdfa73c-e683-40d4-bb07-61df427250d9",
+      "can_edit": true,
+      "created_at": "2025-11-26T15:16:47",
+      "ended_sharing_at": "2025-11-26T15:55:44"
+    }
   ]
 }

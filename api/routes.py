@@ -511,11 +511,11 @@ def _parse_unknown_threshold(raw_value) -> float | None:
 
 
 def _call_model_service(
-    image_file,
-    *,
-    unknown_threshold: float | None = None,
-    family: str | None = None,
-    disease_suggestions: list[str] | None = None,
+        image_file,
+        *,
+        unknown_threshold: float | None = None,
+        family: str | None = None,
+        disease_suggestions: list[str] | None = None,
 ) -> dict:
     """Call the external model API or fall back to the inline service."""
     inline = not MODEL_PREDICT_URL or MODEL_PREDICT_URL.lower() in {"inline", "local", "self"}
@@ -524,7 +524,8 @@ def _call_model_service(
     if hasattr(stream, "seek"):
         stream.seek(0)
     filename = getattr(image_file, "filename", None) or "upload.jpg"
-    mime = getattr(image_file, "mimetype", None) or getattr(image_file, "content_type", None) or "application/octet-stream"
+    mime = getattr(image_file, "mimetype", None) or getattr(image_file, "content_type",
+                                                            None) or "application/octet-stream"
 
     if inline:
         from ecogrow_disease_detection.model_inference_service import get_disease_inference_service
@@ -732,6 +733,7 @@ def get_all_plants():
     except Exception:
         return jsonify({"error": "Database error"}), 500
 
+
 @api_blueprint.route("/user/plants/sick", methods=["GET"])
 @require_jwt
 def get_user_sick_plants():
@@ -749,7 +751,6 @@ def get_user_sick_plants():
         q = (
             s.query(
                 Plant,
-                UserPlant.nickname,
                 UserPlant.location_note,
                 PlantDisease,
                 Disease,
@@ -770,7 +771,7 @@ def get_user_sick_plants():
 
         # Vogliamo una sola entry per pianta: prendiamo la malattia più recente
         by_plant: dict[str, dict] = {}
-        for plant, nickname, location_note, pd, disease in rows:
+        for plant, location_note, pd, disease in rows:
             if plant.id in by_plant:
                 continue  # abbiamo già preso la più recente grazie all'order_by
 
@@ -779,7 +780,6 @@ def get_user_sick_plants():
                     "id": plant.id,
                     "scientific_name": plant.scientific_name,
                     "common_name": getattr(plant, "common_name", None),
-                    "nickname": nickname,
                     "location_note": location_note,
                 },
                 "last_disease": {
@@ -807,7 +807,7 @@ def get_user_healthy_plants():
 
     with _session_ctx() as s:
         q = (
-            s.query(Plant, UserPlant.nickname, UserPlant.location_note)
+            s.query(Plant, UserPlant.location_note)
             .join(UserPlant, UserPlant.plant_id == Plant.id)
             .filter(
                 UserPlant.user_id == user_id,
@@ -819,16 +819,16 @@ def get_user_healthy_plants():
         rows = q.all()
 
         result = []
-        for plant, nickname, location_note in rows:
+        for plant, location_note in rows:
             result.append({
                 "id": plant.id,
                 "scientific_name": plant.scientific_name,
                 "common_name": getattr(plant, "common_name", None),
-                "nickname": nickname,
                 "location_note": location_note,
             })
 
         return jsonify(result), 200
+
 
 @api_blueprint.route("/plant/full/<plant_id>", methods=["GET"])
 @require_jwt
@@ -1127,7 +1127,6 @@ def create_plant():
             repo.ensure_user_plant_link(
                 user_id=g.user_id,
                 plant_id=str(p.id),
-                nickname=None,
                 location_note=None,
                 since=datetime.now(),
                 overwrite=False,
@@ -1433,6 +1432,7 @@ def disease_delete(did: str):
         write_changes_delete("disease", did)
         return ("", 204)
 
+
 @api_blueprint.route("/ai/model/check-plant-disease", methods=["POST"])
 @require_jwt
 def ai_model_check_plant_disease():
@@ -1621,8 +1621,6 @@ def ai_model_check_plant_disease():
             },
             "model_raw": raw_result,
         }), 200
-
-
 
 
 # ========= PlantDisease =========
@@ -1895,7 +1893,6 @@ def user_plant_add():
         up = UserPlant(
             user_id=g.user_id,
             plant_id=plant_id,
-            nickname=payload.get("nickname"),
             location_note=payload.get("location_note"),
             since=payload.get("since"),
         )
@@ -1923,7 +1920,6 @@ def user_plant_delete():
         return ("", 204)
 
 
-# ========= Friendship =========
 # ============================
 #         FRIENDSHIP
 # ============================
@@ -1932,38 +1928,70 @@ def user_plant_delete():
 @require_jwt
 def friendship_summary():
     user_id = g.user_id
-    print(f"[API] friendship_summary called by {user_id}")
+    print("\n===== [API] friendship_summary CALLED =====")
+    print(f"[USER]  Logged user_id: {user_id}")
 
     repo = RepositoryService()
 
+    # short_id dell’utente loggato
     short_id = user_id.split("-")[0]
+    print(f"[USER]  short_id (self): {short_id}")
 
     # Tutte le friendship dell'utente
     rows = repo.get_friendships_for_user(user_id)
+    print(f"[DB]    Found {len(rows)} friendship rows for user {user_id}")
 
-    # Carichiamo info sugli amici
     friends_out = []
-    user_cache = {}  # evita query duplicate
+    user_cache = {}
 
     with repo.Session() as s:
         for fr in rows:
-            friend_id = fr.user_id_b if fr.user_id_a == user_id else fr.user_id_a
+            print("\n--- Friendship Row ---")
+            print(f"[FR] friendship_id={fr.id}")
 
+            # Identifica l’amico
+            friend_id = fr.user_id_b if fr.user_id_a == user_id else fr.user_id_a
+            print(f"[FR] friend_id resolved: {friend_id}")
+
+            # Carica info amico
             if friend_id not in user_cache:
+                print(f"[DB] Fetching friend user from DB: {friend_id}")
                 u = s.query(User).filter(User.id == friend_id).first()
                 user_cache[friend_id] = u
 
+                if u is None:
+                    print(f"[WARN] Friend user not found in DB: {friend_id}")
+                else:
+                    print(f"[OK]   Loaded friend user: {u.first_name} {u.last_name}")
+            else:
+                print(f"[CACHE] Using cached user for {friend_id}")
+
             u = user_cache[friend_id]
 
-            friends_out.append({
+            # Calcolo short_id dell’amico
+            friend_short_id = friend_id.split("-")[0]
+            print(f"[FR] friend_short_id: {friend_short_id}")
+
+            # Aggiungi all’output
+            out_entry = {
                 "friendship_id": fr.id,
                 "user_id": friend_id,
+                "short_id": friend_short_id,
                 "first_name": u.first_name if u else None,
                 "last_name": u.last_name if u else None,
                 "created_at": fr.created_at.isoformat() if fr.created_at else None,
-            })
+            }
 
-    print(f"[API] friendship_summary → returned {len(friends_out)} friends")
+            print(f"[OUT] Appended friend entry: {out_entry}")
+
+            friends_out.append(out_entry)
+
+    print("\n===== FINAL OUTPUT =====")
+    print(f"[RETURN] Total friends: {len(friends_out)}")
+    for f in friends_out:
+        print(f" → {f['first_name']} {f['last_name']} | user_id={f['user_id']} | short_id={f['short_id']}")
+
+    print("===== END friendship_summary =====\n")
 
     return jsonify({
         "short_id": short_id,
@@ -2102,109 +2130,86 @@ def friendship_delete(fid: str):
 @api_blueprint.route("/shared_plant/all", methods=["GET"])
 @require_jwt
 def shared_plant_all():
-    """
-    Restituisce tutte le shared_plant dove l'utente è owner o recipient.
-
-    Output per ogni elemento:
-    {
-        "shared_id": "...",
-        "plant_id": "...",
-        "plant_name": "...",            # common_name o scientific_name
-        "nickname": "...",              # nickname dell'utente loggato (se esiste)
-        "friend_first_name": "...",
-        "friend_last_name": "...",
-        "photo_base64": "..."           # immagine compressa come per i reminder
-    }
-    """
     user_id = g.user_id
     repo = RepositoryService()
 
+    # Il repository restituisce già il JSON finale
     rows = repo.get_shared_plants_for_user(user_id)
 
-    out = []
-    with _session_ctx() as s:
-        user_cache = {}
-
-        for sp in rows:
-            # --- plant info + foto compressa (come nei reminder) ---
-            plant = s.query(Plant).options(selectinload(Plant.photos),
-                                           selectinload(Plant.family)) \
-                .filter(Plant.id == sp.plant_id).first()
-
-            plant_name = None
-            photo_base64 = None
-            if plant:
-                serialized = _serialize_full_plant(plant)
-                plant_name = serialized.get("common_name") or serialized.get("scientific_name")
-                photo_base64 = serialized.get("photo_base64")
-
-            # --- nickname dell'utente loggato per quella pianta (se c'è) ---
-            up = s.get(UserPlant, (user_id, sp.plant_id))
-            nickname = up.nickname if up and up.nickname else None
-
-            # --- amico (owner/recipient opposto all'utente loggato) ---
-            friend_id = sp.recipient_user_id if sp.owner_user_id == user_id else sp.owner_user_id
-
-            if friend_id not in user_cache:
-                u = s.query(User).filter(User.id == friend_id).first()
-                user_cache[friend_id] = u
-            else:
-                u = user_cache[friend_id]
-
-            friend_first = u.first_name if u else None
-            friend_last = u.last_name if u else None
-
-            out.append({
-                "shared_id": str(sp.id),
-                "plant_id": str(sp.plant_id),
-                "plant_name": plant_name,
-                "nickname": nickname,
-                "friend_first_name": friend_first,
-                "friend_last_name": friend_last,
-                "photo_base64": photo_base64,
-            })
-
-    return jsonify(out), 200
+    return jsonify(rows), 200
 
 
 @api_blueprint.route("/shared_plant/add", methods=["POST"])
 @require_jwt
 def shared_plant_add():
     """
-    Crea una nuova condivisione:
-    - owner = utente loggato (g.user_id)
-    - recipient = trovato tramite short_id
-    - plant_id passato dal frontend
+    Crea una nuova condivisione e assegna la pianta al recipient (tabella user_plant).
     """
+    from datetime import datetime
+
     payload = _parse_json_body()
     repo = RepositoryService()
 
     plant_id = payload.get("plant_id")
     short_id = payload.get("short_id")
 
+    print("\n===== [API] SHARED PLANT ADD =====")
+    print(f"[PAYLOAD] plant_id={plant_id}, short_id={short_id}")
+
+    # -------------------------
+    # Validate input
+    # -------------------------
     if not plant_id or not short_id:
+        print("[ERROR] Missing plant_id or short_id")
         return jsonify({"error": "Missing plant_id or short_id"}), 400
 
     owner_id = g.user_id
+    print(f"[OWNER] {owner_id}")
 
-    # Ricava recipient usando short-id
+    # -------------------------
+    # Check plant exists
+    # -------------------------
+    print("[CHECK] Verifying plant exists…")
+    with repo.Session() as s:
+        plant = s.query(Plant).filter(Plant.id == plant_id).first()
+        if not plant:
+            print("[ERROR] Plant not found")
+            return jsonify({"error": "Plant not found"}), 404
+
+    # -------------------------
+    # Resolve short_id → recipient
+    # -------------------------
     recipient_id = repo.get_user_id_by_short(short_id)
+
     if not recipient_id:
+        print("[ERROR] Recipient short_id not found")
         return jsonify({"error": "Recipient not found"}), 404
 
+    print(f"[RECIPIENT] {recipient_id}")
+
     if recipient_id == owner_id:
+        print("[ERROR] Cannot share with yourself")
         return jsonify({"error": "Cannot share with yourself"}), 400
 
-    # Controlla duplicati
+    # -------------------------
+    # Check duplicate shared plant
+    # -------------------------
+    print("[CHECK] Checking existing shared plants…")
     existing = repo.get_shared_plants_for_user(owner_id)
+
     for row in existing:
-        if (row.owner_user_id == owner_id and
-                row.recipient_user_id == recipient_id and
-                row.plant_id == plant_id and
-                row.ended_sharing_at is None):
+        if (
+            row["owner_user_id"] == owner_id and
+            row["recipient_user_id"] == recipient_id and
+            row["plant_id"] == plant_id and
+            row.get("ended_sharing_at") is None
+        ):
+            print("[ERROR] Already shared")
             return jsonify({"error": "Already shared"}), 409
 
-    # Crea la condivisione
+    # -------------------------
+    # Create SharedPlant
+    # -------------------------
     data = {
         "owner_user_id": owner_id,
         "recipient_user_id": recipient_id,
@@ -2214,11 +2219,34 @@ def shared_plant_add():
 
     try:
         sp = repo.create_shared_plant(data)
+        print(f"[OK] SharedPlant created id={sp.id}")
     except Exception as e:
-        print("[API] ERROR creating shared plant:", e)
+        print("[FATAL] Error creating shared plant:", e)
         return jsonify({"error": "Could not create shared plant"}), 500
 
-    return jsonify({"ok": True, "id": sp.id}), 201
+    # -------------------------
+    # Assign plant to recipient (user_plant)
+    # -------------------------
+    print("[CHECK] Assigning plant to recipient…")
+
+    try:
+        up = repo.ensure_user_plant_link(
+            user_id=recipient_id,
+            plant_id=plant_id,
+            location_note=None,
+            since=datetime.utcnow(),
+            overwrite=False
+        )
+        print("[OK] UserPlant linked:", up)
+    except Exception as e:
+        print("[FATAL] Error linking plant to user:", e)
+        return jsonify({
+            "error": "Shared but could not assign plant to recipient (user_plant failed)"
+        }), 500
+
+    print("===== [API] FINISHED SHARED PLANT ADD =====\n")
+
+    return jsonify({"ok": True, "shared_id": sp.id}), 201
 
 
 @api_blueprint.route("/shared_plant/update/<sid>", methods=["PATCH", "PUT"])
@@ -2244,11 +2272,13 @@ def shared_plant_delete(sid: str):
     _ensure_uuid(sid, "shared_plant_id")
     repo = RepositoryService()
 
-    ok = repo.delete_shared_plant(sid)
+    ok = repo.delete_shared_plant(sid, g.user_id)
+
     if not ok:
-        return jsonify({"error": "SharedPlant not found"}), 404
+        return jsonify({"error": "SharedPlant not found or unauthorized"}), 404
 
     return ("", 204)
+
 
 
 # ========= WateringPlan =========

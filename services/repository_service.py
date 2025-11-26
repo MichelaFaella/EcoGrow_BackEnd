@@ -283,7 +283,6 @@ class RepositoryService:
         *,
         user_id: str,
         plant_id: str,
-        nickname: Optional[str] = None,
         location_note: Optional[str] = None,
         since: Optional[date | datetime | str] = None,
         overwrite: bool = False,
@@ -297,7 +296,6 @@ class RepositoryService:
         Lancia ValueError se la pianta non esiste o se 'since' non è valido.
         """
         since_date = self._parse_since_to_date(since) if since else None
-        nickname = (nickname or "").strip() or None
         location_note = (location_note or "").strip() or None
 
         with self.Session() as s:
@@ -309,9 +307,6 @@ class RepositoryService:
             if up:
                 changed = False
                 if overwrite:
-                    if up.nickname != nickname:
-                        up.nickname = nickname
-                        changed = True
                     if up.location_note != location_note:
                         up.location_note = location_note
                         changed = True
@@ -319,9 +314,6 @@ class RepositoryService:
                         up.since = since_date
                         changed = True
                 else:
-                    if nickname is not None and nickname != up.nickname:
-                        up.nickname = nickname
-                        changed = True
                     if location_note is not None and location_note != up.location_note:
                         up.location_note = location_note
                         changed = True
@@ -334,7 +326,6 @@ class RepositoryService:
                     write_changes_upsert("user_plant", [{
                         "user_id": user_id,
                         "plant_id": plant_id,
-                        "nickname": up.nickname,
                         "location_note": up.location_note,
                         "since": up.since.isoformat() if up.since else None,
                     }])
@@ -342,7 +333,6 @@ class RepositoryService:
                 return {
                     "user_id": user_id,
                     "plant_id": plant_id,
-                    "nickname": up.nickname,
                     "location_note": up.location_note,
                     "since": up.since.isoformat() if up.since else None,
                 }
@@ -351,7 +341,6 @@ class RepositoryService:
             up = UserPlant(
                 user_id=user_id,
                 plant_id=plant_id,
-                nickname=nickname,
                 location_note=location_note,
                 since=since_date,
             )
@@ -361,7 +350,6 @@ class RepositoryService:
             write_changes_upsert("user_plant", [{
                 "user_id": user_id,
                 "plant_id": plant_id,
-                "nickname": up.nickname,
                 "location_note": up.location_note,
                 "since": up.since.isoformat() if up.since else None,
             }])
@@ -369,7 +357,6 @@ class RepositoryService:
             return {
                 "user_id": user_id,
                 "plant_id": plant_id,
-                "nickname": up.nickname,
                 "location_note": up.location_note,
                 "since": up.since.isoformat() if up.since else None,
             }
@@ -384,7 +371,6 @@ class RepositoryService:
                     Plant.id,
                     Plant.scientific_name,
                     Plant.common_name,
-                    UserPlant.nickname,
                     UserPlant.location_note,
                 )
                 .select_from(Plant)
@@ -398,7 +384,6 @@ class RepositoryService:
                     "id": r.id,
                     "scientific_name": r.scientific_name,
                     "common_name": r.common_name,
-                    "nickname": r.nickname,
                     "location_note": r.location_note,
                 }
                 for r in rows
@@ -767,12 +752,8 @@ class RepositoryService:
 
     def get_shared_plants_for_user(self, user_id: str):
         """
-        Ritorna tutte le piante condivise dove l’utente è owner o recipient,
-        includendo:
-        - nome pianta
-        - nickname
-        - foto (base64)
-        - nome + cognome dell’amico
+        Ritorna tutte le piante condivise ATTIVE (ended_sharing_at IS NULL)
+        dove l’utente è owner o recipient.
         """
         print(f"[RepositoryService] get_shared_plants_for_user user_id={user_id}")
 
@@ -780,69 +761,86 @@ class RepositoryService:
             shared = (
                 s.query(SharedPlant)
                 .filter(
-                    (SharedPlant.owner_user_id == user_id) |
-                    (SharedPlant.recipient_user_id == user_id)
+                    (
+                            (SharedPlant.owner_user_id == user_id) |
+                            (SharedPlant.recipient_user_id == user_id)
+                    ) &
+                    (SharedPlant.ended_sharing_at.is_(None))  # <-- 🔥 FILTRO CORRETTO
                 )
                 .order_by(SharedPlant.created_at.desc())
                 .all()
             )
 
-            print(f"[RepositoryService] Found {len(shared)} shared plants.")
+            print(f"[RepositoryService] Found {len(shared)} active shared plants.")
 
             out = []
 
             for sp in shared:
+
+                # ==========================================================
+                # SUPPORTA SIA MODELLO SQLALCHEMY CHE DICT
+                # ==========================================================
+                def get(obj, key):
+                    if isinstance(obj, dict):
+                        return obj.get(key)
+                    return getattr(obj, key, None)
+
+                plant_id = get(sp, "plant_id")
+                owner_id = get(sp, "owner_user_id")
+                recipient_id = get(sp, "recipient_user_id")
+                created_at = get(sp, "created_at")
+                can_edit = get(sp, "can_edit")
+
                 # ---------------------------------------------------------
-                # 1. Identifica l'amico
+                # Identifica l’amico
                 # ---------------------------------------------------------
-                friend_id = (
-                    sp.recipient_user_id if sp.owner_user_id == user_id
-                    else sp.owner_user_id
-                )
+                friend_id = recipient_id if owner_id == user_id else owner_id
 
                 friend = s.query(User).filter(User.id == friend_id).first()
-                first_name = friend.first_name if friend else None
-                last_name = friend.last_name if friend else None
 
                 # ---------------------------------------------------------
-                # 2. Info pianta
+                # Info pianta
                 # ---------------------------------------------------------
-                plant = s.query(Plant).filter(Plant.id == sp.plant_id).first()
-                if plant:
-                    plant_name = plant.common_name or plant.scientific_name
-                    plant_nickname = plant.nickname
-                else:
-                    plant_name = None
-                    plant_nickname = None
+                plant = s.query(Plant).filter(Plant.id == plant_id).first()
+
+                plant_name = plant.common_name if plant else None
+                if not plant_name and plant:
+                    plant_name = plant.scientific_name
 
                 # ---------------------------------------------------------
-                # 3. Foto pianta (primo elemento)
+                # FOTO
                 # ---------------------------------------------------------
                 photo = (
                     s.query(PlantPhoto)
-                    .filter(PlantPhoto.plant_id == sp.plant_id)
-                    .order_by(PlantPhoto.created_at.asc())
+                    .filter(PlantPhoto.plant_id == plant_id)
+                    .order_by(PlantPhoto.order_index.asc())
                     .first()
                 )
 
-                photo_b64 = photo.image if photo else None
+                photo_b64 = None
+                if photo:
+                    file_path = os.path.join("uploads", plant_id, photo.url)
+
+                    try:
+                        with open(file_path, "rb") as f:
+                            photo_b64 = base64.b64encode(f.read()).decode("utf-8")
+                    except Exception as e:
+                        print(f"[WARN] Cannot read file {file_path}: {e}")
 
                 # ---------------------------------------------------------
                 # OUTPUT
                 # ---------------------------------------------------------
                 out.append({
-                    "shared_id": str(sp.id),
-                    "plant_id": str(sp.plant_id),
-                    "owner_user_id": str(sp.owner_user_id),
-                    "recipient_user_id": str(sp.recipient_user_id),
-                    "can_edit": sp.can_edit,
-                    "created_at": sp.created_at.isoformat() if sp.created_at else None,
+                    "shared_id": str(get(sp, "id")),
+                    "plant_id": str(plant_id),
+                    "owner_user_id": str(owner_id),
+                    "recipient_user_id": str(recipient_id),
+                    "can_edit": can_edit,
+                    "created_at": created_at.isoformat() if created_at else None,
 
-                    # EXTRA
-                    "friend_first_name": first_name,
-                    "friend_last_name": last_name,
+                    "friend_first_name": friend.first_name if friend else None,
+                    "friend_last_name": friend.last_name if friend else None,
                     "plant_name": plant_name,
-                    "plant_nickname": plant_nickname,
                     "photo_base64": photo_b64,
                 })
 
@@ -873,20 +871,40 @@ class RepositoryService:
 
             return sp
 
-    def delete_shared_plant(self, sid: str) -> bool:
-        print(f"[RepositoryService] delete_shared_plant sid={sid}")
+    def delete_shared_plant(self, sid: str, user_id: str) -> bool:
+        """
+        Termina una condivisione (soft delete) impostando ended_sharing_at.
+        Solo l'owner può rimuoverla.
+        """
+        print(f"[RepositoryService] soft-delete shared plant sid={sid}")
 
         with self.Session() as s:
             sp = s.get(SharedPlant, sid)
             if not sp:
-                print("[RepositoryService] Nothing to delete (not found)")
+                print("[RepositoryService] Not found")
                 return False
 
-            s.delete(sp)
+            # Autorizzazione: solo l'owner può rimuovere la condivisione
+            if sp.owner_user_id != user_id:
+                print("[RepositoryService] Not authorized")
+                return False
+
+            # Soft delete
+            sp.ended_sharing_at = datetime.utcnow()
             s.commit()
 
-            write_changes_delete("shared_plant", sid)
-            print(f"[RepositoryService] Deleted shared plant {sid}")
+            # Devi usare upsert, NON update, perché non esiste
+            write_changes_upsert("shared_plant", [{
+                "id": sp.id,
+                "owner_user_id": sp.owner_user_id,
+                "recipient_user_id": sp.recipient_user_id,
+                "plant_id": sp.plant_id,
+                "can_edit": sp.can_edit,
+                "created_at": sp.created_at.isoformat() if sp.created_at else None,
+                "ended_sharing_at": sp.ended_sharing_at.isoformat() if sp.ended_sharing_at else None,
+            }])
+
+            print(f"[RepositoryService] Shared plant {sid} marked as ended")
             return True
 
     # =======================

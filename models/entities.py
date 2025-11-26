@@ -57,13 +57,15 @@ class Family(Base):
         lazy="selectin",
     )
 
+
 class SizeEnum(str, Enum):
     MINUSCULE = "minuscule"
     SMALL = "small"
     MEDIUM = "medium"
     LARGE = "large"
     GIANT = "giant"
-    
+
+
 class HealthStatus(str, Enum):
     HEALTHY = "healthy"
     SICK = "sick"
@@ -85,8 +87,8 @@ class Plant(Base):
 
     # ENUM/logici
     category: Mapped[str] = mapped_column(String(100), nullable=False)  # CategoryEnum logico
-    climate: Mapped[str] = mapped_column(String(100), nullable=False)   # ClimateEnum logico
-    pests: Mapped[Optional[dict]] = mapped_column(MySQLJSON)            # es. ["aphid","whitefly"]
+    climate: Mapped[str] = mapped_column(String(100), nullable=False)  # ClimateEnum logico
+    pests: Mapped[Optional[dict]] = mapped_column(MySQLJSON)  # es. ["aphid","whitefly"]
 
     size: Mapped[SizeEnum] = mapped_column(
         SAEnum(
@@ -149,7 +151,7 @@ class Plant(Base):
         secondary="user_plant",
         back_populates="plants",
         lazy="selectin",
-        viewonly=True,          # non crea/modifica user_plant, solo legge
+        viewonly=True,  # non crea/modifica user_plant, solo legge
         overlaps="user_links",  # dice a SQLAlchemy che condivide le stesse FK
     )
 
@@ -158,7 +160,7 @@ class Plant(Base):
         back_populates="plant",
         lazy="selectin",
         cascade="all, delete-orphan",
-        overlaps="owners",      # stessa sorgente dati di owners
+        overlaps="owners",  # stessa sorgente dati di owners
     )
 
     watering_plans: Mapped[List["WateringPlan"]] = relationship(
@@ -213,7 +215,7 @@ class Disease(Base):
     name: Mapped[str] = mapped_column(String(255), nullable=False)
 
     description: Mapped[str] = mapped_column(Text, nullable=False)
-    symptoms: Mapped[Optional[dict]] = mapped_column(MySQLJSON)   # es. ["dark lesions","yellow leaves",...]
+    symptoms: Mapped[Optional[dict]] = mapped_column(MySQLJSON)  # es. ["dark lesions","yellow leaves",...]
     cure_tips: Mapped[Optional[dict]] = mapped_column(MySQLJSON)  # es. ["Remove and destroy...","Improve air...", ...]
 
     # 🔗 collegamento alla Family
@@ -291,7 +293,7 @@ class User(Base):
         secondary="user_plant",
         back_populates="owners",
         lazy="selectin",
-        viewonly=True,          # anche qui solo lettura
+        viewonly=True,  # anche qui solo lettura
         overlaps="user_links",  # condivide le stesse FK di user_links
     )
 
@@ -354,20 +356,31 @@ class UserPlant(Base):
         Index("idx_up_plant", "plant_id"),
     )
 
+    # chiave primaria composta
     user_id: Mapped[str] = mapped_column(
         String(36),
         ForeignKey("user.id", ondelete="CASCADE", onupdate="CASCADE"),
         primary_key=True,
     )
+
     plant_id: Mapped[str] = mapped_column(
         String(36),
         ForeignKey("plant.id", ondelete="CASCADE", onupdate="CASCADE"),
         primary_key=True,
     )
-    nickname: Mapped[Optional[str]] = mapped_column(String(100))
+
+    # campi ESISTENTI IN MYSQL
     location_note: Mapped[Optional[str]] = mapped_column(String(255))
     since: Mapped[Optional[date]] = mapped_column(Date)
 
+    # nuovo campo
+    health_status: Mapped[str] = mapped_column(
+        String(20),
+        nullable=False,
+        default=HealthStatus.HEALTHY.value,
+    )
+
+    # relationships
     user: Mapped["User"] = relationship(
         back_populates="user_links",
         lazy="selectin",
@@ -378,12 +391,6 @@ class UserPlant(Base):
         back_populates="user_links",
         lazy="selectin",
         overlaps="plants,owners",
-    )
-        # 👇 nuovo campo
-    health_status: Mapped[str] = mapped_column(
-        String(20),
-        nullable=False,
-        default=HealthStatus.HEALTHY.value,  # oppure HealthStatus.HEALTHY.value se la vuoi "sana" di default
     )
 
 
