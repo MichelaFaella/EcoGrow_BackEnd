@@ -732,6 +732,113 @@ def get_all_plants():
     except Exception:
         return jsonify({"error": "Database error"}), 500
 
+@api_blueprint.route("/user/plants/sick", methods=["GET"])
+@require_jwt
+def get_user_sick_plants():
+    """
+    Restituisce tutte le piante dell'utente che hanno almeno
+    una PlantDisease con status='confirmed'.
+
+    Per ogni pianta ritorna anche l'ultima malattia confermata.
+    """
+    user_id = g.user_id
+
+    with _session_ctx() as s:
+        # Join su UserPlant -> Plant -> PlantDisease -> Disease
+        q = (
+            s.query(
+                Plant,
+                UserPlant.nickname,
+                UserPlant.location_note,
+                PlantDisease,
+                Disease,
+            )
+            .join(UserPlant, UserPlant.plant_id == Plant.id)
+            .join(PlantDisease, PlantDisease.plant_id == Plant.id)
+            .join(Disease, Disease.id == PlantDisease.disease_id)
+            .filter(
+                UserPlant.user_id == user_id,
+                PlantDisease.status == "confirmed",
+            )
+            .order_by(PlantDisease.detected_at.desc().nulls_last())
+        )
+
+        rows = q.all()
+
+        # Vogliamo una sola entry per pianta: prendiamo la malattia più recente
+        by_plant: dict[str, dict] = {}
+        for plant, nickname, location_note, pd, disease in rows:
+            if plant.id in by_plant:
+                continue  # abbiamo già preso la più recente grazie all'order_by
+
+            by_plant[plant.id] = {
+                "plant": {
+                    "id": plant.id,
+                    "scientific_name": plant.scientific_name,
+                    "common_name": getattr(plant, "common_name", None),
+                    "nickname": nickname,
+                    "location_note": location_note,
+                },
+                "last_disease": {
+                    "id": pd.id,
+                    "name": disease.name,
+                    "status": pd.status,
+                    "severity": pd.severity,
+                    "detected_at": (
+                        pd.detected_at.isoformat() if pd.detected_at else None
+                    ),
+                },
+            }
+
+        return jsonify(list(by_plant.values())), 200
+
+@api_blueprint.route("/user/plants/healthy", methods=["GET"])
+@require_jwt
+def get_user_healthy_plants():
+    """
+    Restituisce tutte le piante dell'utente che NON hanno
+    alcuna PlantDisease con status='confirmed'.
+    """
+    user_id = g.user_id
+
+    with _session_ctx() as s:
+        # Sottoquery: tutte le plant_id che hanno almeno una malattia confermata
+        sick_plant_ids_subq = (
+            s.query(PlantDisease.plant_id)
+            .join(Plant, Plant.id == PlantDisease.plant_id)
+            .join(UserPlant, UserPlant.plant_id == Plant.id)
+            .filter(
+                UserPlant.user_id == user_id,
+                PlantDisease.status == "confirmed",
+            )
+            .distinct()
+            .subquery()
+        )
+
+        # Tutte le piante dell'utente che NON sono in quella lista
+        q = (
+            s.query(Plant, UserPlant.nickname, UserPlant.location_note)
+            .join(UserPlant, UserPlant.plant_id == Plant.id)
+            .filter(UserPlant.user_id == user_id)
+            .filter(~Plant.id.in_(sick_plant_ids_subq))
+            .order_by(Plant.common_name, Plant.scientific_name)
+        )
+
+        rows = q.all()
+
+        result = []
+        for plant, nickname, location_note in rows:
+            result.append({
+                "id": plant.id,
+                "scientific_name": plant.scientific_name,
+                "common_name": getattr(plant, "common_name", None),
+                "nickname": nickname,
+                "location_note": location_note,
+            })
+
+        return jsonify(result), 200
+
+
 
 @api_blueprint.route("/plant/full/<plant_id>", methods=["GET"])
 @require_jwt
