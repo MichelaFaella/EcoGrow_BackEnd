@@ -761,6 +761,80 @@ def ai_model_disease_detection():
     }), 200
 
 
+@api_blueprint.route("/ai/model/disease-latest", methods=["GET"])
+@require_jwt
+def ai_model_disease_latest():
+    plant_id = request.values.get("plant_id")
+    if not plant_id:
+        return jsonify({"error": "Missing plant_id"}), 400
+
+    # -----------------------------------------
+    # 1. Recupera l'ultima malattia registrata
+    # -----------------------------------------
+    with repo.Session() as s:
+        last_disease = (
+            s.query(PlantDisease)
+            .filter(PlantDisease.plant_id == plant_id)
+            .order_by(PlantDisease.detected_at.desc(), PlantDisease.id.desc())
+            .first()
+        )
+
+        if not last_disease:
+            return jsonify({"error": "No disease found for this plant"}), 404
+
+        # Recupera record disease vero
+        disease_obj = (
+            s.query(Disease)
+            .filter(Disease.id == last_disease.disease_id)
+            .first()
+        )
+
+        if disease_obj:
+            # Costruisci output esattamente come nella predizione
+            disease_info = repo._build_disease_output(
+                disease_obj,
+                image_base64=None  # Impostiamo dopo
+            )
+        else:
+            disease_info = {
+                "id": None,
+                "name": "Unknown",
+                "description": None,
+                "symptoms": [],
+                "cure_tips": [],
+                "family_id": None,
+            }
+
+        # -----------------------------------------
+        # 2. Recupera la foto con order_index più alto
+        # -----------------------------------------
+        photo_row = (
+            s.query(PlantPhoto)
+            .filter(PlantPhoto.plant_id == plant_id)
+            .order_by(PlantPhoto.order_index.desc())
+            .first()
+        )
+
+    # -----------------------------------------
+    # 3. Carica immagine e converte in base64
+    # -----------------------------------------
+    photo_base64 = None
+
+    if photo_row:
+        file_path = os.path.join("uploads", plant_id, photo_row.url)
+        if os.path.exists(file_path):
+            with open(file_path, "rb") as f:
+                photo_base64 = base64.b64encode(f.read()).decode("utf-8")
+
+    # Inseriamo la foto dentro disease_info
+    disease_info["photo_base64"] = photo_base64
+
+    return jsonify({
+        "disease": disease_info,
+        "photo_base64": photo_base64
+    }), 200
+
+
 @api_blueprint.route("/families", methods=["GET"])
 def get_families():
     try:

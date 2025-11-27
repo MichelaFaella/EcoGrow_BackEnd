@@ -830,6 +830,36 @@
       "health_status": "sick",
       "location_note": null,
       "since": "2025-11-26"
+    },
+    {
+      "user_id": "51a98f63-6d60-46bb-8cc0-8fcd94514b15",
+      "plant_id": "c3d1ac84-db3c-4d3d-8da4-c06ab1b9f6f2",
+      "location_note": null,
+      "since": "2025-11-27"
+    },
+    {
+      "user_id": "51a98f63-6d60-46bb-8cc0-8fcd94514b15",
+      "plant_id": "fbfcf54d-109f-479f-87b3-f83e05b1bbe1",
+      "location_note": null,
+      "since": "2025-11-27"
+    },
+    {
+      "user_id": "8f12a3cc-2b47-4e8e-9cd3-7a5fe28d91c7",
+      "plant_id": "c3d1ac84-db3c-4d3d-8da4-c06ab1b9f6f2",
+      "location_note": null,
+      "since": "2025-11-27"
+    },
+    {
+      "user_id": "4c183b19-54cc-4b71-a7cd-0dfcffadb76d",
+      "plant_id": "c3d1ac84-db3c-4d3d-8da4-c06ab1b9f6f2",
+      "location_note": null,
+      "since": "2025-11-27"
+    },
+    {
+      "user_id": "8f12a3cc-2b47-4e8e-9cd3-7a5fe28d91c7",
+      "plant_id": "fbfcf54d-109f-479f-87b3-f83e05b1bbe1",
+      "location_note": null,
+      "since": "2025-11-27"
     }
   ],
   "shared_plant": [
@@ -850,6 +880,51 @@
       "can_edit": true,
       "created_at": "2025-11-26T15:16:47",
       "ended_sharing_at": "2025-11-26T15:55:44"
+    },
+    {
+      "id": "77b1ef15-64dc-4195-9334-b1f193196ee0",
+      "owner_user_id": "d2b805fd-5ac6-440b-b649-64af3cbd41ad",
+      "recipient_user_id": "51a98f63-6d60-46bb-8cc0-8fcd94514b15",
+      "plant_id": "c3d1ac84-db3c-4d3d-8da4-c06ab1b9f6f2",
+      "can_edit": true,
+      "created_at": "2025-11-27T22:08:08",
+      "ended_sharing_at": "2025-11-27T22:08:19"
+    },
+    {
+      "id": "dbad1ed1-d343-40a6-b67a-94bcaa471972",
+      "owner_user_id": "d2b805fd-5ac6-440b-b649-64af3cbd41ad",
+      "recipient_user_id": "51a98f63-6d60-46bb-8cc0-8fcd94514b15",
+      "plant_id": "fbfcf54d-109f-479f-87b3-f83e05b1bbe1",
+      "can_edit": true,
+      "created_at": "2025-11-27T22:08:28",
+      "ended_sharing_at": "2025-11-27T22:08:34"
+    },
+    {
+      "id": "ca617daa-b01c-495b-a0e6-259f8343297d",
+      "owner_user_id": "d2b805fd-5ac6-440b-b649-64af3cbd41ad",
+      "recipient_user_id": "8f12a3cc-2b47-4e8e-9cd3-7a5fe28d91c7",
+      "plant_id": "c3d1ac84-db3c-4d3d-8da4-c06ab1b9f6f2",
+      "can_edit": true,
+      "created_at": "2025-11-27T22:08:48",
+      "ended_sharing_at": "2025-11-27T22:08:57"
+    },
+    {
+      "id": "46ca9a33-e114-45e9-9aef-72dae6772d15",
+      "owner_user_id": "d2b805fd-5ac6-440b-b649-64af3cbd41ad",
+      "recipient_user_id": "4c183b19-54cc-4b71-a7cd-0dfcffadb76d",
+      "plant_id": "c3d1ac84-db3c-4d3d-8da4-c06ab1b9f6f2",
+      "can_edit": true,
+      "created_at": "2025-11-27T22:11:33",
+      "ended_sharing_at": "2025-11-27T22:11:43"
+    },
+    {
+      "id": "3ff8fb46-be18-4d3d-8d4d-a03fc5bf6493",
+      "owner_user_id": "d2b805fd-5ac6-440b-b649-64af3cbd41ad",
+      "recipient_user_id": "8f12a3cc-2b47-4e8e-9cd3-7a5fe28d91c7",
+      "plant_id": "fbfcf54d-109f-479f-87b3-f83e05b1bbe1",
+      "can_edit": true,
+      "created_at": "2025-11-27T22:11:51",
+      "ended_sharing_at": "2025-11-27T22:12:03"
     }
   ],
   "plant_disease": [
