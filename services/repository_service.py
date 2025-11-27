@@ -13,6 +13,8 @@ from typing import List, Dict, Optional, Tuple
 
 from PIL import Image
 from sqlalchemy import select, func
+from sqlalchemy.dialects.postgresql import Any
+
 from models.base import SessionLocal
 from models.scripts.replay_changes import write_changes_upsert, write_changes_delete
 from models.entities import (
@@ -25,7 +27,7 @@ from models.entities import (
     UserQuestionAnswer,
     WateringPlan,
     Reminder,
-    WateringLog, Friendship, User, SharedPlant, Disease,
+    WateringLog, Friendship, User, SharedPlant, Disease, PlantDisease,
 )
 
 
@@ -44,6 +46,36 @@ class RepositoryService:
         t = re.sub(r"[^a-z0-9\s]", " ", t.lower())
         t = re.sub(r"\s+", " ", t).strip()
         return t
+
+    @staticmethod
+    def _build_disease_output(disease, image_base64: str):
+        # symptoms può essere list o dict
+        raw_sym = getattr(disease, "symptoms", None)
+        if isinstance(raw_sym, list):
+            symptoms = [str(x) for x in raw_sym if x]
+        elif isinstance(raw_sym, dict):
+            symptoms = [str(k) for k, v in raw_sym.items() if v]
+        else:
+            symptoms = []
+
+        raw_cure = getattr(disease, "cure_tips", None)
+        if isinstance(raw_cure, list):
+            cure_tips = [str(x) for x in raw_cure if x]
+        elif isinstance(raw_cure, dict):
+            cure_tips = [str(k) for k, v in raw_cure.items() if v]
+        else:
+            cure_tips = []
+
+        return {
+            "id": str(disease.id),
+            "name": disease.name,
+            "description": disease.description,
+            "symptoms": symptoms,
+            "cure_tips": cure_tips,
+            "family_id": str(disease.family_id),
+            "image_base64": image_base64,
+        }
+
 
     @staticmethod
     def _build_ordered_regex(tokens: List[str]) -> re.Pattern:
@@ -1427,4 +1459,48 @@ class RepositoryService:
                 "family_id": family_id,
                 "symptoms": result,
             }
+
+    def enrich_disease_prediction(self, family_id: str, predicted_label: str, image_base64: str):
+        print(f"[enrich_disease_prediction] family={family_id}, label={predicted_label}")
+
+        label = (predicted_label or "").strip()
+        if not label:
+            label = "Unknown"
+
+        predicted_norm = self._normalize(label)
+
+        with self.Session() as s:
+            diseases = (
+                s.query(Disease)
+                .filter(Disease.family_id == family_id)
+                .all()
+            )
+
+            # MATCH ESATTO
+            for d in diseases:
+                if self._normalize(d.name) == predicted_norm:
+                    out = self._build_disease_output(d, image_base64)
+                    out["photo_base64"] = image_base64  # compat con la route
+                    return out
+
+            # MATCH CONTIENE
+            for d in diseases:
+                if predicted_norm and predicted_norm in self._normalize(d.name):
+                    out = self._build_disease_output(d, image_base64)
+                    out["photo_base64"] = image_base64
+                    return out
+
+        # FALLBACK: Unknown o non trovata
+        return {
+            "id": None,
+            "name": label,
+            "description": None,
+            "symptoms": [],
+            "cure_tips": [],
+            "severity": None,
+            "family_id": family_id,
+            "photo_base64": image_base64,
+        }
+
+
 

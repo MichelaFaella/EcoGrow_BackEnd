@@ -68,7 +68,7 @@ services:
       ECOGROW_MODEL_CACHE: /app/artifacts/pretrained
       U2NET_HOME: /app/artifacts/u2net
     ports:
-      - "8001:8000"
+      - "5000:8000"
     restart: unless-stopped
     volumes:
       - ./ecogrow_disease_detection/artifacts/pretrained:/app/artifacts/pretrained

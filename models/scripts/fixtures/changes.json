@@ -810,6 +810,11 @@
       "plant_id": "c3d1ac84-db3c-4d3d-8da4-c06ab1b9f6f2",
       "location_note": null,
       "since": "2025-11-26"
+    },
+    {
+      "user_id": "d2b805fd-5ac6-440b-b649-64af3cbd41ad",
+      "plant_id": "c3d1ac84-db3c-4d3d-8da4-c06ab1b9f6f2",
+      "health_status": "sick"
     }
   ],
   "shared_plant": [
