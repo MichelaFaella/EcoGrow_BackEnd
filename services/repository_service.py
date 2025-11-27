@@ -1502,5 +1502,154 @@ class RepositoryService:
             "photo_base64": image_base64,
         }
 
+    # =======================
+    # NUOVE FUNZIONI PER AI DISEASE DETECTION
+    # =======================
+
+    def create_plant_disease_record(
+            self,
+            *,
+            plant_id: str,
+            disease_id: Optional[str],
+            status: str = "detected",
+            severity: Optional[int] = None,
+            notes: Optional[str] = None,
+            detected_at: Optional[date] = None,
+    ) -> Optional[PlantDisease]:
+
+        detected_at = detected_at or date.today()
+
+        with self.Session() as s:
+            # 1️⃣ Verifica plant
+            plant = s.get(Plant, plant_id)
+            if not plant:
+                print("[ERROR] Plant not found:", plant_id)
+                return None
+
+            # 2️⃣ Verifica disease (solo se disease_id è valido)
+            disease = None
+            if disease_id:
+                disease = s.get(Disease, disease_id)
+                if not disease:
+                    print("[ERROR] Disease not found:", disease_id)
+                    return None
+            else:
+                # Unknown → non salvare un record plant_disease
+                print("[INFO] No disease_id provided → skipping plant_disease creation")
+                return None
+
+            # 3️⃣ Crea record
+            record = PlantDisease(
+                plant_id=plant_id,
+                disease_id=disease_id,
+                detected_at=detected_at,
+                severity=severity,
+                notes=notes,
+                status=status,
+            )
+            s.add(record)
+            s.commit()
+            s.refresh(record)
+
+            # Tracciamento modifiche
+            write_changes_upsert("plant_disease", [{
+                "id": record.id,
+                "plant_id": plant_id,
+                "disease_id": disease_id,
+                "detected_at": detected_at.isoformat(),
+                "severity": severity,
+                "notes": notes,
+                "status": status,
+            }])
+
+            return record
+
+    def add_plant_photo(
+            self,
+            *,
+            plant_id: str,
+            image_base64: str,
+            caption: Optional[str] = None,
+    ) -> Optional[PlantPhoto]:
+
+        # Decodifica immagine
+        raw_bytes = base64.b64decode(image_base64)
+
+        with self.Session() as s:
+            # 1️⃣ Verifica plant
+            plant = s.get(Plant, plant_id)
+            if not plant:
+                print("[ERROR] Plant not found:", plant_id)
+                return None
+
+            # 2️⃣ Prepara path
+            folder = os.path.join("uploads", plant_id)
+            os.makedirs(folder, exist_ok=True)
+
+            filename = f"{uuid.uuid4()}.jpg"
+            file_path = os.path.join(folder, filename)
+
+            # Salva file
+            with open(file_path, "wb") as f:
+                f.write(raw_bytes)
+
+            # 3️⃣ Ordine foto
+            count = (
+                        s.query(func.count(PlantPhoto.id))
+                        .filter(PlantPhoto.plant_id == plant_id)
+                        .scalar()
+                    ) or 0
+
+            # 4️⃣ Salva record DB
+            photo = PlantPhoto(
+                plant_id=plant_id,
+                url=filename,
+                caption=caption,
+                order_index=count,
+            )
+            s.add(photo)
+            s.commit()
+            s.refresh(photo)
+
+            write_changes_upsert("plant_photo", [{
+                "id": photo.id,
+                "plant_id": plant_id,
+                "url": filename,
+                "caption": caption,
+                "order_index": count,
+                "created_at": photo.created_at.isoformat() if photo.created_at else None,
+            }])
+
+            return photo
+
+    def update_user_plant_status(
+            self,
+            *,
+            user_id: str,
+            plant_id: str,
+            new_status: str,
+    ) -> Optional[UserPlant]:
+
+        with self.Session() as s:
+            up = s.get(UserPlant, (user_id, plant_id))
+            if not up:
+                print("[ERROR] UserPlant link not found:", user_id, plant_id)
+                return None
+
+            up.health_status = new_status
+
+            s.commit()
+            s.refresh(up)
+
+            write_changes_upsert("user_plant", [{
+                "user_id": user_id,
+                "plant_id": plant_id,
+                "health_status": new_status,
+                "location_note": up.location_note,
+                "since": up.since.isoformat() if up.since else None,
+            }])
+
+            return up
+
 
 

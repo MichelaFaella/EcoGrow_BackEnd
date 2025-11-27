@@ -7,7 +7,7 @@ import json
 import os
 import uuid
 from contextlib import contextmanager
-from datetime import datetime
+from datetime import datetime, date
 
 import requests
 from PIL import Image
@@ -654,14 +654,13 @@ def ping():
     return jsonify(ping="pong")
 
 
-import base64
-
 @api_blueprint.route("/ai/model/disease-detection", methods=["POST"])
+@require_jwt
 def ai_model_disease_detection():
     if "image" not in request.files:
         return jsonify({"error": "Missing 'image' file in request."}), 400
 
-    # 🔥 convertiamo l'immagine caricata in base64
+    # convertiamo l'immagine caricata in base64
     uploaded_image_file = request.files["image"]
     image_bytes = uploaded_image_file.read()
     image_base64 = base64.b64encode(image_bytes).decode("utf-8")
@@ -700,12 +699,12 @@ def ai_model_disease_detection():
         return jsonify({"error": f"Inference failed: {exc}"}), 502
 
     # ---------------------------------------------------------
-    # 👉 TROVA LA CLASSE CON PROBABILITÀ PIÙ ALTA
+    #  TROVA LA CLASSE CON PROBABILITÀ PIÙ ALTA
     # ---------------------------------------------------------
     classes = (
         result.get("data", {})
-              .get("predictions", [{}])[0]
-              .get("classes", [])
+        .get("predictions", [{}])[0]
+        .get("classes", [])
     )
 
     if classes:
@@ -715,19 +714,51 @@ def ai_model_disease_detection():
         best_label = None
 
     # ---------------------------------------------------------
-    # 👉 ARRICHIMENTO con la foto originale
+    #  ARRICHIMENTO con la foto originale
     # ---------------------------------------------------------
     enriched = repo.enrich_disease_prediction(
         family_id=family,
         predicted_label=best_label,
-        image_base64=image_base64,  # 🔥 qui usiamo la foto originale
+        image_base64=image_base64,  # qui usiamo la foto originale
+    )
+
+    # ---------------------------------------------------------
+    #  SALVATAGGI DOPO L'ARRICHIMENTO
+    # ---------------------------------------------------------
+
+    # ⚠ Recupera plant_id e user_id dalla tua request / auth
+    plant_id = request.values.get("plant_id") or (body.get("plant_id") if isinstance(body, dict) else None)
+    user_id = g.user_id
+
+    # 1 Salva la malattia rilevata in plant_disease
+    detected_disease_id = enriched.get("id")
+    repo.create_plant_disease_record(
+        plant_id=plant_id,
+        disease_id=detected_disease_id,
+        detected_at=date.today(),
+        severity=None,
+        notes=None,
+        status="detected"
+    )
+
+    # 2 Salva la foto originale in plant_photo
+    repo.add_plant_photo(
+        plant_id=plant_id,
+        image_base64=image_base64,  # verrà convertita/hostata da repo
+        caption=f"Detection result: {best_label}",
+    )
+
+    # 3️⃣ Aggiorna lo stato della user_plant → sick
+    repo.update_user_plant_status(
+        user_id=user_id,
+        plant_id=plant_id,
+        new_status="sick"
     )
 
     return jsonify({
         "model": result,
         "disease": enriched
     }), 200
-
 
 
 @api_blueprint.route("/families", methods=["GET"])
@@ -819,7 +850,6 @@ def get_user_sick_plants():
             }
 
         return jsonify(list(by_plant.values())), 200
-
 
 
 @api_blueprint.route("/user/plants/healthy", methods=["GET"])
