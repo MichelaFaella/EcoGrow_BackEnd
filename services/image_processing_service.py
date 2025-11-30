@@ -13,6 +13,7 @@ PLANT_NET_PATH = "https://my-api.plantnet.org/v2/identify/all"
 DISEASE_MODEL_URL = os.getenv("DISEASE_MODEL_URL", "http://model:8000/predict")
 DISEASE_MODEL_TIMEOUT = float(os.getenv("DISEASE_MODEL_TIMEOUT", "300"))
 
+
 class ImageProcessingService:
 
     @staticmethod
@@ -118,13 +119,13 @@ class ImageProcessingService:
 
         print("[ImageProcessingService] process_image → done")
         return info
-    
+
     @staticmethod
     def _call_disease_model(
-        image_bytes: bytes,
-        unknown_threshold: float | None = None,
-        family: str | None = None,
-        disease_suggestions: Optional[List[str]] = None,
+            image_bytes: bytes,
+            unknown_threshold: float | None = None,
+            family: str | None = None,
+            disease_suggestions: Optional[List[str]] = None,
     ) -> Dict[str, Any]:
         """
         Parla con il servizio esterno di disease recognition.
@@ -182,10 +183,10 @@ class ImageProcessingService:
 
     @staticmethod
     def disease_detection_raw(
-        image_file,
-        unknown_threshold: float | None = None,
-        family: str | None = None,
-        disease_suggestions: Optional[List[str]] = None,
+            image_file,
+            unknown_threshold: float | None = None,
+            family: str | None = None,
+            disease_suggestions: Optional[List[str]] = None,
     ) -> Dict[str, Any]:
         """
         Converte l'immagine in JPEG (come per PlantNet), chiama il modello
@@ -211,10 +212,10 @@ class ImageProcessingService:
 
     @staticmethod
     def disease_detection_top_class(
-        image_file,
-        unknown_threshold: float | None = None,
-        family: str | None = None,
-        disease_suggestions: Optional[List[str]] = None,
+            image_file,
+            unknown_threshold: float | None = None,
+            family: str | None = None,
+            disease_suggestions: Optional[List[str]] = None,
     ) -> Tuple[Dict[str, Any], str, float]:
         """
         Come disease_detection_raw, ma in più estrae la top prediction.

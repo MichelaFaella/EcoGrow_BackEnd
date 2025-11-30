@@ -75,7 +75,7 @@ class Plant(Base):
     __tablename__ = "plant"
 
     id: Mapped[str] = mapped_column(String(36), primary_key=True, default=gen_uuid)
-    scientific_name: Mapped[str] = mapped_column(String(255), nullable=False, unique=True)
+    scientific_name: Mapped[str] = mapped_column(String(255), nullable=False)
     common_name: Mapped[Optional[str]] = mapped_column(String(255))
     use: Mapped[str] = mapped_column("use", String(100), nullable=False)  # UseEnum logico
     origin: Mapped[Optional[str]] = mapped_column(String(255))

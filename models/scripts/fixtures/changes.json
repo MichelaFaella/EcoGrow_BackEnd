@@ -735,6 +735,158 @@
       "min_temp_c": 5,
       "category": "Flowering shrub",
       "light_level": 5
+    },
+    {
+      "category": "Cactus And Succulent",
+      "light_level": 5,
+      "water_level": 1,
+      "min_temp_c": 12,
+      "created_at": "2025-11-27T22:18:46",
+      "pests": null,
+      "size": "medium",
+      "use": "Potted plant, Primary, Secondary",
+      "origin": "Mexico",
+      "common_name": "Lilliput Agave",
+      "family_id": "4fba4b56-94c3-41f3-91d2-84f1d612aa70",
+      "climate": "Arid Tropical",
+      "id": "405ecfa2-1fca-4d75-a2e3-bde4701bc2e0",
+      "max_temp_c": 35,
+      "difficulty": 3,
+      "scientific_name": "Agave americana",
+      "updated_at": "2025-11-27T22:18:46"
+    },
+    {
+      "updated_at": "2025-11-28T11:41:09",
+      "origin": "Asia",
+      "max_temp_c": 28,
+      "water_level": 3,
+      "common_name": "Rose",
+      "id": "f7bc798f-61ba-47f9-9456-cf4e0fd1ae9d",
+      "light_level": 5,
+      "scientific_name": "Rosa lucieae",
+      "use": "Garden plant, Cut flowers, Ornamental",
+      "family_id": "b9cbfcc6-ce18-47cd-ac15-3535712d8c45",
+      "min_temp_c": 5,
+      "pests": null,
+      "size": "medium",
+      "created_at": "2025-11-28T11:41:09",
+      "category": "Flowering shrub",
+      "climate": "Temperate",
+      "difficulty": 3
+    },
+    {
+      "min_temp_c": 15,
+      "scientific_name": "Spathiphyllum cannifolium",
+      "size": "small",
+      "family_id": "ddc38e06-6633-48eb-988e-af2579ef2b53",
+      "use": "Table top, Tertiary",
+      "created_at": "2025-11-30T10:33:43",
+      "origin": "Cultivar",
+      "id": "b384a9db-fc83-4d08-bb84-41b2552ea6b4",
+      "water_level": 5,
+      "difficulty": 3,
+      "category": "Spathiphyllum",
+      "updated_at": "2025-11-30T10:33:43",
+      "climate": "Tropical",
+      "light_level": 4,
+      "pests": null,
+      "common_name": "Peace lily",
+      "max_temp_c": 28
+    },
+    {
+      "id": "f3552a5a-d407-4794-b7b9-76f498d17c91",
+      "difficulty": 3,
+      "max_temp_c": 30,
+      "climate": "Tropical",
+      "light_level": 4,
+      "created_at": "2025-11-30T10:44:24",
+      "common_name": "Maindenhair",
+      "scientific_name": "Adiantum raddianum",
+      "size": "small",
+      "pests": null,
+      "water_level": 5,
+      "use": "Potted plant, Ground cover, Table top",
+      "origin": "Brazil",
+      "category": "Fern",
+      "updated_at": "2025-11-30T10:44:24",
+      "family_id": "13a6ceee-6f0a-4ab6-b530-12a049ad2317",
+      "min_temp_c": 12
+    },
+    {
+      "id": "652f8a53-2cc5-4c4d-ac11-78c6a57e7f4d",
+      "difficulty": 3,
+      "max_temp_c": 25,
+      "climate": "",
+      "light_level": 3,
+      "created_at": "2025-11-30T10:59:24",
+      "common_name": null,
+      "scientific_name": "Opuntia microdasys",
+      "size": "medium",
+      "pests": null,
+      "water_level": 3,
+      "use": "",
+      "origin": null,
+      "category": "",
+      "updated_at": "2025-11-30T10:59:24",
+      "family_id": "88d1cdfc-7f90-4d8a-b6cc-789bb2b511e0",
+      "min_temp_c": 15
+    },
+    {
+      "origin": null,
+      "water_level": 3,
+      "difficulty": 3,
+      "pests": null,
+      "family_id": "03640112-d37b-4a84-a467-a03aa956bbfc",
+      "created_at": "2025-11-30T11:22:20",
+      "id": "799558f1-a3d2-48a2-9733-98d695ff47c8",
+      "min_temp_c": 15,
+      "light_level": 3,
+      "common_name": null,
+      "size": "medium",
+      "use": "",
+      "updated_at": "2025-11-30T11:22:20",
+      "climate": "",
+      "category": "",
+      "max_temp_c": 25,
+      "scientific_name": "Narcissus jonquilla"
+    },
+    {
+      "origin": null,
+      "water_level": 3,
+      "difficulty": 3,
+      "pests": null,
+      "family_id": "88d1cdfc-7f90-4d8a-b6cc-789bb2b511e0",
+      "created_at": "2025-11-30T11:22:37",
+      "id": "4aca0d71-eb58-468a-971c-f98e516ed612",
+      "min_temp_c": 15,
+      "light_level": 3,
+      "common_name": null,
+      "size": "medium",
+      "use": "",
+      "updated_at": "2025-11-30T11:22:37",
+      "climate": "",
+      "category": "",
+      "max_temp_c": 25,
+      "scientific_name": "Opuntia microdasys"
+    },
+    {
+      "origin": "Hybrid",
+      "water_level": 2,
+      "difficulty": 3,
+      "pests": null,
+      "family_id": "8947b2cf-d9bc-4e16-b5b1-d3f180c45d7a",
+      "created_at": "2025-11-30T11:24:59",
+      "id": "00c9196f-a77b-4b5b-bd0a-a471a5738cee",
+      "min_temp_c": 12,
+      "light_level": 4,
+      "common_name": "Silver vase",
+      "size": "small",
+      "use": "Flower, Table top, Tertiary",
+      "updated_at": "2025-11-30T11:24:59",
+      "climate": "Tropical humid",
+      "category": "Bromeliad",
+      "max_temp_c": 30,
+      "scientific_name": "Aechmea fasciata"
     }
   ],
   "plant_photo": [
@@ -785,6 +937,102 @@
       "caption": "Detection result: downy_mildew",
       "order_index": 2,
       "created_at": "2025-11-27T21:21:12"
+    },
+    {
+      "created_at": null,
+      "url": "7e8f3662-e9e9-4200-8bab-b1c7cb8aa2e5.jpg",
+      "caption": null,
+      "order_index": 0,
+      "plant_id": "405ecfa2-1fca-4d75-a2e3-bde4701bc2e0",
+      "id": "7e8f3662-e9e9-4200-8bab-b1c7cb8aa2e5"
+    },
+    {
+      "id": "3661a070-f9a5-41a9-8d76-11e7724babf6",
+      "plant_id": "405ecfa2-1fca-4d75-a2e3-bde4701bc2e0",
+      "url": "47b0498a-1c94-4934-b6b6-af8bb9ad9770.jpg",
+      "caption": "Detection result: downy_mildew",
+      "order_index": 1,
+      "created_at": "2025-11-27T22:20:34"
+    },
+    {
+      "id": "0b66a629-8d23-41fe-a18f-2ac5cb2dce84",
+      "plant_id": "405ecfa2-1fca-4d75-a2e3-bde4701bc2e0",
+      "url": "bb17b891-3318-47aa-82ff-5299ee283a31.jpg",
+      "caption": "Detection result: downy_mildew",
+      "order_index": 2,
+      "created_at": "2025-11-27T22:21:05"
+    },
+    {
+      "plant_id": "f7bc798f-61ba-47f9-9456-cf4e0fd1ae9d",
+      "caption": null,
+      "id": "8f4e535c-2def-429d-84a1-002dfe9893ae",
+      "order_index": 0,
+      "url": "8f4e535c-2def-429d-84a1-002dfe9893ae.jpg",
+      "created_at": null
+    },
+    {
+      "id": "b44bc78c-18de-4ede-a20c-25ac2329a853",
+      "plant_id": "f7bc798f-61ba-47f9-9456-cf4e0fd1ae9d",
+      "url": "31368279-de1e-4208-8c64-b73f39eb79a9.jpg",
+      "caption": "Detection result: downy_mildew",
+      "order_index": 1,
+      "created_at": "2025-11-28T15:11:13"
+    },
+    {
+      "caption": null,
+      "plant_id": "b384a9db-fc83-4d08-bb84-41b2552ea6b4",
+      "created_at": null,
+      "url": "41db3ebb-f915-46bd-9bc5-ea20858bb70f.jpg",
+      "id": "41db3ebb-f915-46bd-9bc5-ea20858bb70f",
+      "order_index": 0
+    },
+    {
+      "id": "ae9780f4-5312-4172-85e2-20407b2f95b6",
+      "order_index": 0,
+      "created_at": null,
+      "caption": null,
+      "plant_id": "f3552a5a-d407-4794-b7b9-76f498d17c91",
+      "url": "ae9780f4-5312-4172-85e2-20407b2f95b6.jpg"
+    },
+    {
+      "id": "39e36c5e-0aa4-4632-97b6-dc611613f2db",
+      "order_index": 0,
+      "created_at": null,
+      "caption": null,
+      "plant_id": "652f8a53-2cc5-4c4d-ac11-78c6a57e7f4d",
+      "url": "39e36c5e-0aa4-4632-97b6-dc611613f2db.jpg"
+    },
+    {
+      "id": "f3d6e5f1-aea4-4b31-b5dc-4007da79140e",
+      "plant_id": "f7bc798f-61ba-47f9-9456-cf4e0fd1ae9d",
+      "url": "7c3c1d65-90b2-4c95-95e9-e9a5beffae26.jpg",
+      "caption": "Detection result: downy_mildew",
+      "order_index": 2,
+      "created_at": "2025-11-30T11:07:11"
+    },
+    {
+      "created_at": null,
+      "plant_id": "799558f1-a3d2-48a2-9733-98d695ff47c8",
+      "order_index": 0,
+      "id": "4a792fe9-76b6-4658-a946-70b1b23d1391",
+      "caption": null,
+      "url": "4a792fe9-76b6-4658-a946-70b1b23d1391.jpg"
+    },
+    {
+      "created_at": null,
+      "plant_id": "4aca0d71-eb58-468a-971c-f98e516ed612",
+      "order_index": 0,
+      "id": "99cca2e4-83e4-49b7-86d3-8104cf463463",
+      "caption": null,
+      "url": "99cca2e4-83e4-49b7-86d3-8104cf463463.jpg"
+    },
+    {
+      "created_at": null,
+      "plant_id": "00c9196f-a77b-4b5b-bd0a-a471a5738cee",
+      "order_index": 0,
+      "id": "c1336d4c-1173-468b-8368-644864a133bf",
+      "caption": null,
+      "url": "c1336d4c-1173-468b-8368-644864a133bf.jpg"
     }
   ],
   "user_plant": [
@@ -860,6 +1108,88 @@
       "plant_id": "fbfcf54d-109f-479f-87b3-f83e05b1bbe1",
       "location_note": null,
       "since": "2025-11-27"
+    },
+    {
+      "user_id": "d2b805fd-5ac6-440b-b649-64af3cbd41ad",
+      "plant_id": "405ecfa2-1fca-4d75-a2e3-bde4701bc2e0",
+      "location_note": null,
+      "since": "2025-11-27"
+    },
+    {
+      "user_id": "d2b805fd-5ac6-440b-b649-64af3cbd41ad",
+      "plant_id": "405ecfa2-1fca-4d75-a2e3-bde4701bc2e0",
+      "health_status": "sick",
+      "location_note": null,
+      "since": "2025-11-27"
+    },
+    {
+      "user_id": "d2b805fd-5ac6-440b-b649-64af3cbd41ad",
+      "plant_id": "405ecfa2-1fca-4d75-a2e3-bde4701bc2e0",
+      "health_status": "sick",
+      "location_note": null,
+      "since": "2025-11-27"
+    },
+    {
+      "user_id": "8f12a3cc-2b47-4e8e-9cd3-7a5fe28d91c7",
+      "plant_id": "405ecfa2-1fca-4d75-a2e3-bde4701bc2e0",
+      "location_note": null,
+      "since": "2025-11-28"
+    },
+    {
+      "user_id": "dd1101f6-17ba-448a-a2c9-0f4b9b6e92d3",
+      "plant_id": "f7bc798f-61ba-47f9-9456-cf4e0fd1ae9d",
+      "location_note": null,
+      "since": "2025-11-28"
+    },
+    {
+      "user_id": "dd1101f6-17ba-448a-a2c9-0f4b9b6e92d3",
+      "plant_id": "f7bc798f-61ba-47f9-9456-cf4e0fd1ae9d",
+      "health_status": "sick",
+      "location_note": null,
+      "since": "2025-11-28"
+    },
+    {
+      "user_id": "dd1101f6-17ba-448a-a2c9-0f4b9b6e92d3",
+      "plant_id": "b384a9db-fc83-4d08-bb84-41b2552ea6b4",
+      "location_note": null,
+      "since": "2025-11-30"
+    },
+    {
+      "user_id": "dd1101f6-17ba-448a-a2c9-0f4b9b6e92d3",
+      "plant_id": "f3552a5a-d407-4794-b7b9-76f498d17c91",
+      "location_note": null,
+      "since": "2025-11-30"
+    },
+    {
+      "user_id": "dd1101f6-17ba-448a-a2c9-0f4b9b6e92d3",
+      "plant_id": "652f8a53-2cc5-4c4d-ac11-78c6a57e7f4d",
+      "location_note": null,
+      "since": "2025-11-30"
+    },
+    {
+      "user_id": "dd1101f6-17ba-448a-a2c9-0f4b9b6e92d3",
+      "plant_id": "f7bc798f-61ba-47f9-9456-cf4e0fd1ae9d",
+      "health_status": "sick",
+      "location_note": null,
+      "since": "2025-11-28"
+    },
+    {
+      "user_id": "dd1101f6-17ba-448a-a2c9-0f4b9b6e92d3",
+      "plant_id": "799558f1-a3d2-48a2-9733-98d695ff47c8",
+      "location_note": null,
+      "since": "2025-11-30"
+    },
+    {
+      "user_id": "dd1101f6-17ba-448a-a2c9-0f4b9b6e92d3",
+      "plant_id": "4aca0d71-eb58-468a-971c-f98e516ed612",
+      "location_note": null,
+      "since": "2025-11-30"
+    },
+    {
+      "user_id": "dd1101f6-17ba-448a-a2c9-0f4b9b6e92d3",
+      "plant_id": "00c9196f-a77b-4b5b-bd0a-a471a5738cee",
+      "location_note": null,
+      "since": "2025-11-30"
     }
   ],
   "shared_plant": [
@@ -925,6 +1255,15 @@
       "can_edit": true,
       "created_at": "2025-11-27T22:11:51",
       "ended_sharing_at": "2025-11-27T22:12:03"
+    },
+    {
+      "id": "2d0f8043-626f-43b0-bf6d-b61d5f0d808c",
+      "owner_user_id": "d2b805fd-5ac6-440b-b649-64af3cbd41ad",
+      "recipient_user_id": "8f12a3cc-2b47-4e8e-9cd3-7a5fe28d91c7",
+      "plant_id": "405ecfa2-1fca-4d75-a2e3-bde4701bc2e0",
+      "can_edit": true,
+      "created_at": "2025-11-28T10:36:29",
+      "ended_sharing_at": null
     }
   ],
   "plant_disease": [
@@ -936,6 +1275,41 @@
       "severity": null,
       "notes": null,
       "status": "detected"
+    },
+    {
+      "id": "52609dfa-3cd8-461b-9b11-da7debf99b31",
+      "plant_id": "f7bc798f-61ba-47f9-9456-cf4e0fd1ae9d",
+      "disease_id": "04a01348-6926-5e78-9cea-6d1660b765d8",
+      "detected_at": "2025-11-28",
+      "severity": null,
+      "notes": null,
+      "status": "detected"
+    },
+    {
+      "id": "f40f868c-15a2-465c-a51c-3ba29a49ccc2",
+      "plant_id": "f7bc798f-61ba-47f9-9456-cf4e0fd1ae9d",
+      "disease_id": "04a01348-6926-5e78-9cea-6d1660b765d8",
+      "detected_at": "2025-11-30",
+      "severity": null,
+      "notes": null,
+      "status": "detected"
+    }
+  ],
+  "friendship": [
+    {
+      "id": "b6807ab6-9eae-4f17-acf2-61e542f11210",
+      "_delete": true
+    }
+  ],
+  "user": [
+    {
+      "first_name": "Alberto",
+      "updated_at": "2025-11-28T11:23:34",
+      "created_at": "2025-11-28T11:23:34",
+      "last_name": "Genovese",
+      "password_hash": "scrypt:32768:8:1$zIzZojqXzUBlTUP2$18fa4ee6f269d8cb3a0494bfbaf6057f81ffd2b187f2134c619202c297d4b1b53e1b980ca1b2d966e4ec5855ba5dc55e7b18c053c88408b89a61022c27e02f4d",
+      "id": "dd1101f6-17ba-448a-a2c9-0f4b9b6e92d3",
+      "email": "alb.genovese@gmail.com"
     }
   ]
 }

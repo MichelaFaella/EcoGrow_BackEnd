@@ -657,16 +657,23 @@ def ping():
 @api_blueprint.route("/ai/model/disease-detection", methods=["POST"])
 @require_jwt
 def ai_model_disease_detection():
+    print("\n========= [ai_model_disease_detection] REQUEST RECEIVED =========\n")
+
     if "image" not in request.files:
+        print("[ERROR] Missing 'image' file in request")
         return jsonify({"error": "Missing 'image' file in request."}), 400
 
     # convertiamo l'immagine caricata in base64
     uploaded_image_file = request.files["image"]
     image_bytes = uploaded_image_file.read()
+    print(f"[DEBUG] Uploaded image size (bytes): {len(image_bytes)}")
+
     image_base64 = base64.b64encode(image_bytes).decode("utf-8")
+    print(f"[DEBUG] Image converted to base64, length = {len(image_base64)}")
 
     # (IMPORTANTE) riportiamo il file pointer all'inizio per riutilizzarlo
     uploaded_image_file.stream.seek(0)
+    print("[DEBUG] Reset file stream pointer")
 
     body = request.get_json(silent=True) if request.is_json else None
     try:
@@ -674,10 +681,14 @@ def ai_model_disease_detection():
         if raw_thr is None and isinstance(body, dict):
             raw_thr = body.get("unknown_threshold")
         unknown_threshold = _parse_unknown_threshold(raw_thr)
+        print(f"[DEBUG] Parsed unknown_threshold = {unknown_threshold}")
     except ValueError as exc:
+        print("[ERROR] Invalid unknown_threshold:", exc)
         return jsonify({"error": str(exc)}), 400
 
     family = request.values.get("family") or (body.get("family") if isinstance(body, dict) else None)
+    print(f"[DEBUG] family = {family}")
+
     disease_suggestions: list[str] = []
     if request.values:
         disease_suggestions.extend([v for v in request.values.getlist("disease_suggestions") if v])
@@ -686,6 +697,10 @@ def ai_model_disease_detection():
         if isinstance(raw, list):
             disease_suggestions.extend([str(v) for v in raw if v is not None])
 
+    # ----------------------------------------------------------------------
+    # CALL DISEASE MODEL
+    # ----------------------------------------------------------------------
+    print("[ImageProcessingService] Running disease detection inference...")
     try:
         result = image_service.disease_detection_raw(
             image_file=uploaded_image_file,
@@ -693,14 +708,18 @@ def ai_model_disease_detection():
             family=family,
             disease_suggestions=disease_suggestions or None,
         )
+        print("[ImageProcessingService] ← Model inference completed")
     except ValueError as exc:
+        print("[ImageProcessingService] Model ValueError:", exc)
         return jsonify({"error": str(exc)}), 400
     except Exception as exc:
+        print("[ImageProcessingService] Model inference failed:", exc)
         return jsonify({"error": f"Inference failed: {exc}"}), 502
 
-    # ---------------------------------------------------------
-    #  TROVA LA CLASSE CON PROBABILITÀ PIÙ ALTA
-    # ---------------------------------------------------------
+    # ----------------------------------------------------------------------
+    # Find class with highest probability
+    # ----------------------------------------------------------------------
+    print("[DEBUG] Selecting best predicted class...")
     classes = (
         result.get("data", {})
         .get("predictions", [{}])[0]
@@ -710,23 +729,25 @@ def ai_model_disease_detection():
     if classes:
         best = max(classes, key=lambda x: x.get("probability", 0))
         best_label = best.get("label")
+        print(f"[DEBUG] Best label = {best_label}")
     else:
         best_label = None
+        print("[DEBUG] No prediction classes returned from model")
 
-    # ---------------------------------------------------------
-    #  ARRICHIMENTO con la foto originale
-    # ---------------------------------------------------------
+    # ----------------------------------------------------------------------
+    # ENRICH PREDICTION WITH REPOSITORY
+    # ----------------------------------------------------------------------
+    print("[RepositoryService] Enriching prediction with metadata...")
     enriched = repo.enrich_disease_prediction(
         family_id=family,
         predicted_label=best_label,
-        image_base64=image_base64,  # qui usiamo la foto originale
+        image_base64=image_base64,
     )
 
     # ---------------------------------------------------------
     #  SALVATAGGI DOPO L'ARRICHIMENTO
     # ---------------------------------------------------------
 
-    # ⚠ Recupera plant_id e user_id dalla tua request / auth
     plant_id = request.values.get("plant_id") or (body.get("plant_id") if isinstance(body, dict) else None)
     user_id = g.user_id
 
@@ -748,7 +769,7 @@ def ai_model_disease_detection():
         caption=f"Detection result: {best_label}",
     )
 
-    # 3️⃣ Aggiorna lo stato della user_plant → sick
+    # 3️ Aggiorna lo stato della user_plant → sick
     repo.update_user_plant_status(
         user_id=user_id,
         plant_id=plant_id,
@@ -980,7 +1001,7 @@ def get_full_plant(plant_id):
 @api_blueprint.route("/plant/add", methods=["POST"])
 @require_jwt
 def create_plant():
-    print("\n================== [create_plant] RICHIESTA ARRIVATA ==================\n")
+    print("\n================== [create_plant] THE REQUEST IS ARRIVED ==================\n")
 
     # LOG PRIMA DI PARSARE
     try:
@@ -1006,7 +1027,7 @@ def create_plant():
     # =====================================================================
     # 2) RECUPERO BASE64
     # =====================================================================
-    print("[DEBUG] Controllo campo image…")
+    print("[DEBUG] Checking the image…")
 
     image_b64 = body.get("image")
     if not image_b64:
@@ -1018,11 +1039,11 @@ def create_plant():
     # =====================================================================
     # 3) BASE64 → BYTES
     # =====================================================================
-    print("[DEBUG] Decodifica base64…")
+    print("[DEBUG] Decoding base64…")
 
     try:
         image_bytes = base64.b64decode(image_b64)
-        print(f"[DEBUG] Base64 decodificato. Bytes = {len(image_bytes)}")
+        print(f"[DEBUG] Base64 decoded. Bytes = {len(image_bytes)}")
     except Exception as e:
         print("[ERRORE] Base64 non valido:", e)
         return jsonify({"error": "Invalid base64 image data"}), 400
@@ -1033,16 +1054,16 @@ def create_plant():
             self.stream = io.BytesIO(b)
 
     fake_file = _FileWrapper(image_bytes)
-    print("[DEBUG] _FileWrapper creato correttamente")
+    print("[DEBUG] _FileWrapper created")
 
     # =====================================================================
-    # 4) CHIAMATA A PLANTNET
+    # 4) CALL TO PLANTNET
     # =====================================================================
-    print("[DEBUG] → Invio immagine a PlantNet…")
+    print("[DEBUG] → Sending the image to PlantNet using ImageProcessing…")
 
     try:
         plant_info = image_service.process_image(fake_file)
-        print("[DEBUG] ← Risposta da PlantNet:", plant_info)
+        print("[DEBUG] ← Response from PlantNet:", plant_info)
     except Exception as e:
         print("[ERRORE] PlantNet FALLITA:", e)
         return jsonify({"error": "Image processing failed"}), 500
@@ -1060,7 +1081,7 @@ def create_plant():
     # =====================================================================
     # 5) DEFAULTS
     # =====================================================================
-    print("[DEBUG] Carico defaults repository…")
+    print("[DEBUG] Load defaults  from repository…")
 
     defaults = repo.get_plant_defaults(scientific_name) or {}
     print("[DEBUG] Defaults caricati:", defaults)
@@ -1071,7 +1092,7 @@ def create_plant():
         **{k: v for k, v in defaults.items() if v is not None},
     }
 
-    print("[DEBUG] Payload iniziale:", payload)
+    print("[DEBUG] Payload:", payload)
 
     # =====================================================================
     # 6) ID + TIMESTAMPS
@@ -1085,12 +1106,12 @@ def create_plant():
     payload["created_at"] = now
     payload["updated_at"] = now
 
-    print("[DEBUG] Payload con ID + timestamps:", payload)
+    print("[DEBUG] Payload with ID + timestamps:", payload)
 
     # =====================================================================
     # 7) NORMALIZZAZIONI CAMPI
     # =====================================================================
-    print("[DEBUG] Normalizzazione campi NOT NULL…")
+    print("[DEBUG] Normalization…")
 
     # use
     if "use" in cols:
@@ -1140,12 +1161,12 @@ def create_plant():
         if insects is not None:
             payload["pests"] = insects
 
-    print("[DEBUG] Payload dopo normalizzazione:", payload)
+    print("[DEBUG] Payload after normalizzazione:", payload)
 
     # =====================================================================
     # 8) VALIDAZIONE NUMERICA
     # =====================================================================
-    print("[DEBUG] Validazione numerica…")
+    print("[DEBUG] Numeric validation…")
 
     try:
         wl = int(payload["water_level"])
@@ -1170,18 +1191,18 @@ def create_plant():
         print("[ERRORE] Temp non valide:", e)
         return jsonify({"error": "min_temp_c/max_temp_c must be integer"}), 400
 
-    print("[DEBUG] Payload validato:", payload)
+    print("[DEBUG] Payload validated:", payload)
 
     # =====================================================================
     # 9) FILTRAGGIO MODELLO
     # =====================================================================
     data = _filter_fields_for_model(payload, Plant)
-    print("[DEBUG] Payload finale per DB:", data)
+    print("[DEBUG] Final payload for DB:", data)
 
     # =====================================================================
     # 10) TRANSAZIONE DB
     # =====================================================================
-    print("[DEBUG] Apertura transazione DB…")
+    print("[RepositoryService] Saving on DB…")
 
     with _session_ctx() as s:
         try:
@@ -1191,11 +1212,11 @@ def create_plant():
             fam_id = None
             if family_name:
                 fam_id = repo.get_family_by_name(family_name)
-                print("[DEBUG] family da PlantNet:", fam_id)
+                print("[RepositoryService] family da PlantNet:", fam_id)
 
             if not fam_id:
                 fam_id = repo.get_family(data["scientific_name"])
-                print("[DEBUG] family da defaults JSON:", fam_id)
+                print("[RepositoryService] family da defaults JSON:", fam_id)
 
             if not fam_id:
                 print("[ERRORE] Family non trovata")
@@ -1204,11 +1225,11 @@ def create_plant():
             data["family_id"] = fam_id
 
             # create plant
-            print("[DEBUG] Creazione pianta nel DB…")
+            print("[RepositoryService] Creazione pianta nel DB…")
             p = Plant(**data)
             s.add(p)
             _commit_or_409(s)
-            print(f"[DEBUG] Pianta creata ID={p.id}")
+            print(f"[RepositoryService] Pianta creata ID={p.id}")
 
             write_changes_upsert("plant", [_serialize_instance(p)])
 
@@ -1229,7 +1250,7 @@ def create_plant():
                 with open(image_path, "wb") as f:
                     f.write(image_bytes)
 
-                print(f"[DEBUG] Immagine salvata in: {image_path}")
+                print(f"[DEBUG] Image saved in: {image_path}")
 
                 # Crea la riga in plant_photo
                 photo = PlantPhoto(
@@ -1249,7 +1270,7 @@ def create_plant():
             # ================================================================
 
             # LINK USER → PLANT (SEMPRE)
-            print("[DEBUG] Creo link user-plant…")
+            print("[RepositoryService] creation of user-plant…")
             repo.ensure_user_plant_link(
                 user_id=g.user_id,
                 plant_id=str(p.id),
@@ -1261,25 +1282,23 @@ def create_plant():
             # ================================================================
             # WATERING PLAN (NON DEVE MAI ROMPERE NULLA)
             # ================================================================
-            print("[DEBUG] Creo watering plan da questionario + pianta…")
+            print("[ReminderService] Creation of watering plan from quiz + plant info…")
             try:
                 # usa il ReminderService istanziato in alto:
-                # reminder_service = ReminderService()
                 reminder_service.create_plan_for_new_plant(
                     user_id=str(g.user_id),
                     plant_id=str(p.id),
                 )
-                print("[DEBUG] Watering plan creato/aggiornato")
+                print("[ReminderService] Watering plan created")
             except Exception as e:
-                # qui logghiamo SOLO l'errore, ma NON facciamo rollback
-                print("[ERRORE] Creazione watering plan fallita (ignoro):", e)
+                print("[ReminderService] Creation of watering plan failed:", e)
 
             # ================================================================
             # COMMIT FINALE — SALVA TUTTO SENZA ROLLBACK
             # ================================================================
             s.commit()
 
-            print("\n================== [create_plant] COMPLETATA ==================\n")
+            print("\n================== [create_plant] COMPLETED ==================\n")
 
             return jsonify({"ok": True, "id": str(p.id)}), 201
 

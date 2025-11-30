@@ -216,7 +216,8 @@ class ReminderService:
     # ---------------------------------------------------------
     #  APPLY PLANT DATA (water_level, difficulty, size)
     # ---------------------------------------------------------
-    def _adjust_plan_with_plant_data(self, interval_days: int, plant: Plant):
+    @staticmethod
+    def _adjust_plan_with_plant_data(interval_days: int, plant: Plant):
         notes = ""
 
         # ---- water_level ----
@@ -332,7 +333,7 @@ class ReminderService:
                     latest[qid] = str(pos)
                     seen.add(qid)
 
-            # ➕ Patch: garantiamo che ci siano valori di fallback
+            # Patch: garantiamo che ci siano valori di fallback
             latest.setdefault("q1", "3")  # Any day
             latest.setdefault("q2", "1")  # Morning
             latest.setdefault("q6", "1")  # Not eco
