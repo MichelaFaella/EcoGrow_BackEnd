@@ -887,6 +887,157 @@
       "category": "Bromeliad",
       "max_temp_c": 30,
       "scientific_name": "Aechmea fasciata"
+    },
+    {
+      "origin": "China",
+      "common_name": "Butterfly Ginger",
+      "water_level": 5,
+      "scientific_name": "Hedychium coronarium",
+      "climate": "Subtropical",
+      "size": "medium",
+      "use": "Flower, Secondary",
+      "difficulty": 3,
+      "created_at": "2025-12-02T18:01:48",
+      "id": "5516433a-5a0e-4136-857f-959677ce4de3",
+      "family_id": "471e4906-8e4a-417b-a395-6bd42f117deb",
+      "min_temp_c": 10,
+      "category": "Flower",
+      "updated_at": "2025-12-02T18:01:48",
+      "pests": null,
+      "light_level": 5,
+      "max_temp_c": 30
+    },
+    {
+      "origin": "China",
+      "common_name": "Chrysanthemum",
+      "water_level": 3,
+      "scientific_name": "Chrysanthemum × morifolium",
+      "climate": "Temperate",
+      "size": "medium",
+      "use": "Potted plant, Ornamental",
+      "difficulty": 3,
+      "created_at": "2025-12-02T18:08:41",
+      "id": "111867b8-f25c-4dce-80ef-582851f2a031",
+      "family_id": "3f91821e-4b75-4ba8-b8c1-e28ad7459bad",
+      "min_temp_c": 10,
+      "category": "Flowering",
+      "updated_at": "2025-12-02T18:08:41",
+      "pests": null,
+      "light_level": 2,
+      "max_temp_c": 25
+    },
+    {
+      "origin": "China",
+      "common_name": "Chrysanthemum",
+      "water_level": 3,
+      "scientific_name": "Chrysanthemum × morifolium",
+      "climate": "Temperate",
+      "size": "medium",
+      "use": "Potted plant, Ornamental",
+      "difficulty": 3,
+      "created_at": "2025-12-02T18:11:11",
+      "id": "15089bc7-0aeb-44ae-8984-5efcead779c8",
+      "family_id": "3f91821e-4b75-4ba8-b8c1-e28ad7459bad",
+      "min_temp_c": 10,
+      "category": "Flowering",
+      "updated_at": "2025-12-02T18:11:11",
+      "pests": null,
+      "light_level": 2,
+      "max_temp_c": 25
+    },
+    {
+      "id": "66b6ef82-9b62-45f7-9892-27defa0fee7a",
+      "_delete": true,
+      "created_at": "2025-12-02T19:04:25",
+      "updated_at": "2025-12-02T19:04:25"
+    },
+    {
+      "id": "7c9a307b-3a52-4119-a9f4-c7f426930714",
+      "_delete": true,
+      "created_at": "2025-12-02T19:04:25",
+      "updated_at": "2025-12-02T19:04:25"
+    },
+    {
+      "max_temp_c": 28,
+      "climate": "Tropical",
+      "family_id": "ddc38e06-6633-48eb-988e-af2579ef2b53",
+      "created_at": "2025-12-02T18:22:46",
+      "size": "medium",
+      "updated_at": "2025-12-02T18:22:46",
+      "id": "dddb27e9-f7cc-421a-a1e9-3ac1c50b8f41",
+      "scientific_name": "Aglaonema costatum",
+      "pests": null,
+      "water_level": 3,
+      "light_level": 4,
+      "category": "Aglaonema",
+      "common_name": "Chinese Evergreen",
+      "min_temp_c": 18,
+      "origin": "Hybrid",
+      "difficulty": 3,
+      "use": "Potted plant, Secondary, Tertiary"
+    },
+    {
+      "id": "88cad466-c2b8-41b3-a0c0-f658b29c489b",
+      "_delete": true,
+      "created_at": "2025-12-02T19:04:26",
+      "updated_at": "2025-12-02T19:04:26"
+    },
+    {
+      "scientific_name": "Aechmea fasciata",
+      "common_name": "Silver vase",
+      "difficulty": 3,
+      "max_temp_c": 30,
+      "id": "8f3e2b81-8379-4963-b080-76f94b1b29a5",
+      "pests": null,
+      "origin": "Hybrid",
+      "climate": "Tropical humid",
+      "size": "small",
+      "category": "Bromeliad",
+      "water_level": 2,
+      "created_at": "2025-12-02T19:35:09",
+      "family_id": "8947b2cf-d9bc-4e16-b5b1-d3f180c45d7a",
+      "min_temp_c": 12,
+      "updated_at": "2025-12-02T19:35:09",
+      "use": "Flower, Table top, Tertiary",
+      "light_level": 4
+    },
+    {
+      "scientific_name": "Rosa lucieae",
+      "common_name": "Rose",
+      "difficulty": 3,
+      "max_temp_c": 28,
+      "id": "8fe9c82e-6295-414e-9647-b0dd3f5f51fe",
+      "pests": null,
+      "origin": "Asia",
+      "climate": "Temperate",
+      "size": "medium",
+      "category": "Flowering shrub",
+      "water_level": 3,
+      "created_at": "2025-12-02T19:36:14",
+      "family_id": "b9cbfcc6-ce18-47cd-ac15-3535712d8c45",
+      "min_temp_c": 5,
+      "updated_at": "2025-12-02T19:36:14",
+      "use": "Garden plant, Cut flowers, Ornamental",
+      "light_level": 5
+    },
+    {
+      "origin": "China",
+      "updated_at": "2025-12-03T10:03:41",
+      "use": "Potted plant, Ornamental",
+      "category": "Flowering",
+      "family_id": "3f91821e-4b75-4ba8-b8c1-e28ad7459bad",
+      "difficulty": 3,
+      "scientific_name": "Chrysanthemum × morifolium",
+      "id": "442b14e4-c350-455c-ba7c-26911530a427",
+      "water_level": 3,
+      "min_temp_c": 10,
+      "size": "medium",
+      "climate": "Temperate",
+      "pests": null,
+      "created_at": "2025-12-03T10:03:41",
+      "light_level": 2,
+      "common_name": "Mum",
+      "max_temp_c": 25
     }
   ],
   "plant_photo": [
@@ -1033,6 +1184,77 @@
       "id": "c1336d4c-1173-468b-8368-644864a133bf",
       "caption": null,
       "url": "c1336d4c-1173-468b-8368-644864a133bf.jpg"
+    },
+    {
+      "caption": null,
+      "id": "1f2ceefa-316d-4ab1-a002-022fe064953c",
+      "order_index": 0,
+      "url": "1f2ceefa-316d-4ab1-a002-022fe064953c.jpg",
+      "created_at": null,
+      "plant_id": "5516433a-5a0e-4136-857f-959677ce4de3"
+    },
+    {
+      "caption": null,
+      "id": "cda683b7-3119-4f59-9e96-fe58f02d47f7",
+      "order_index": 0,
+      "url": "cda683b7-3119-4f59-9e96-fe58f02d47f7.jpg",
+      "created_at": null,
+      "plant_id": "111867b8-f25c-4dce-80ef-582851f2a031"
+    },
+    {
+      "caption": null,
+      "id": "11fdd35a-31e7-4ae4-a0c4-88347dc8f6a3",
+      "order_index": 0,
+      "url": "11fdd35a-31e7-4ae4-a0c4-88347dc8f6a3.jpg",
+      "created_at": null,
+      "plant_id": "15089bc7-0aeb-44ae-8984-5efcead779c8"
+    },
+    {
+      "id": "eb9e6769-2c1a-456c-91e7-aefb8056482e",
+      "_delete": true,
+      "created_at": "2025-12-02T19:04:26"
+    },
+    {
+      "id": "440f9a77-32dd-49f3-bb94-e71d857b033f",
+      "_delete": true,
+      "created_at": "2025-12-02T19:04:26"
+    },
+    {
+      "url": "dd86fa82-193a-4e6d-b66d-a591ed7e7aa0.jpg",
+      "caption": null,
+      "order_index": 0,
+      "created_at": null,
+      "id": "dd86fa82-193a-4e6d-b66d-a591ed7e7aa0",
+      "plant_id": "dddb27e9-f7cc-421a-a1e9-3ac1c50b8f41"
+    },
+    {
+      "id": "65047feb-40c6-46a6-99f8-31c3fdd66dc7",
+      "_delete": true,
+      "created_at": "2025-12-02T19:04:26"
+    },
+    {
+      "caption": null,
+      "order_index": 0,
+      "plant_id": "8f3e2b81-8379-4963-b080-76f94b1b29a5",
+      "id": "a78b5516-28f6-4d23-b6e1-b4d173c81e96",
+      "url": "a78b5516-28f6-4d23-b6e1-b4d173c81e96.jpg",
+      "created_at": null
+    },
+    {
+      "caption": null,
+      "order_index": 0,
+      "plant_id": "8fe9c82e-6295-414e-9647-b0dd3f5f51fe",
+      "id": "92c92f5a-77eb-4260-8783-4b54523c0dde",
+      "url": "92c92f5a-77eb-4260-8783-4b54523c0dde.jpg",
+      "created_at": null
+    },
+    {
+      "caption": null,
+      "plant_id": "442b14e4-c350-455c-ba7c-26911530a427",
+      "id": "c2beb97c-a602-4e8a-8ede-24269f7a7b66",
+      "created_at": null,
+      "order_index": 0,
+      "url": "c2beb97c-a602-4e8a-8ede-24269f7a7b66.jpg"
     }
   ],
   "user_plant": [
@@ -1190,6 +1412,130 @@
       "plant_id": "00c9196f-a77b-4b5b-bd0a-a471a5738cee",
       "location_note": null,
       "since": "2025-11-30"
+    },
+    {
+      "user_id": "d2b805fd-5ac6-440b-b649-64af3cbd41ad",
+      "plant_id": "5516433a-5a0e-4136-857f-959677ce4de3",
+      "location_note": null,
+      "since": "2025-12-02"
+    },
+    {
+      "user_id": "d2b805fd-5ac6-440b-b649-64af3cbd41ad",
+      "plant_id": "111867b8-f25c-4dce-80ef-582851f2a031",
+      "location_note": null,
+      "since": "2025-12-02"
+    },
+    {
+      "user_id": "d2b805fd-5ac6-440b-b649-64af3cbd41ad",
+      "plant_id": "15089bc7-0aeb-44ae-8984-5efcead779c8",
+      "location_note": null,
+      "since": "2025-12-02"
+    },
+    {
+      "user_id": "d2b805fd-5ac6-440b-b649-64af3cbd41ad",
+      "plant_id": "66b6ef82-9b62-45f7-9892-27defa0fee7a",
+      "location_note": null,
+      "since": "2025-12-02"
+    },
+    {
+      "user_id": "d2b805fd-5ac6-440b-b649-64af3cbd41ad",
+      "plant_id": "7c9a307b-3a52-4119-a9f4-c7f426930714",
+      "location_note": null,
+      "since": "2025-12-02"
+    },
+    {
+      "user_id": "d2b805fd-5ac6-440b-b649-64af3cbd41ad",
+      "plant_id": "dddb27e9-f7cc-421a-a1e9-3ac1c50b8f41",
+      "location_note": null,
+      "since": "2025-12-02"
+    },
+    {
+      "user_id": "dd1101f6-17ba-448a-a2c9-0f4b9b6e92d3",
+      "plant_id": "5516433a-5a0e-4136-857f-959677ce4de3",
+      "location_note": null,
+      "since": "2025-12-02"
+    },
+    {
+      "user_id": "d2b805fd-5ac6-440b-b649-64af3cbd41ad",
+      "plant_id": "88cad466-c2b8-41b3-a0c0-f658b29c489b",
+      "location_note": null,
+      "since": "2025-12-02"
+    },
+    {
+      "user_id": "d2b805fd-5ac6-440b-b649-64af3cbd41ad",
+      "plant_id": "405ecfa2-1fca-4d75-a2e3-bde4701bc2e0",
+      "_delete": true
+    },
+    {
+      "user_id": "d2b805fd-5ac6-440b-b649-64af3cbd41ad",
+      "plant_id": "5516433a-5a0e-4136-857f-959677ce4de3",
+      "_delete": true
+    },
+    {
+      "user_id": "d2b805fd-5ac6-440b-b649-64af3cbd41ad",
+      "plant_id": "66b6ef82-9b62-45f7-9892-27defa0fee7a",
+      "_delete": true
+    },
+    {
+      "user_id": "d2b805fd-5ac6-440b-b649-64af3cbd41ad",
+      "plant_id": "7c9a307b-3a52-4119-a9f4-c7f426930714",
+      "_delete": true
+    },
+    {
+      "user_id": "d2b805fd-5ac6-440b-b649-64af3cbd41ad",
+      "plant_id": "88cad466-c2b8-41b3-a0c0-f658b29c489b",
+      "_delete": true
+    },
+    {
+      "user_id": "d2b805fd-5ac6-440b-b649-64af3cbd41ad",
+      "plant_id": "9cdfa73c-e683-40d4-bb07-61df427250d9",
+      "_delete": true
+    },
+    {
+      "user_id": "d2b805fd-5ac6-440b-b649-64af3cbd41ad",
+      "plant_id": "c3d1ac84-db3c-4d3d-8da4-c06ab1b9f6f2",
+      "_delete": true
+    },
+    {
+      "user_id": "d2b805fd-5ac6-440b-b649-64af3cbd41ad",
+      "plant_id": "fbfcf54d-109f-479f-87b3-f83e05b1bbe1",
+      "_delete": true
+    },
+    {
+      "user_id": "6c79caf6-3be8-4a86-806a-b2ef1fce8469",
+      "plant_id": "8f3e2b81-8379-4963-b080-76f94b1b29a5",
+      "location_note": null,
+      "since": "2025-12-02"
+    },
+    {
+      "user_id": "6c79caf6-3be8-4a86-806a-b2ef1fce8469",
+      "plant_id": "8fe9c82e-6295-414e-9647-b0dd3f5f51fe",
+      "location_note": null,
+      "since": "2025-12-02"
+    },
+    {
+      "user_id": "f17e57ab-7f0d-4e98-868e-34dfa7b62dd9",
+      "plant_id": "00c9196f-a77b-4b5b-bd0a-a471a5738cee",
+      "location_note": null,
+      "since": "2025-12-02"
+    },
+    {
+      "user_id": "f17e57ab-7f0d-4e98-868e-34dfa7b62dd9",
+      "plant_id": "b384a9db-fc83-4d08-bb84-41b2552ea6b4",
+      "location_note": null,
+      "since": "2025-12-03"
+    },
+    {
+      "user_id": "f17e57ab-7f0d-4e98-868e-34dfa7b62dd9",
+      "plant_id": "f7bc798f-61ba-47f9-9456-cf4e0fd1ae9d",
+      "location_note": null,
+      "since": "2025-12-03"
+    },
+    {
+      "user_id": "dd1101f6-17ba-448a-a2c9-0f4b9b6e92d3",
+      "plant_id": "442b14e4-c350-455c-ba7c-26911530a427",
+      "location_note": null,
+      "since": "2025-12-03"
     }
   ],
   "shared_plant": [
@@ -1263,6 +1609,42 @@
       "plant_id": "405ecfa2-1fca-4d75-a2e3-bde4701bc2e0",
       "can_edit": true,
       "created_at": "2025-11-28T10:36:29",
+      "ended_sharing_at": "2025-12-02T18:57:33"
+    },
+    {
+      "id": "3d56f394-b0d5-4324-808c-588a1ac18b6f",
+      "owner_user_id": "d2b805fd-5ac6-440b-b649-64af3cbd41ad",
+      "recipient_user_id": "dd1101f6-17ba-448a-a2c9-0f4b9b6e92d3",
+      "plant_id": "5516433a-5a0e-4136-857f-959677ce4de3",
+      "can_edit": true,
+      "created_at": "2025-12-02T18:27:20",
+      "ended_sharing_at": null
+    },
+    {
+      "id": "a7d12e3f-a93a-4719-9050-47bfebc9d03d",
+      "owner_user_id": "dd1101f6-17ba-448a-a2c9-0f4b9b6e92d3",
+      "recipient_user_id": "f17e57ab-7f0d-4e98-868e-34dfa7b62dd9",
+      "plant_id": "00c9196f-a77b-4b5b-bd0a-a471a5738cee",
+      "can_edit": true,
+      "created_at": "2025-12-02T19:38:38",
+      "ended_sharing_at": "2025-12-02T19:39:00"
+    },
+    {
+      "id": "d0fc42ca-9f9f-47ca-a84a-98d31aa24908",
+      "owner_user_id": "dd1101f6-17ba-448a-a2c9-0f4b9b6e92d3",
+      "recipient_user_id": "f17e57ab-7f0d-4e98-868e-34dfa7b62dd9",
+      "plant_id": "b384a9db-fc83-4d08-bb84-41b2552ea6b4",
+      "can_edit": true,
+      "created_at": "2025-12-03T09:57:30",
+      "ended_sharing_at": "2025-12-03T09:57:39"
+    },
+    {
+      "id": "2c68e3e2-b389-4603-b8f2-4dc05fc51e5b",
+      "owner_user_id": "dd1101f6-17ba-448a-a2c9-0f4b9b6e92d3",
+      "recipient_user_id": "f17e57ab-7f0d-4e98-868e-34dfa7b62dd9",
+      "plant_id": "f7bc798f-61ba-47f9-9456-cf4e0fd1ae9d",
+      "can_edit": true,
+      "created_at": "2025-12-03T10:01:09",
       "ended_sharing_at": null
     }
   ],
@@ -1299,17 +1681,65 @@
     {
       "id": "b6807ab6-9eae-4f17-acf2-61e542f11210",
       "_delete": true
+    },
+    {
+      "id": "e00cd550-7c67-4cf6-8c3d-d503a892f9df",
+      "user_id_a": "d2b805fd-5ac6-440b-b649-64af3cbd41ad",
+      "user_id_b": "dd1101f6-17ba-448a-a2c9-0f4b9b6e92d3",
+      "status": "accepted",
+      "created_at": "2025-12-02T18:27:01",
+      "updated_at": "2025-12-02T18:27:01"
+    },
+    {
+      "id": "262539e7-67ea-4030-ad1f-f58938acf310",
+      "user_id_a": "dd1101f6-17ba-448a-a2c9-0f4b9b6e92d3",
+      "user_id_b": "f17e57ab-7f0d-4e98-868e-34dfa7b62dd9",
+      "status": "accepted",
+      "created_at": "2025-12-02T19:38:18",
+      "updated_at": "2025-12-02T19:38:18"
+    },
+    {
+      "id": "6a00ac38-d303-4e51-a26d-efd671b03df8",
+      "user_id_a": "dd1101f6-17ba-448a-a2c9-0f4b9b6e92d3",
+      "user_id_b": "d9ebc668-9c59-4bd9-af08-0c4c4ce05b77",
+      "status": "accepted",
+      "created_at": "2025-12-03T10:00:52",
+      "updated_at": "2025-12-03T10:00:52"
     }
   ],
   "user": [
     {
-      "first_name": "Alberto",
-      "updated_at": "2025-11-28T11:23:34",
-      "created_at": "2025-11-28T11:23:34",
+      "first_name": "Albert",
+      "updated_at": "2025-12-03T09:55:14",
       "last_name": "Genovese",
-      "password_hash": "scrypt:32768:8:1$zIzZojqXzUBlTUP2$18fa4ee6f269d8cb3a0494bfbaf6057f81ffd2b187f2134c619202c297d4b1b53e1b980ca1b2d966e4ec5855ba5dc55e7b18c053c88408b89a61022c27e02f4d",
       "id": "dd1101f6-17ba-448a-a2c9-0f4b9b6e92d3",
-      "email": "alb.genovese@gmail.com"
+      "email": "alb.genovese@gmail.com",
+      "password_hash": "scrypt:32768:8:1$zIzZojqXzUBlTUP2$18fa4ee6f269d8cb3a0494bfbaf6057f81ffd2b187f2134c619202c297d4b1b53e1b980ca1b2d966e4ec5855ba5dc55e7b18c053c88408b89a61022c27e02f4d",
+      "created_at": "2025-11-28T11:23:34"
+    },
+    {
+      "id": "d2b805fd-5ac6-440b-b649-64af3cbd41ad",
+      "_delete": true,
+      "created_at": "2025-12-02T19:04:25",
+      "updated_at": "2025-12-02T19:04:25"
+    },
+    {
+      "id": "6c79caf6-3be8-4a86-806a-b2ef1fce8469",
+      "last_name": "Faella",
+      "password_hash": "scrypt:32768:8:1$lFcfwl3YE1spiWFs$d31f61ff7a7c2ec5f87e84162b4e033cefaa86e48db483e649a2bd2c781bf5fb79590573a5196d40e534c9802d708ab6951c3198b18fa9f44464601bfb1a0d32",
+      "first_name": "Massimo",
+      "email": "m.faella@gmail.com",
+      "updated_at": "2025-12-02T19:33:46",
+      "created_at": "2025-12-02T19:33:46"
+    },
+    {
+      "first_name": "Gaetano",
+      "updated_at": "2025-12-03T10:04:48",
+      "last_name": "Lano",
+      "id": "8a419703-0884-4f3f-8857-c5620dc409b2",
+      "email": "g.lanogmail.com",
+      "password_hash": "scrypt:32768:8:1$zOtRq9AZ0DvEthPw$9cf4f82317819b9f6930690d2dcd37eb7c6c0514e89532f9502da2e053fc2d26b0701e9ec3ab84a68049e88fb3494319e984dc488800bb38a6d9398ad09363aa",
+      "created_at": "2025-12-03T10:04:48"
     }
   ]
 }

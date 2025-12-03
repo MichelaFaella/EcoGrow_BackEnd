@@ -327,8 +327,8 @@
         "latin": "Aglaonema",
         "family": "Araceae",
         "common": [
-            "Chinese Evergreen",
-            "Amelia"
+            "Amelia",
+            "Chinese Evergreen"
         ],
         "category": "Aglaonema",
         "origin": "Hybrid",
@@ -5151,7 +5151,7 @@
         "latin": "Hibiscus rosa sinensis",
         "family": "Malvaceae",
         "common": [
-            "Chinese hibiscus"
+            "Hibiscus"
         ],
         "category": "Flower",
         "origin": "Asia",
@@ -7389,7 +7389,6 @@
         "latin": "Chrysanthemum morifolium",
         "family": "Asteraceae",
         "common": [
-            "Chrysanthemum",
             "Mum"
         ],
         "category": "Flowering",
@@ -7676,6 +7675,38 @@
         "size": "medium",
         "watering_level": 3,
         "lighting_level": 2,
+        "difficulty": 3
+    },
+    {
+        "id": 500,
+        "latin": "Gerbera jamesonii",
+        "family": "Asteraceae",
+        "common": [
+            "Gerbera Daisy"
+        ],
+        "category": "Flowering",
+        "origin": "South Africa",
+        "climate": "Temperate",
+        "tempmax": {
+            "celsius": 27,
+            "fahrenheit": 80
+        },
+        "tempmin": {
+            "celsius": 12,
+            "fahrenheit": 54
+        },
+        "ideallight": "Gerbera plants thrive best in bright, indirect sunlight for most of the day. They prefer a well-lit environment where the light is diffused rather than harsh, helping maintain vibrant blooms and preventing leaf burn. A spot near an east-facing or lightly filtered south window is ideal.",
+        "toleratedlight": "Partial shade to full sun.",
+        "watering": "Keep soil evenly moist, but avoid overwatering.",
+        "insects": "Aphids, Spider mites",
+        "diseases": "Powdery mildew, Leaf spot",
+        "use": [
+            "Cut flower",
+            "Ornamental"
+        ],
+        "size": "medium",
+        "watering_level": 3,
+        "lighting_level": 4,
         "difficulty": 3
     }
 ]

@@ -2922,13 +2922,13 @@ def plant_undo_watering(plant_id):
 @require_jwt
 def watering_plan_calendar_export():
     """
-    Esporta tutti i watering plan dell'utente loggato
-    in un formato comodo da usare come eventi calendario sul telefono.
+    Ritorna tutti i watering plan dell'utente loggato in un formato leggero e
+    ottimizzato per la sincronizzazione con un calendario.
+    NESSUNA immagine viene esportata.
     """
     user_id = g.user_id
 
     with _session_ctx() as s:
-        # Join con Plant per avere il nome pianta
         rows = (
             s.query(WateringPlan, Plant)
             .join(Plant, Plant.id == WateringPlan.plant_id)
@@ -2939,23 +2939,25 @@ def watering_plan_calendar_export():
 
         events = []
         for wp, plant in rows:
-            # titolo leggibile per il calendario
+            # Titolo leggibile per il calendario
             title = f"Water {plant.common_name or plant.scientific_name}"
 
             events.append({
                 "id": str(wp.id),
+
+                # Info pianta (SOLO ciò che serve!)
                 "plant_id": str(plant.id),
                 "plant_name": plant.common_name or plant.scientific_name,
+
+                # Evento
                 "title": title,
+                "start": wp.next_due_at.isoformat(),
 
-                # quando parte il promemoria
-                "start": wp.next_due_at.isoformat(),  # es. 2025-11-23T09:00:00
-
-                # ogni quanti giorni si ripete
+                # Ripetizione (opzionale)
                 "interval_days": wp.interval_days,
 
-                # se vuoi farla usare per note/event description
-                "notes": wp.notes,
+                # Note opzionali
+                "notes": wp.notes or ""
             })
 
         return jsonify(events), 200
