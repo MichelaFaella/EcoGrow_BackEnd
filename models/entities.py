@@ -90,6 +90,7 @@ class Plant(Base):
     climate: Mapped[str] = mapped_column(String(100), nullable=False)  # ClimateEnum logico
     pests: Mapped[Optional[dict]] = mapped_column(MySQLJSON)  # es. ["aphid","whitefly"]
 
+    tips: Mapped[Optional[dict]] = mapped_column(MySQLJSON)  # es. ["Ideal light: …", "Tolerated light: …", ...]
     size: Mapped[SizeEnum] = mapped_column(
         SAEnum(
             SizeEnum,

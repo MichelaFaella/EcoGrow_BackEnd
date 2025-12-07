@@ -276,7 +276,7 @@ def _serialize_full_plant(plant):
         "light_level": plant.light_level,
         "min_temp_c": plant.min_temp_c,
         "max_temp_c": plant.max_temp_c,
-
+        "tips": plant.tips,  
         "family_name": family_name,
         "family_description": family_description,
 
