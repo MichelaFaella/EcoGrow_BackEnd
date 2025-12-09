@@ -276,7 +276,7 @@ def _serialize_full_plant(plant):
         "light_level": plant.light_level,
         "min_temp_c": plant.min_temp_c,
         "max_temp_c": plant.max_temp_c,
-        "tips": plant.tips,  
+        "tips": plant.tips,
         "family_name": family_name,
         "family_description": family_description,
 
@@ -725,6 +725,13 @@ def ai_model_disease_detection():
         .get("predictions", [{}])[0]
         .get("classes", [])
     )
+
+    # DEBUG: print all predicted classes
+    print("[DEBUG] Model returned classes:")
+    for c in classes:
+        print(f"    → {c.get('label')}: {c.get('probability')}")
+
+    print("[DEBUG] Selecting best predicted class...")
 
     if classes:
         best = max(classes, key=lambda x: x.get("probability", 0))
@@ -1675,6 +1682,7 @@ def user_all():
         )
         return jsonify([_serialize_instance(r) for r in rows]), 200
 
+
 @api_blueprint.route("/user/add", methods=["POST"])
 def user_add():
     payload = _parse_json_body()
@@ -1907,6 +1915,7 @@ def user_plant_delete():
             [{"user_id": user_id, "plant_id": plant_id, "_delete": True}],
         )
         return ("", 204)
+
 
 # ============================
 #         FRIENDSHIP
@@ -2314,6 +2323,7 @@ def watering_plan_all():
         )
         return jsonify([_serialize_instance(r) for r in rows]), 200
 
+
 @api_blueprint.route("/watering_plan/add", methods=["POST"])
 @require_jwt
 def watering_plan_add():
@@ -2445,6 +2455,7 @@ def watering_log_delete(lid: str):
             _commit_or_409(s)
         write_changes_delete("watering_log", lid)
         return ("", 204)
+
 
 @api_blueprint.route("/question/all", methods=["GET"])
 @require_jwt
@@ -3062,6 +3073,7 @@ def reminder_update(rid: str):
         _commit_or_409(s)
         write_changes_upsert("reminder", [_serialize_instance(r)])
         return jsonify({"ok": True, "id": r.id}), 200
+
 
 @api_blueprint.route("/reminder/delete/<rid>", methods=["DELETE"])
 @require_jwt

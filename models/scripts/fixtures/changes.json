@@ -1288,6 +1288,22 @@
       "url": "df23eba6-3acf-4dba-9740-b45c953bf250.jpg",
       "created_at": null,
       "caption": null
+    },
+    {
+      "id": "a8fff1a8-c247-40aa-a38b-6630d4b91cea",
+      "plant_id": "b46c82ff-60d8-4431-9c8f-d2f1ae43a686",
+      "url": "d9f5a4ac-824a-4516-9545-cf7ccaf3085e.jpg",
+      "caption": "Detection result: necrotic_fungal_lesion",
+      "order_index": 6,
+      "created_at": "2025-12-09T18:11:15"
+    },
+    {
+      "id": "42494c82-1638-4a3a-abc9-706acee9131c",
+      "plant_id": "b46c82ff-60d8-4431-9c8f-d2f1ae43a686",
+      "url": "e80ddde6-b877-42ab-a03b-6eeae42ee3b9.jpg",
+      "caption": "Detection result: necrotic_fungal_lesion",
+      "order_index": 7,
+      "created_at": "2025-12-09T18:12:37"
     }
   ],
   "user_plant": [
@@ -1580,6 +1596,20 @@
       "plant_id": "c3f6758a-98a5-4937-853c-108f58a796bc",
       "location_note": null,
       "since": "2025-12-09"
+    },
+    {
+      "user_id": "55b11b16-1206-4bf4-b613-b81fc1c78e0c",
+      "plant_id": "b46c82ff-60d8-4431-9c8f-d2f1ae43a686",
+      "health_status": "sick",
+      "location_note": null,
+      "since": "2025-12-09"
+    },
+    {
+      "user_id": "55b11b16-1206-4bf4-b613-b81fc1c78e0c",
+      "plant_id": "b46c82ff-60d8-4431-9c8f-d2f1ae43a686",
+      "health_status": "sick",
+      "location_note": null,
+      "since": "2025-12-09"
     }
   ],
   "shared_plant": [
@@ -1734,6 +1764,24 @@
       "plant_id": "f7bc798f-61ba-47f9-9456-cf4e0fd1ae9d",
       "disease_id": "04a01348-6926-5e78-9cea-6d1660b765d8",
       "detected_at": "2025-11-30",
+      "severity": null,
+      "notes": null,
+      "status": "detected"
+    },
+    {
+      "id": "e7d2b048-1755-41f4-8bab-577f044454f8",
+      "plant_id": "b46c82ff-60d8-4431-9c8f-d2f1ae43a686",
+      "disease_id": "95b1095e-68e8-5b12-a723-57b53725f6fd",
+      "detected_at": "2025-12-09",
+      "severity": null,
+      "notes": null,
+      "status": "detected"
+    },
+    {
+      "id": "e1809063-2e52-483b-bf9f-ce016c3a6ae7",
+      "plant_id": "b46c82ff-60d8-4431-9c8f-d2f1ae43a686",
+      "disease_id": "95b1095e-68e8-5b12-a723-57b53725f6fd",
+      "detected_at": "2025-12-09",
       "severity": null,
       "notes": null,
       "status": "detected"

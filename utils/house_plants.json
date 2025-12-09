@@ -9022,5 +9022,58 @@
             "Watering: Keep soil evenly moist, but avoid overwatering.",
             "Soil: Use regular indoor potting soil with good drainage."
         ]
-    }
+    },
+    {
+    "id": 504,
+    "latin": "Asphodelus albus",
+    "family": "Asphodelaceae",
+    "common": ["White asphodel"],
+    "category": "Flowering perennial",
+    "origin": "Mediterranean",
+    "climate": "Mediterranean / Temperate",
+    "tempmax": { "celsius": 29, "fahrenheit": 84.2 },
+    "tempmin": { "celsius": -5, "fahrenheit": 23 },
+    "ideallight": "Full sun.",
+    "toleratedlight": "Light shade tolerated.",
+    "watering": "Low watering; drought tolerant.",
+    "insects": "Aphids, Leaf miners",
+    "diseases": "Rust, Fungal leaf spots",
+    "use": ["Ornamental", "Wildflower gardens"],
+    "size": "medium",
+    "watering_level": 1,
+    "lighting_level": 5,
+    "difficulty": 3,
+    "tips": [
+        "Prefers dry, rocky soils.",
+        "Does not tolerate waterlogged ground.",
+        "Deadhead flower spikes to maintain shape."
+    ]
+},
+    {
+    "id": 505,
+    "latin": "Dianella tasmanica",
+    "family": "Asphodelaceae",
+    "common": ["Tasmanian flax lily"],
+    "category": "Evergreen perennial",
+    "origin": "Australia",
+    "climate": "Temperate / Subtropical",
+    "tempmax": { "celsius": 30, "fahrenheit": 86 },
+    "tempmin": { "celsius": -3, "fahrenheit": 26.6 },
+    "ideallight": "Partial shade to full shade.",
+    "toleratedlight": "Morning sun tolerated.",
+    "watering": "Keep soil evenly moist.",
+    "insects": "Scale insects, Aphids",
+    "diseases": "Root rot, Leaf blight",
+    "use": ["Indoor plant", "Border plant", "Ornamental"],
+    "size": "medium",
+    "watering_level": 3,
+    "lighting_level": 3,
+    "difficulty": 3,
+    "tips": [
+        "Avoid direct harsh sunlight.",
+        "Use well-draining soil to avoid root rot.",
+        "Trim damaged leaves to maintain appearance."
+    ]
+}
+
 ]
