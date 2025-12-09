@@ -747,6 +747,31 @@ class RepositoryService:
 
             write_changes_delete("friendship", fid)
             print(f"[RepositoryService] Deleted friendship {fid}")
+    
+    def update_friendship(self, fid: str, data: dict) -> Optional[Friendship]:
+        print(f"[RepositoryService] update_friendship fid={fid}, data={data}")
+        with self.Session() as s:
+            fr = s.get(Friendship, fid)
+            if not fr:
+                print("[RepositoryService] Friendship not found")
+                return None
+
+            for k, v in data.items():
+                setattr(fr, k, v)
+
+            s.commit()
+
+            write_changes_upsert("friendship", [{
+                "id": fr.id,
+                "user_id_a": fr.user_id_a,
+                "user_id_b": fr.user_id_b,
+                "status": fr.status,
+                "created_at": fr.created_at.isoformat() if fr.created_at else None,
+            }])
+
+            return fr
+
+
 
     # ===========================
     # SHARED_PLANT
