@@ -34,7 +34,13 @@
         "size": "small",
         "watering_level": 3,
         "lighting_level": 5,
-        "difficulty": 4
+        "difficulty": 4,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Direct sunlight",
+            "Watering: Keep moist between watering. Can be a bit dry between watering",
+            "Soil: Use regular indoor potting soil with good drainage."
+        ]
     },
     {
         "id": 1,
@@ -72,7 +78,13 @@
         "size": "small",
         "watering_level": 5,
         "lighting_level": 4,
-        "difficulty": 5
+        "difficulty": 5,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Keep moist between watering. Must not be dry between watering",
+            "Soil: Use soft, rich soil that stays slightly moist."
+        ]
     },
     {
         "id": 2,
@@ -105,7 +117,13 @@
         "size": "small",
         "watering_level": 2,
         "lighting_level": 4,
-        "difficulty": 3
+        "difficulty": 3,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Water when soil is half dry. Change water in the vase regularly.",
+            "Soil: Use a very airy mix, mostly bark with little soil."
+        ]
     },
     {
         "id": 3,
@@ -142,7 +160,13 @@
         "size": "medium",
         "watering_level": 1,
         "lighting_level": 5,
-        "difficulty": 3
+        "difficulty": 3,
+        "tips": [
+            "Ideal light: 6 or more hours of direct sunlight per day.",
+            "Tolerated light: Direct sunlight.",
+            "Watering: Water only when the soil is dry. Must be dry between watering",
+            "Soil: Use cactus and succulent soil that drains very quickly."
+        ]
     },
     {
         "id": 4,
@@ -175,7 +199,13 @@
         "size": "medium",
         "watering_level": 2,
         "lighting_level": 4,
-        "difficulty": 3
+        "difficulty": 3,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Water when soil is half dry. Change water in the vase regularly.",
+            "Soil: Use a very airy mix, mostly bark with little soil."
+        ]
     },
     {
         "id": 5,
@@ -208,7 +238,13 @@
         "size": "small",
         "watering_level": 2,
         "lighting_level": 4,
-        "difficulty": 3
+        "difficulty": 3,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Water when soil is half dry. Change water in the vase regularly.",
+            "Soil: Use a very airy mix, mostly bark with little soil."
+        ]
     },
     {
         "id": 6,
@@ -245,7 +281,13 @@
         "size": "medium",
         "watering_level": 1,
         "lighting_level": 5,
-        "difficulty": 3
+        "difficulty": 3,
+        "tips": [
+            "Ideal light: 6 or more hours of direct sunlight per day.",
+            "Tolerated light: Direct sunlight.",
+            "Watering: Water only when the soil is dry. Must be dry between watering",
+            "Soil: Use cactus and succulent soil that drains very quickly."
+        ]
     },
     {
         "id": 7,
@@ -283,7 +325,13 @@
         "size": "small",
         "watering_level": 5,
         "lighting_level": 4,
-        "difficulty": 5
+        "difficulty": 5,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Keep moist between watering. Must not be dry between watering",
+            "Soil: Use soft, rich soil that stays slightly moist."
+        ]
     },
     {
         "id": 8,
@@ -320,7 +368,13 @@
         "size": "medium",
         "watering_level": 1,
         "lighting_level": 5,
-        "difficulty": 3
+        "difficulty": 3,
+        "tips": [
+            "Ideal light: 6 or more hours of direct sunlight per day.",
+            "Tolerated light: Direct sunlight.",
+            "Watering: Water only when the soil is dry. Must be dry between watering",
+            "Soil: Use cactus and succulent soil that drains very quickly."
+        ]
     },
     {
         "id": 9,
@@ -360,7 +414,13 @@
         "size": "medium",
         "watering_level": 3,
         "lighting_level": 4,
-        "difficulty": 4
+        "difficulty": 4,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Keep moist between watering. Water when soil is half dry.",
+            "Soil: Use light, airy soil: potting soil mixed with some bark and perlite."
+        ]
     },
     {
         "id": 10,
@@ -400,7 +460,13 @@
         "size": "medium",
         "watering_level": 3,
         "lighting_level": 4,
-        "difficulty": 4
+        "difficulty": 4,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Keep moist between watering. Water when soil is half dry.",
+            "Soil: Use light, airy soil: potting soil mixed with some bark and perlite."
+        ]
     },
     {
         "id": 11,
@@ -440,7 +506,13 @@
         "size": "medium",
         "watering_level": 3,
         "lighting_level": 4,
-        "difficulty": 4
+        "difficulty": 4,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Keep moist between watering. Water when soil is half dry.",
+            "Soil: Use light, airy soil: potting soil mixed with some bark and perlite."
+        ]
     },
     {
         "id": 12,
@@ -480,7 +552,13 @@
         "size": "small",
         "watering_level": 3,
         "lighting_level": 4,
-        "difficulty": 4
+        "difficulty": 4,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Keep moist between watering. Water when soil is half dry.",
+            "Soil: Use light, airy soil: potting soil mixed with some bark and perlite."
+        ]
     },
     {
         "id": 13,
@@ -520,7 +598,13 @@
         "size": "medium",
         "watering_level": 3,
         "lighting_level": 4,
-        "difficulty": 4
+        "difficulty": 4,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Keep moist between watering. Water when soil is half dry.",
+            "Soil: Use light, airy soil: potting soil mixed with some bark and perlite."
+        ]
     },
     {
         "id": 14,
@@ -560,7 +644,13 @@
         "size": "medium",
         "watering_level": 3,
         "lighting_level": 4,
-        "difficulty": 4
+        "difficulty": 4,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Keep moist between watering. Water when soil is half dry.",
+            "Soil: Use light, airy soil: potting soil mixed with some bark and perlite."
+        ]
     },
     {
         "id": 15,
@@ -600,7 +690,13 @@
         "size": "medium",
         "watering_level": 3,
         "lighting_level": 4,
-        "difficulty": 4
+        "difficulty": 4,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Keep moist between watering. Water when soil is half dry.",
+            "Soil: Use light, airy soil: potting soil mixed with some bark and perlite."
+        ]
     },
     {
         "id": 16,
@@ -640,7 +736,13 @@
         "size": "medium",
         "watering_level": 3,
         "lighting_level": 4,
-        "difficulty": 4
+        "difficulty": 4,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Keep moist between watering. Water when soil is half dry.",
+            "Soil: Use light, airy soil: potting soil mixed with some bark and perlite."
+        ]
     },
     {
         "id": 17,
@@ -680,7 +782,13 @@
         "size": "big",
         "watering_level": 3,
         "lighting_level": 4,
-        "difficulty": 5
+        "difficulty": 5,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Keep moist between watering. Water when soil is half dry.",
+            "Soil: Use light, airy soil: potting soil mixed with some bark and perlite."
+        ]
     },
     {
         "id": 18,
@@ -720,7 +828,13 @@
         "size": "medium",
         "watering_level": 3,
         "lighting_level": 4,
-        "difficulty": 4
+        "difficulty": 4,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Keep moist between watering. Water when soil is half dry.",
+            "Soil: Use light, airy soil: potting soil mixed with some bark and perlite."
+        ]
     },
     {
         "id": 19,
@@ -757,7 +871,13 @@
         "size": "medium",
         "watering_level": 1,
         "lighting_level": 5,
-        "difficulty": 3
+        "difficulty": 3,
+        "tips": [
+            "Ideal light: 6 or more hours of direct sunlight per day.",
+            "Tolerated light: Direct sunlight.",
+            "Watering: Water only when the soil is dry. Must be dry between watering",
+            "Soil: Use cactus and succulent soil that drains very quickly."
+        ]
     },
     {
         "id": 20,
@@ -797,7 +917,13 @@
         "size": "small",
         "watering_level": 3,
         "lighting_level": 4,
-        "difficulty": 4
+        "difficulty": 4,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Keep moist between watering. Water when soil is half dry.",
+            "Soil: Use light, airy soil: potting soil mixed with some bark and perlite."
+        ]
     },
     {
         "id": 21,
@@ -837,7 +963,13 @@
         "size": "medium",
         "watering_level": 3,
         "lighting_level": 4,
-        "difficulty": 4
+        "difficulty": 4,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Keep moist between watering. Water when soil is half dry.",
+            "Soil: Use light, airy soil: potting soil mixed with some bark and perlite."
+        ]
     },
     {
         "id": 22,
@@ -875,7 +1007,13 @@
         "size": "medium",
         "watering_level": 1,
         "lighting_level": 5,
-        "difficulty": 3
+        "difficulty": 3,
+        "tips": [
+            "Ideal light: 6 or more hours of direct sunlight per day.",
+            "Tolerated light: Direct sunlight.",
+            "Watering: Water only when the soil is dry. Must be dry between watering",
+            "Soil: Use cactus and succulent soil that drains very quickly."
+        ]
     },
     {
         "id": 23,
@@ -915,7 +1053,13 @@
         "size": "medium",
         "watering_level": 3,
         "lighting_level": 4,
-        "difficulty": 4
+        "difficulty": 4,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Keep moist between watering. Water when soil is half dry.",
+            "Soil: Use light, airy soil: potting soil mixed with some bark and perlite."
+        ]
     },
     {
         "id": 24,
@@ -955,7 +1099,13 @@
         "size": "small",
         "watering_level": 3,
         "lighting_level": 4,
-        "difficulty": 4
+        "difficulty": 4,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Keep moist between watering. Water when soil is half dry.",
+            "Soil: Use light, airy soil: potting soil mixed with some bark and perlite."
+        ]
     },
     {
         "id": 25,
@@ -994,7 +1144,13 @@
         "size": "medium",
         "watering_level": 3,
         "lighting_level": 5,
-        "difficulty": 5
+        "difficulty": 5,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Direct sunlight.",
+            "Watering: Keep moist between watering. Water when soil is half dry.",
+            "Soil: Use light, airy soil: potting soil mixed with some bark and perlite."
+        ]
     },
     {
         "id": 26,
@@ -1034,7 +1190,13 @@
         "size": "medium",
         "watering_level": 3,
         "lighting_level": 4,
-        "difficulty": 4
+        "difficulty": 4,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Keep moist between watering. Water when soil is half dry.",
+            "Soil: Use light, airy soil: potting soil mixed with some bark and perlite."
+        ]
     },
     {
         "id": 27,
@@ -1074,7 +1236,13 @@
         "size": "medium",
         "watering_level": 3,
         "lighting_level": 4,
-        "difficulty": 4
+        "difficulty": 4,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Keep moist between watering. Water when soil is half dry.",
+            "Soil: Use light, airy soil: potting soil mixed with some bark and perlite."
+        ]
     },
     {
         "id": 28,
@@ -1109,7 +1277,13 @@
         "size": "medium",
         "watering_level": 3,
         "lighting_level": 5,
-        "difficulty": 4
+        "difficulty": 4,
+        "tips": [
+            "Ideal light: 6 or more hours of direct sunlight per day.",
+            "Tolerated light: Direct sunlight.",
+            "Watering: Keep moist between watering. Water when soil is half dry.",
+            "Soil: Use regular indoor potting soil with good drainage."
+        ]
     },
     {
         "id": 29,
@@ -1149,7 +1323,13 @@
         "size": "big",
         "watering_level": 3,
         "lighting_level": 4,
-        "difficulty": 5
+        "difficulty": 5,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Keep moist between watering. Water when soil is half dry.",
+            "Soil: Use light, airy soil: potting soil mixed with some bark and perlite."
+        ]
     },
     {
         "id": 30,
@@ -1189,7 +1369,13 @@
         "size": "big",
         "watering_level": 3,
         "lighting_level": 4,
-        "difficulty": 5
+        "difficulty": 5,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Keep moist between watering. Water when soil is half dry.",
+            "Soil: Use light, airy soil: potting soil mixed with some bark and perlite."
+        ]
     },
     {
         "id": 31,
@@ -1229,7 +1415,13 @@
         "size": "medium",
         "watering_level": 3,
         "lighting_level": 4,
-        "difficulty": 4
+        "difficulty": 4,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Keep moist between watering. Water when soil is half dry.",
+            "Soil: Use light, airy soil: potting soil mixed with some bark and perlite."
+        ]
     },
     {
         "id": 32,
@@ -1269,7 +1461,13 @@
         "size": "medium",
         "watering_level": 3,
         "lighting_level": 4,
-        "difficulty": 4
+        "difficulty": 4,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Keep moist between watering. Water when soil is half dry.",
+            "Soil: Use light, airy soil: potting soil mixed with some bark and perlite."
+        ]
     },
     {
         "id": 33,
@@ -1305,7 +1503,13 @@
         "size": "small",
         "watering_level": 2,
         "lighting_level": 4,
-        "difficulty": 3
+        "difficulty": 3,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Water when soil is half dry. Can be dry between watering.",
+            "Soil: Use regular indoor potting soil with good drainage."
+        ]
     },
     {
         "id": 34,
@@ -1341,7 +1545,13 @@
         "size": "small",
         "watering_level": 2,
         "lighting_level": 4,
-        "difficulty": 3
+        "difficulty": 3,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Water when soil is half dry. Can be dry between watering.",
+            "Soil: Use light, airy soil: potting soil mixed with some bark and perlite."
+        ]
     },
     {
         "id": 35,
@@ -1376,7 +1586,13 @@
         "size": "giant",
         "watering_level": 5,
         "lighting_level": 4,
-        "difficulty": 5
+        "difficulty": 5,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Keep moist between watering. Must not be dry between watering",
+            "Soil: Use rich potting soil with some sand or perlite so water drains well."
+        ]
     },
     {
         "id": 36,
@@ -1411,7 +1627,13 @@
         "size": "medium",
         "watering_level": 3,
         "lighting_level": 5,
-        "difficulty": 4
+        "difficulty": 4,
+        "tips": [
+            "Ideal light: 6 or more hours of direct sunlight per day.",
+            "Tolerated light: Direct sunlight.",
+            "Watering: Keep moist between watering. Water when soil is half dry.",
+            "Soil: Use regular indoor potting soil with good drainage."
+        ]
     },
     {
         "id": 37,
@@ -1446,7 +1668,13 @@
         "size": "medium",
         "watering_level": 1,
         "lighting_level": 5,
-        "difficulty": 3
+        "difficulty": 3,
+        "tips": [
+            "Ideal light: 6 or more hours of direct sunlight per day.",
+            "Tolerated light: Direct sunlight.",
+            "Watering: Water only when dry or when soil is half dry.",
+            "Soil: Use cactus and succulent soil that drains very quickly."
+        ]
     },
     {
         "id": 38,
@@ -1482,7 +1710,13 @@
         "size": "medium",
         "watering_level": 5,
         "lighting_level": 4,
-        "difficulty": 5
+        "difficulty": 5,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Keep moist between watering. Must not be dry between watering",
+            "Soil: Use soft, rich soil that stays slightly moist."
+        ]
     },
     {
         "id": 39,
@@ -1521,7 +1755,13 @@
         "size": "big",
         "watering_level": 3,
         "lighting_level": 4,
-        "difficulty": 4
+        "difficulty": 4,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Keep moist between watering. Water when soil is half dry.",
+            "Soil: Use rich potting soil with some sand or perlite so water drains well."
+        ]
     },
     {
         "id": 40,
@@ -1557,7 +1797,13 @@
         "size": "small",
         "watering_level": 3,
         "lighting_level": 4,
-        "difficulty": 4
+        "difficulty": 4,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Keep moist between watering. Water when soil is half dry.",
+            "Soil: Use regular indoor potting soil with good drainage."
+        ]
     },
     {
         "id": 41,
@@ -1594,7 +1840,13 @@
         "size": "small",
         "watering_level": 3,
         "lighting_level": 4,
-        "difficulty": 4
+        "difficulty": 4,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Keep moist between watering. Water when soil is half dry.",
+            "Soil: Use regular indoor potting soil with good drainage."
+        ]
     },
     {
         "id": 42,
@@ -1631,7 +1883,13 @@
         "size": "big",
         "watering_level": 3,
         "lighting_level": 5,
-        "difficulty": 5
+        "difficulty": 5,
+        "tips": [
+            "Ideal light: 6 or more hours of direct sunlight per day.",
+            "Tolerated light: Direct sunlight.",
+            "Watering: Keep moist between watering. Water when soil is half dry.",
+            "Soil: Use regular indoor potting soil with good drainage."
+        ]
     },
     {
         "id": 43,
@@ -1667,7 +1925,13 @@
         "size": "big",
         "watering_level": 3,
         "lighting_level": 4,
-        "difficulty": 4
+        "difficulty": 4,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Keep moist between watering. Water when soil is half dry.",
+            "Soil: Use rich potting soil with some sand or perlite so water drains well."
+        ]
     },
     {
         "id": 44,
@@ -1706,7 +1970,13 @@
         "size": "medium",
         "watering_level": 3,
         "lighting_level": 4,
-        "difficulty": 4
+        "difficulty": 4,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Keep moist between watering. Water when soil is half dry.",
+            "Soil: Use light, airy soil: potting soil mixed with some bark and perlite."
+        ]
     },
     {
         "id": 45,
@@ -1747,7 +2017,13 @@
         "size": "small",
         "watering_level": 2,
         "lighting_level": 4,
-        "difficulty": 4
+        "difficulty": 4,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Water when soil is half dry. Can be dry between watering.",
+            "Soil: Use light, airy soil: potting soil mixed with some bark and perlite."
+        ]
     },
     {
         "id": 46,
@@ -1787,7 +2063,13 @@
         "size": "medium",
         "watering_level": 2,
         "lighting_level": 4,
-        "difficulty": 4
+        "difficulty": 4,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Water when soil is half dry. Can be dry between watering.",
+            "Soil: Use light, airy soil: potting soil mixed with some bark and perlite."
+        ]
     },
     {
         "id": 47,
@@ -1823,7 +2105,13 @@
         "size": "small",
         "watering_level": 4,
         "lighting_level": 4,
-        "difficulty": 5
+        "difficulty": 5,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Keep moist between watering. Can dry between watering",
+            "Soil: Use regular indoor potting soil with good drainage."
+        ]
     },
     {
         "id": 48,
@@ -1858,7 +2146,13 @@
         "size": "medium",
         "watering_level": 1,
         "lighting_level": 5,
-        "difficulty": 3
+        "difficulty": 3,
+        "tips": [
+            "Ideal light: 6 or more hours of direct sunlight per day.",
+            "Tolerated light: Direct sunlight.",
+            "Watering: Water only when dry or when soil is half dry.",
+            "Soil: Use cactus and succulent soil that drains very quickly."
+        ]
     },
     {
         "id": 49,
@@ -1893,7 +2187,13 @@
         "size": "big",
         "watering_level": 3,
         "lighting_level": 4,
-        "difficulty": 4
+        "difficulty": 4,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Keep moist between watering. Water when soil is half dry.",
+            "Soil: Use rich potting soil with some sand or perlite so water drains well."
+        ]
     },
     {
         "id": 50,
@@ -1929,7 +2229,13 @@
         "size": "small",
         "watering_level": 3,
         "lighting_level": 4,
-        "difficulty": 4
+        "difficulty": 4,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Keep moist between watering. Water when soil is half dry.",
+            "Soil: Use regular indoor potting soil with good drainage."
+        ]
     },
     {
         "id": 51,
@@ -1964,7 +2270,13 @@
         "size": "medium",
         "watering_level": 3,
         "lighting_level": 5,
-        "difficulty": 4
+        "difficulty": 4,
+        "tips": [
+            "Ideal light: 6 or more hours of direct sunlight per day.",
+            "Tolerated light: Direct sunlight.",
+            "Watering: Keep moist between watering. Water when soil is half dry.",
+            "Soil: Use regular indoor potting soil with good drainage."
+        ]
     },
     {
         "id": 52,
@@ -2000,7 +2312,13 @@
         "size": "small",
         "watering_level": 3,
         "lighting_level": 4,
-        "difficulty": 4
+        "difficulty": 4,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Keep moist between watering. Water when soil is half dry.",
+            "Soil: Use regular indoor potting soil with good drainage."
+        ]
     },
     {
         "id": 53,
@@ -2039,7 +2357,13 @@
         "size": "medium",
         "watering_level": 3,
         "lighting_level": 4,
-        "difficulty": 4
+        "difficulty": 4,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Keep moist between watering. Water when soil is half dry.",
+            "Soil: Use light, airy soil: potting soil mixed with some bark and perlite."
+        ]
     },
     {
         "id": 54,
@@ -2071,7 +2395,13 @@
         "size": "medium",
         "watering_level": 1,
         "lighting_level": 5,
-        "difficulty": 3
+        "difficulty": 3,
+        "tips": [
+            "Ideal light: 6 or more hours of direct sunlight per day.",
+            "Tolerated light: Direct sunlight.",
+            "Watering: Water only when the soil is dry. Must be dry between watering",
+            "Soil: Use cactus and succulent soil that drains very quickly."
+        ]
     },
     {
         "id": 55,
@@ -2110,7 +2440,13 @@
         "size": "giant",
         "watering_level": 3,
         "lighting_level": 4,
-        "difficulty": 5
+        "difficulty": 5,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Keep moist between watering. Water when soil is half dry.",
+            "Soil: Use light, airy soil: potting soil mixed with some bark and perlite."
+        ]
     },
     {
         "id": 56,
@@ -2145,7 +2481,13 @@
         "size": "small",
         "watering_level": 4,
         "lighting_level": 4,
-        "difficulty": 5
+        "difficulty": 5,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Keep moist between watering. Can dry between watering",
+            "Soil: Use rich potting soil that stays evenly, slightly moist."
+        ]
     },
     {
         "id": 57,
@@ -2183,7 +2525,13 @@
         "size": "big",
         "watering_level": 2,
         "lighting_level": 4,
-        "difficulty": 4
+        "difficulty": 4,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Water when soil is half dry. Can be dry between watering.",
+            "Soil: Use light, airy soil: potting soil mixed with some bark and perlite."
+        ]
     },
     {
         "id": 58,
@@ -2216,7 +2564,13 @@
         "size": "big",
         "watering_level": 3,
         "lighting_level": 4,
-        "difficulty": 4
+        "difficulty": 4,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Keep moist between watering. Water when soil is half dry.",
+            "Soil: Use rich potting soil with some sand or perlite so water drains well."
+        ]
     },
     {
         "id": 59,
@@ -2253,7 +2607,13 @@
         "size": "small",
         "watering_level": 2,
         "lighting_level": 4,
-        "difficulty": 3
+        "difficulty": 3,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Water when soil is half dry. Can be dry between watering.",
+            "Soil: Use regular indoor potting soil with good drainage."
+        ]
     },
     {
         "id": 60,
@@ -2290,7 +2650,13 @@
         "size": "small",
         "watering_level": 3,
         "lighting_level": 4,
-        "difficulty": 4
+        "difficulty": 4,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Keep moist between watering. Water when soil is half dry.",
+            "Soil: Use regular indoor potting soil with good drainage."
+        ]
     },
     {
         "id": 61,
@@ -2322,7 +2688,13 @@
         "size": "big",
         "watering_level": 5,
         "lighting_level": 4,
-        "difficulty": 5
+        "difficulty": 5,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Keep moist between watering. Must not be dry between watering",
+            "Soil: Use soft, rich soil that stays slightly moist."
+        ]
     },
     {
         "id": 62,
@@ -2362,7 +2734,13 @@
         "size": "big",
         "watering_level": 2,
         "lighting_level": 4,
-        "difficulty": 4
+        "difficulty": 4,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Water when soil is half dry. Can be dry between watering.",
+            "Soil: Use light, airy soil: potting soil mixed with some bark and perlite."
+        ]
     },
     {
         "id": 63,
@@ -2394,7 +2772,13 @@
         "size": "small",
         "watering_level": 3,
         "lighting_level": 4,
-        "difficulty": 4
+        "difficulty": 4,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Keep moist between watering. Water when soil is half dry.",
+            "Soil: Use regular indoor potting soil with good drainage."
+        ]
     },
     {
         "id": 64,
@@ -2429,7 +2813,13 @@
         "size": "medium",
         "watering_level": 5,
         "lighting_level": 5,
-        "difficulty": 5
+        "difficulty": 5,
+        "tips": [
+            "Ideal light: 6 or more hours of direct sunlight per day.",
+            "Tolerated light: Diffused",
+            "Watering: Keep moist between watering. Must not be dry between watering",
+            "Soil: Use soft, rich soil that stays slightly moist."
+        ]
     },
     {
         "id": 65,
@@ -2468,7 +2858,13 @@
         "size": "small",
         "watering_level": 4,
         "lighting_level": 4,
-        "difficulty": 5
+        "difficulty": 5,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Keep moist between watering. Can dry between watering",
+            "Soil: Use light, airy soil: potting soil mixed with some bark and perlite."
+        ]
     },
     {
         "id": 66,
@@ -2507,7 +2903,13 @@
         "size": "medium",
         "watering_level": 4,
         "lighting_level": 4,
-        "difficulty": 5
+        "difficulty": 5,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Keep moist between watering. Can dry between watering",
+            "Soil: Use light, airy soil: potting soil mixed with some bark and perlite."
+        ]
     },
     {
         "id": 67,
@@ -2544,7 +2946,13 @@
         "size": "medium",
         "watering_level": 4,
         "lighting_level": 4,
-        "difficulty": 4
+        "difficulty": 4,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Keep moist between watering. Can dry between watering",
+            "Soil: Use rich potting soil that stays evenly, slightly moist."
+        ]
     },
     {
         "id": 68,
@@ -2579,7 +2987,13 @@
         "size": "big",
         "watering_level": 4,
         "lighting_level": 4,
-        "difficulty": 5
+        "difficulty": 5,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Keep moist between watering. Can dry between watering",
+            "Soil: Use rich potting soil that stays evenly, slightly moist."
+        ]
     },
     {
         "id": 69,
@@ -2614,7 +3028,13 @@
         "size": "medium",
         "watering_level": 4,
         "lighting_level": 4,
-        "difficulty": 4
+        "difficulty": 4,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Keep moist between watering. Can dry between watering",
+            "Soil: Use rich potting soil that stays evenly, slightly moist."
+        ]
     },
     {
         "id": 70,
@@ -2644,7 +3064,13 @@
         "size": "medium",
         "watering_level": 2,
         "lighting_level": 5,
-        "difficulty": 4
+        "difficulty": 4,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Direct sunlight",
+            "Watering: Can be dry between watering. Water when soil is half dry.",
+            "Soil: Use a very airy mix, mostly bark with little soil."
+        ]
     },
     {
         "id": 71,
@@ -2677,7 +3103,13 @@
         "size": "big",
         "watering_level": 3,
         "lighting_level": 5,
-        "difficulty": 5
+        "difficulty": 5,
+        "tips": [
+            "Ideal light: 6 or more hours of direct sunlight per day.",
+            "Tolerated light: Direct sunlight.",
+            "Watering: Keep moist between watering. Water when soil is half dry.",
+            "Soil: Use regular indoor potting soil with good drainage."
+        ]
     },
     {
         "id": 72,
@@ -2716,7 +3148,13 @@
         "size": "small",
         "watering_level": 4,
         "lighting_level": 4,
-        "difficulty": 5
+        "difficulty": 5,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Keep moist between watering. Can dry between watering",
+            "Soil: Use light, airy soil: potting soil mixed with some bark and perlite."
+        ]
     },
     {
         "id": 73,
@@ -2749,7 +3187,13 @@
         "size": "medium",
         "watering_level": 3,
         "lighting_level": 4,
-        "difficulty": 4
+        "difficulty": 4,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Keep moist between watering. Water when soil is half dry.",
+            "Soil: Use regular indoor potting soil with good drainage."
+        ]
     },
     {
         "id": 74,
@@ -2785,7 +3229,13 @@
         "size": "giant",
         "watering_level": 2,
         "lighting_level": 5,
-        "difficulty": 5
+        "difficulty": 5,
+        "tips": [
+            "Ideal light: Prefers bright, indirect sunlight.",
+            "Tolerated light: /",
+            "Watering: Water when soil is half dry. Can be dry between watering.",
+            "Soil: Use rich potting soil with some sand or perlite so water drains well."
+        ]
     },
     {
         "id": 75,
@@ -2817,7 +3267,13 @@
         "size": "medium",
         "watering_level": 1,
         "lighting_level": 5,
-        "difficulty": 3
+        "difficulty": 3,
+        "tips": [
+            "Ideal light: 6 or more hours of direct sunlight per day.",
+            "Tolerated light: Direct sunlight.",
+            "Watering: Water only when the soil is dry. Must be dry between watering",
+            "Soil: Use cactus and succulent soil that drains very quickly."
+        ]
     },
     {
         "id": 76,
@@ -2852,7 +3308,13 @@
         "size": "medium",
         "watering_level": 5,
         "lighting_level": 4,
-        "difficulty": 5
+        "difficulty": 5,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Keep moist between watering. Must not be dry between watering",
+            "Soil: Use rich potting soil that stays evenly, slightly moist."
+        ]
     },
     {
         "id": 77,
@@ -2884,7 +3346,13 @@
         "size": "small",
         "watering_level": 3,
         "lighting_level": 4,
-        "difficulty": 4
+        "difficulty": 4,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Keep moist between watering. Water when soil is half dry.",
+            "Soil: Use regular indoor potting soil with good drainage."
+        ]
     },
     {
         "id": 78,
@@ -2920,7 +3388,13 @@
         "size": "medium",
         "watering_level": 4,
         "lighting_level": 4,
-        "difficulty": 4
+        "difficulty": 4,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Keep moist between watering. Can dry between watering",
+            "Soil: Use rich potting soil that stays evenly, slightly moist."
+        ]
     },
     {
         "id": 79,
@@ -2955,7 +3429,13 @@
         "size": "small",
         "watering_level": 3,
         "lighting_level": 4,
-        "difficulty": 4
+        "difficulty": 4,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Keep moist between watering. Water when soil is half dry.",
+            "Soil: Use soft, rich soil that stays slightly moist."
+        ]
     },
     {
         "id": 80,
@@ -2992,7 +3472,13 @@
         "size": "medium",
         "watering_level": 4,
         "lighting_level": 4,
-        "difficulty": 4
+        "difficulty": 4,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Keep moist between watering. Can dry between watering",
+            "Soil: Use rich potting soil that stays evenly, slightly moist."
+        ]
     },
     {
         "id": 81,
@@ -3028,7 +3514,13 @@
         "size": "small",
         "watering_level": 2,
         "lighting_level": 4,
-        "difficulty": 3
+        "difficulty": 3,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Water when soil is half dry. Can be dry between watering.",
+            "Soil: Use soft, rich soil that stays slightly moist."
+        ]
     },
     {
         "id": 82,
@@ -3064,7 +3556,13 @@
         "size": "big",
         "watering_level": 4,
         "lighting_level": 4,
-        "difficulty": 5
+        "difficulty": 5,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Keep moist between watering. Can dry between watering",
+            "Soil: Use rich potting soil that stays evenly, slightly moist."
+        ]
     },
     {
         "id": 83,
@@ -3100,7 +3598,13 @@
         "size": "medium",
         "watering_level": 4,
         "lighting_level": 4,
-        "difficulty": 4
+        "difficulty": 4,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Keep moist between watering. Can dry between watering",
+            "Soil: Use rich potting soil that stays evenly, slightly moist."
+        ]
     },
     {
         "id": 84,
@@ -3136,7 +3640,13 @@
         "size": "medium",
         "watering_level": 4,
         "lighting_level": 4,
-        "difficulty": 4
+        "difficulty": 4,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Keep moist between watering. Can dry between watering",
+            "Soil: Use rich potting soil that stays evenly, slightly moist."
+        ]
     },
     {
         "id": 85,
@@ -3172,7 +3682,13 @@
         "size": "small",
         "watering_level": 4,
         "lighting_level": 4,
-        "difficulty": 4
+        "difficulty": 4,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Keep moist between watering. Can dry between watering",
+            "Soil: Use rich potting soil that stays evenly, slightly moist."
+        ]
     },
     {
         "id": 86,
@@ -3211,7 +3727,13 @@
         "size": "small",
         "watering_level": 4,
         "lighting_level": 4,
-        "difficulty": 5
+        "difficulty": 5,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Keep moist between watering. Can dry between watering",
+            "Soil: Use light, airy soil: potting soil mixed with some bark and perlite."
+        ]
     },
     {
         "id": 87,
@@ -3250,7 +3772,13 @@
         "size": "medium",
         "watering_level": 4,
         "lighting_level": 4,
-        "difficulty": 5
+        "difficulty": 5,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Keep moist between watering. Can dry between watering",
+            "Soil: Use light, airy soil: potting soil mixed with some bark and perlite."
+        ]
     },
     {
         "id": 88,
@@ -3286,7 +3814,13 @@
         "size": "medium",
         "watering_level": 4,
         "lighting_level": 5,
-        "difficulty": 5
+        "difficulty": 5,
+        "tips": [
+            "Ideal light: 6 or more hours of direct sunlight per day.",
+            "Tolerated light: Direct sunlight.",
+            "Watering: Keep moist between watering. Can dry between watering",
+            "Soil: Use rich potting soil that stays evenly, slightly moist."
+        ]
     },
     {
         "id": 89,
@@ -3323,7 +3857,13 @@
         "size": "big",
         "watering_level": 5,
         "lighting_level": 5,
-        "difficulty": 5
+        "difficulty": 5,
+        "tips": [
+            "Ideal light: 6 or more hours of direct sunlight per day.",
+            "Tolerated light: Direct sunlight.",
+            "Watering: Keep moist between watering. Must not be dry between watering",
+            "Soil: Use rich potting soil with some sand or perlite so water drains well."
+        ]
     },
     {
         "id": 90,
@@ -3355,7 +3895,13 @@
         "size": "small",
         "watering_level": 3,
         "lighting_level": 5,
-        "difficulty": 4
+        "difficulty": 4,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Direct sunlight",
+            "Watering: Keep moist between watering. Water when soil is half dry.",
+            "Soil: Use cactus and succulent soil that drains very quickly."
+        ]
     },
     {
         "id": 91,
@@ -3391,7 +3937,13 @@
         "size": "medium",
         "watering_level": 1,
         "lighting_level": 5,
-        "difficulty": 3
+        "difficulty": 3,
+        "tips": [
+            "Ideal light: 6 or more hours of direct sunlight per day.",
+            "Tolerated light: /",
+            "Watering: Water only when dry. Must be dry between watering",
+            "Soil: Use cactus and succulent soil that drains very quickly."
+        ]
     },
     {
         "id": 92,
@@ -3430,7 +3982,13 @@
         "size": "small",
         "watering_level": 1,
         "lighting_level": 5,
-        "difficulty": 4
+        "difficulty": 4,
+        "tips": [
+            "Ideal light: 6 or more hours of direct sunlight per day.",
+            "Tolerated light: Direct sunlight.",
+            "Watering: Water only when the soil is dry. Must be dry between watering",
+            "Soil: Use cactus and succulent soil that drains very quickly."
+        ]
     },
     {
         "id": 93,
@@ -3465,7 +4023,13 @@
         "size": "small",
         "watering_level": 3,
         "lighting_level": 4,
-        "difficulty": 4
+        "difficulty": 4,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Keep moist between watering. Water when soil is half dry.",
+            "Soil: Use light, airy soil: potting soil mixed with some bark and perlite."
+        ]
     },
     {
         "id": 94,
@@ -3498,7 +4062,13 @@
         "size": "small",
         "watering_level": 2,
         "lighting_level": 4,
-        "difficulty": 3
+        "difficulty": 3,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Water when soil is half dry. Change water in the vase regularly.",
+            "Soil: Use a very airy mix, mostly bark with little soil."
+        ]
     },
     {
         "id": 95,
@@ -3535,7 +4105,13 @@
         "size": "giant",
         "watering_level": 5,
         "lighting_level": 5,
-        "difficulty": 5
+        "difficulty": 5,
+        "tips": [
+            "Ideal light: 6 or more hours of direct sunlight per day.",
+            "Tolerated light: Direct sunlight.",
+            "Watering: Keep moist between watering. Must not be dry between watering",
+            "Soil: Use rich potting soil that stays evenly, slightly moist."
+        ]
     },
     {
         "id": 96,
@@ -3568,7 +4144,13 @@
         "size": "small",
         "watering_level": 2,
         "lighting_level": 4,
-        "difficulty": 3
+        "difficulty": 3,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Water when soil is half dry. Change water in the vase regularly.",
+            "Soil: Use a very airy mix, mostly bark with little soil."
+        ]
     },
     {
         "id": 97,
@@ -3604,7 +4186,13 @@
         "size": "big",
         "watering_level": 5,
         "lighting_level": 5,
-        "difficulty": 5
+        "difficulty": 5,
+        "tips": [
+            "Ideal light: 6 or more hours of direct sunlight per day.",
+            "Tolerated light: Direct sunlight.",
+            "Watering: Keep moist between watering. Must not be dry between watering",
+            "Soil: Use rich potting soil that stays evenly, slightly moist."
+        ]
     },
     {
         "id": 98,
@@ -3640,7 +4228,13 @@
         "size": "medium",
         "watering_level": 3,
         "lighting_level": 5,
-        "difficulty": 4
+        "difficulty": 4,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Direct sunlight",
+            "Watering: Keep moist between watering. Water when soil is half dry.",
+            "Soil: Use regular indoor potting soil with good drainage."
+        ]
     },
     {
         "id": 99,
@@ -3675,7 +4269,13 @@
         "size": "medium",
         "watering_level": 1,
         "lighting_level": 5,
-        "difficulty": 4
+        "difficulty": 4,
+        "tips": [
+            "Ideal light: 6 or more hours of direct sunlight per day.",
+            "Tolerated light: Direct sunlight.",
+            "Watering: Must be dry between watering. Water only when dry.",
+            "Soil: Use cactus and succulent soil that drains very quickly."
+        ]
     },
     {
         "id": 100,
@@ -3712,7 +4312,13 @@
         "size": "medium",
         "watering_level": 5,
         "lighting_level": 5,
-        "difficulty": 5
+        "difficulty": 5,
+        "tips": [
+            "Ideal light: 6 or more hours of direct sunlight per day.",
+            "Tolerated light: Direct sunlight.",
+            "Watering: Keep moist between watering. Must not be dry between watering",
+            "Soil: Use rich potting soil that stays evenly, slightly moist."
+        ]
     },
     {
         "id": 101,
@@ -3745,7 +4351,13 @@
         "size": "small",
         "watering_level": 2,
         "lighting_level": 4,
-        "difficulty": 3
+        "difficulty": 3,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Water when soil is half dry. Change water in the vase regularly.",
+            "Soil: Use a very airy mix, mostly bark with little soil."
+        ]
     },
     {
         "id": 102,
@@ -3781,7 +4393,13 @@
         "size": "big",
         "watering_level": 4,
         "lighting_level": 5,
-        "difficulty": 5
+        "difficulty": 5,
+        "tips": [
+            "Ideal light: 6 or more hours of direct sunlight per day.",
+            "Tolerated light: Direct sunlight.",
+            "Watering: Keep moist between watering. Can dry between watering",
+            "Soil: Use rich potting soil that stays evenly, slightly moist."
+        ]
     },
     {
         "id": 103,
@@ -3818,7 +4436,13 @@
         "size": "small",
         "watering_level": 3,
         "lighting_level": 4,
-        "difficulty": 4
+        "difficulty": 4,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Keep moist between watering. Water when soil is half dry.",
+            "Soil: Use regular indoor potting soil with good drainage."
+        ]
     },
     {
         "id": 104,
@@ -3852,7 +4476,13 @@
         "size": "small",
         "watering_level": 3,
         "lighting_level": 4,
-        "difficulty": 4
+        "difficulty": 4,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Keep moist between watering. Water when soil is half dry.",
+            "Soil: Use light, airy soil: potting soil mixed with some bark and perlite."
+        ]
     },
     {
         "id": 105,
@@ -3888,7 +4518,13 @@
         "size": "giant",
         "watering_level": 3,
         "lighting_level": 5,
-        "difficulty": 5
+        "difficulty": 5,
+        "tips": [
+            "Ideal light: 6 or more hours of direct sunlight per day.",
+            "Tolerated light: Direct sunlight.",
+            "Watering: Keep moist between watering. Water when soil is half dry.",
+            "Soil: Use regular indoor potting soil with good drainage."
+        ]
     },
     {
         "id": 106,
@@ -3920,7 +4556,13 @@
         "size": "medium",
         "watering_level": 1,
         "lighting_level": 5,
-        "difficulty": 4
+        "difficulty": 4,
+        "tips": [
+            "Ideal light: 6 or more hours of direct sunlight per day.",
+            "Tolerated light: Direct sunlight.",
+            "Watering: Water only when the soil is dry. Must be dry between watering",
+            "Soil: Use cactus and succulent soil that drains very quickly."
+        ]
     },
     {
         "id": 107,
@@ -3957,7 +4599,13 @@
         "size": "big",
         "watering_level": 5,
         "lighting_level": 5,
-        "difficulty": 5
+        "difficulty": 5,
+        "tips": [
+            "Ideal light: 6 or more hours of direct sunlight per day.",
+            "Tolerated light: Direct sunlight.",
+            "Watering: Keep moist between watering. Must not be dry between watering",
+            "Soil: Use rich potting soil that stays evenly, slightly moist."
+        ]
     },
     {
         "id": 108,
@@ -3990,7 +4638,13 @@
         "size": "small",
         "watering_level": 2,
         "lighting_level": 4,
-        "difficulty": 3
+        "difficulty": 3,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Water when soil is half dry. Change water in the vase regularly.",
+            "Soil: Use a very airy mix, mostly bark with little soil."
+        ]
     },
     {
         "id": 109,
@@ -4026,7 +4680,13 @@
         "size": "giant",
         "watering_level": 5,
         "lighting_level": 5,
-        "difficulty": 5
+        "difficulty": 5,
+        "tips": [
+            "Ideal light: 6 or more hours of direct sunlight per day.",
+            "Tolerated light: Direct sunlight.",
+            "Watering: Keep moist between watering. Must not be dry between watering",
+            "Soil: Use rich potting soil that stays evenly, slightly moist."
+        ]
     },
     {
         "id": 110,
@@ -4059,7 +4719,13 @@
         "size": "small",
         "watering_level": 2,
         "lighting_level": 4,
-        "difficulty": 3
+        "difficulty": 3,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Water when soil is half dry. Change water in the vase regularly.",
+            "Soil: Use a very airy mix, mostly bark with little soil."
+        ]
     },
     {
         "id": 111,
@@ -4096,7 +4762,13 @@
         "size": "big",
         "watering_level": 5,
         "lighting_level": 5,
-        "difficulty": 5
+        "difficulty": 5,
+        "tips": [
+            "Ideal light: 6 or more hours of direct sunlight per day.",
+            "Tolerated light: Direct sunlight.",
+            "Watering: Keep moist between watering. Must not be dry between watering",
+            "Soil: Use rich potting soil that stays evenly, slightly moist."
+        ]
     },
     {
         "id": 112,
@@ -4129,7 +4801,13 @@
         "size": "small",
         "watering_level": 2,
         "lighting_level": 4,
-        "difficulty": 3
+        "difficulty": 3,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Water when soil is half dry. Change water in the vase regularly.",
+            "Soil: Use a very airy mix, mostly bark with little soil."
+        ]
     },
     {
         "id": 113,
@@ -4165,7 +4843,13 @@
         "size": "big",
         "watering_level": 4,
         "lighting_level": 5,
-        "difficulty": 5
+        "difficulty": 5,
+        "tips": [
+            "Ideal light: 6 or more hours of direct sunlight per day.",
+            "Tolerated light: Direct sunlight.",
+            "Watering: Keep moist between watering. Can dry between watering",
+            "Soil: Use rich potting soil that stays evenly, slightly moist."
+        ]
     },
     {
         "id": 114,
@@ -4195,7 +4879,13 @@
         "size": "medium",
         "watering_level": 1,
         "lighting_level": 5,
-        "difficulty": 4
+        "difficulty": 4,
+        "tips": [
+            "Ideal light: 6 or more hours of direct sunlight per day.",
+            "Tolerated light: Direct sunlight.",
+            "Watering: Water only when the soil is dry. Must be dry between watering",
+            "Soil: Use cactus and succulent soil that drains very quickly."
+        ]
     },
     {
         "id": 115,
@@ -4231,7 +4921,13 @@
         "size": "small",
         "watering_level": 3,
         "lighting_level": 4,
-        "difficulty": 4
+        "difficulty": 4,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Keep moist between watering. Water when soil is half dry.",
+            "Soil: Use regular indoor potting soil with good drainage."
+        ]
     },
     {
         "id": 116,
@@ -4264,7 +4960,13 @@
         "size": "small",
         "watering_level": 3,
         "lighting_level": 4,
-        "difficulty": 4
+        "difficulty": 4,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Keep moist between watering. Water when soil is half dry.",
+            "Soil: Use regular indoor potting soil with good drainage."
+        ]
     },
     {
         "id": 117,
@@ -4300,7 +5002,13 @@
         "size": "small",
         "watering_level": 3,
         "lighting_level": 4,
-        "difficulty": 4
+        "difficulty": 4,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Keep moist between watering. Water when soil is half dry.",
+            "Soil: Use regular indoor potting soil with good drainage."
+        ]
     },
     {
         "id": 118,
@@ -4333,7 +5041,13 @@
         "size": "big",
         "watering_level": 2,
         "lighting_level": 4,
-        "difficulty": 4
+        "difficulty": 4,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Water when soil is half dry. Can be dry between watering.",
+            "Soil: Use light, airy soil: potting soil mixed with some bark and perlite."
+        ]
     },
     {
         "id": 119,
@@ -4367,7 +5081,13 @@
         "size": "medium",
         "watering_level": 5,
         "lighting_level": 5,
-        "difficulty": 5
+        "difficulty": 5,
+        "tips": [
+            "Ideal light: 6 or more hours of direct sunlight per day.",
+            "Tolerated light: Direct sunlight.",
+            "Watering: Keep moist between watering. Must not be dry between watering",
+            "Soil: Use rich potting soil that stays evenly, slightly moist."
+        ]
     },
     {
         "id": 120,
@@ -4401,7 +5121,13 @@
         "size": "small",
         "watering_level": 3,
         "lighting_level": 4,
-        "difficulty": 4
+        "difficulty": 4,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: /",
+            "Watering: Keep moist between watering. Water when soil is half dry.",
+            "Soil: Use regular indoor potting soil with good drainage."
+        ]
     },
     {
         "id": 121,
@@ -4436,7 +5162,13 @@
         "size": "small",
         "watering_level": 3,
         "lighting_level": 5,
-        "difficulty": 4
+        "difficulty": 4,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Direct sunlight",
+            "Watering: Keep moist between watering. Water when soil is half dry.",
+            "Soil: Use regular indoor potting soil with good drainage."
+        ]
     },
     {
         "id": 122,
@@ -4469,7 +5201,13 @@
         "size": "medium",
         "watering_level": 5,
         "lighting_level": 5,
-        "difficulty": 5
+        "difficulty": 5,
+        "tips": [
+            "Ideal light: 6 or more hours of direct sunlight per day.",
+            "Tolerated light: Direct sunlight.",
+            "Watering: Keep moist between watering. Must not be dry between watering",
+            "Soil: Use regular indoor potting soil with good drainage."
+        ]
     },
     {
         "id": 123,
@@ -4505,7 +5243,13 @@
         "size": "small",
         "watering_level": 3,
         "lighting_level": 4,
-        "difficulty": 4
+        "difficulty": 4,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Keep moist between watering. Water when soil is half dry.",
+            "Soil: Use regular indoor potting soil with good drainage."
+        ]
     },
     {
         "id": 124,
@@ -4536,7 +5280,13 @@
         "size": "small",
         "watering_level": 5,
         "lighting_level": 4,
-        "difficulty": 5
+        "difficulty": 5,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Keep moist between watering. Must not be dry between watering",
+            "Soil: Use soft, rich soil that stays slightly moist."
+        ]
     },
     {
         "id": 125,
@@ -4572,7 +5322,13 @@
         "size": "small",
         "watering_level": 3,
         "lighting_level": 4,
-        "difficulty": 4
+        "difficulty": 4,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Keep moist between watering. Water when soil is half dry.",
+            "Soil: Use regular indoor potting soil with good drainage."
+        ]
     },
     {
         "id": 126,
@@ -4607,7 +5363,13 @@
         "size": "small",
         "watering_level": 2,
         "lighting_level": 4,
-        "difficulty": 3
+        "difficulty": 3,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Water when soil is half dry. Can be dry between watering.",
+            "Soil: Use regular indoor potting soil with good drainage."
+        ]
     },
     {
         "id": 127,
@@ -4644,7 +5406,13 @@
         "size": "medium",
         "watering_level": 5,
         "lighting_level": 5,
-        "difficulty": 5
+        "difficulty": 5,
+        "tips": [
+            "Ideal light: 6 or more hours of direct sunlight per day.",
+            "Tolerated light: /",
+            "Watering: Keep moist between watering. Must not be dry between watering",
+            "Soil: Use regular indoor potting soil with good drainage."
+        ]
     },
     {
         "id": 128,
@@ -4676,7 +5444,13 @@
         "size": "medium",
         "watering_level": 1,
         "lighting_level": 5,
-        "difficulty": 3
+        "difficulty": 3,
+        "tips": [
+            "Ideal light: 6 or more hours of direct sunlight per day.",
+            "Tolerated light: Direct sunlight.",
+            "Watering: Water only when the soil is dry. Must be dry between watering",
+            "Soil: Use cactus and succulent soil that drains very quickly."
+        ]
     },
     {
         "id": 129,
@@ -4711,7 +5485,13 @@
         "size": "big",
         "watering_level": 3,
         "lighting_level": 5,
-        "difficulty": 5
+        "difficulty": 5,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Direct sunlight",
+            "Watering: Keep moist between watering. Water when soil is half dry.",
+            "Soil: Use rich potting soil with some sand or perlite so water drains well."
+        ]
     },
     {
         "id": 130,
@@ -4744,7 +5524,13 @@
         "size": "medium",
         "watering_level": 3,
         "lighting_level": 4,
-        "difficulty": 4
+        "difficulty": 4,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Keep moist between watering. Water when soil is half dry.",
+            "Soil: Use light, airy soil: potting soil mixed with some bark and perlite."
+        ]
     },
     {
         "id": 131,
@@ -4774,7 +5560,13 @@
         "size": "small",
         "watering_level": 2,
         "lighting_level": 4,
-        "difficulty": 3
+        "difficulty": 3,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Change water regularly in the vase. Water when soil is half dry.",
+            "Soil: Use a very airy mix, mostly bark with little soil."
+        ]
     },
     {
         "id": 132,
@@ -4809,7 +5601,13 @@
         "size": "small",
         "watering_level": 3,
         "lighting_level": 5,
-        "difficulty": 4
+        "difficulty": 4,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Direct sunlight",
+            "Watering: Keep moist between watering. Water when soil is half dry.",
+            "Soil: Use regular indoor potting soil with good drainage."
+        ]
     },
     {
         "id": 133,
@@ -4841,7 +5639,13 @@
         "size": "medium",
         "watering_level": 3,
         "lighting_level": 4,
-        "difficulty": 4
+        "difficulty": 4,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Keep moist between watering. Water when soil is half dry.",
+            "Soil: Use light, airy soil: potting soil mixed with some bark and perlite."
+        ]
     },
     {
         "id": 134,
@@ -4874,7 +5678,13 @@
         "size": "small",
         "watering_level": 3,
         "lighting_level": 4,
-        "difficulty": 4
+        "difficulty": 4,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Keep moist between watering. Water when soil is half dry.",
+            "Soil: Use regular indoor potting soil with good drainage."
+        ]
     },
     {
         "id": 135,
@@ -4904,7 +5714,13 @@
         "size": "small",
         "watering_level": 2,
         "lighting_level": 4,
-        "difficulty": 3
+        "difficulty": 3,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Change water regularly in the vase. Water when soil is half dry.",
+            "Soil: Use a very airy mix, mostly bark with little soil."
+        ]
     },
     {
         "id": 136,
@@ -4940,7 +5756,13 @@
         "size": "big",
         "watering_level": 2,
         "lighting_level": 5,
-        "difficulty": 4
+        "difficulty": 4,
+        "tips": [
+            "Ideal light: 6 or more hours of direct sunlight per day.",
+            "Tolerated light: Direct sunlight.",
+            "Watering: Water when soil is half dry. Can be dry between watering.",
+            "Soil: Use regular indoor potting soil with good drainage."
+        ]
     },
     {
         "id": 137,
@@ -4973,7 +5795,13 @@
         "size": "medium",
         "watering_level": 3,
         "lighting_level": 4,
-        "difficulty": 4
+        "difficulty": 4,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Keep moist between watering. Water when soil is half dry.",
+            "Soil: Use light, airy soil: potting soil mixed with some bark and perlite."
+        ]
     },
     {
         "id": 138,
@@ -5006,7 +5834,13 @@
         "size": "small",
         "watering_level": 2,
         "lighting_level": 4,
-        "difficulty": 3
+        "difficulty": 3,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Water when soil is half dry. Can be dry between watering.",
+            "Soil: Use orchid bark mix instead of normal potting soil."
+        ]
     },
     {
         "id": 139,
@@ -5041,7 +5875,13 @@
         "size": "giant",
         "watering_level": 3,
         "lighting_level": 5,
-        "difficulty": 5
+        "difficulty": 5,
+        "tips": [
+            "Ideal light: 6 or more hours of direct sunlight per day.",
+            "Tolerated light: Direct sunlight.",
+            "Watering: Keep moist between watering. Water when soil is half dry.",
+            "Soil: Use rich potting soil with some sand or perlite so water drains well."
+        ]
     },
     {
         "id": 140,
@@ -5076,7 +5916,13 @@
         "size": "small",
         "watering_level": 3,
         "lighting_level": 4,
-        "difficulty": 4
+        "difficulty": 4,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Keep moist between watering. Water when soil is half dry.",
+            "Soil: Use regular indoor potting soil with good drainage."
+        ]
     },
     {
         "id": 141,
@@ -5112,7 +5958,13 @@
         "size": "big",
         "watering_level": 2,
         "lighting_level": 5,
-        "difficulty": 4
+        "difficulty": 4,
+        "tips": [
+            "Ideal light: 6 or more hours of direct sunlight per day.",
+            "Tolerated light: Direct sunlight.",
+            "Watering: Water when soil is half dry. Can be dry between watering.",
+            "Soil: Use regular indoor potting soil with good drainage."
+        ]
     },
     {
         "id": 142,
@@ -5144,7 +5996,13 @@
         "size": "medium",
         "watering_level": 5,
         "lighting_level": 5,
-        "difficulty": 5
+        "difficulty": 5,
+        "tips": [
+            "Ideal light: 6 or more hours of direct sunlight per day.",
+            "Tolerated light: Direct sunlight.",
+            "Watering: Keep moist between watering. Must not be dry between watering",
+            "Soil: Use rich potting soil that stays evenly, slightly moist."
+        ]
     },
     {
         "id": 143,
@@ -5180,7 +6038,13 @@
         "size": "medium",
         "watering_level": 5,
         "lighting_level": 5,
-        "difficulty": 5
+        "difficulty": 5,
+        "tips": [
+            "Ideal light: 6 or more hours of direct sunlight per day.",
+            "Tolerated light: Direct sunlight.",
+            "Watering: Keep moist between watering. Must not be dry between watering",
+            "Soil: Use rich potting soil that stays evenly, slightly moist."
+        ]
     },
     {
         "id": 144,
@@ -5216,7 +6080,13 @@
         "size": "small",
         "watering_level": 3,
         "lighting_level": 4,
-        "difficulty": 4
+        "difficulty": 4,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Keep moist between watering. Water when soil is half dry.",
+            "Soil: Use soft, rich soil that stays slightly moist."
+        ]
     },
     {
         "id": 145,
@@ -5249,7 +6119,13 @@
         "size": "giant",
         "watering_level": 5,
         "lighting_level": 4,
-        "difficulty": 5
+        "difficulty": 5,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Keep moist between watering. Must not be dry between watering",
+            "Soil: Use rich potting soil with some sand or perlite so water drains well."
+        ]
     },
     {
         "id": 146,
@@ -5281,7 +6157,13 @@
         "size": "medium",
         "watering_level": 3,
         "lighting_level": 4,
-        "difficulty": 4
+        "difficulty": 4,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Keep moist between watering. Water when soil is half dry.",
+            "Soil: Use light, airy soil: potting soil mixed with some bark and perlite."
+        ]
     },
     {
         "id": 147,
@@ -5313,7 +6195,13 @@
         "size": "small",
         "watering_level": 3,
         "lighting_level": 4,
-        "difficulty": 4
+        "difficulty": 4,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Keep moist between watering. Water when soil is half dry.",
+            "Soil: Use light, airy soil: potting soil mixed with some bark and perlite."
+        ]
     },
     {
         "id": 148,
@@ -5346,7 +6234,13 @@
         "size": "small",
         "watering_level": 3,
         "lighting_level": 4,
-        "difficulty": 4
+        "difficulty": 4,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: /",
+            "Watering: Keep moist between watering. Water when soil is half dry.",
+            "Soil: Use regular indoor potting soil with good drainage."
+        ]
     },
     {
         "id": 149,
@@ -5379,7 +6273,13 @@
         "size": "medium",
         "watering_level": 3,
         "lighting_level": 5,
-        "difficulty": 4
+        "difficulty": 4,
+        "tips": [
+            "Ideal light: 6 or more hours of direct sunlight per day.",
+            "Tolerated light: Direct sunlight.",
+            "Watering: Keep moist between watering. Water when soil is half dry.",
+            "Soil: Use regular indoor potting soil with good drainage."
+        ]
     },
     {
         "id": 150,
@@ -5409,7 +6309,13 @@
         "size": "small",
         "watering_level": 2,
         "lighting_level": 4,
-        "difficulty": 3
+        "difficulty": 3,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Change water regularly in the vase. Water when soil is half dry.",
+            "Soil: Use a very airy mix, mostly bark with little soil."
+        ]
     },
     {
         "id": 151,
@@ -5441,7 +6347,13 @@
         "size": "small",
         "watering_level": 3,
         "lighting_level": 5,
-        "difficulty": 4
+        "difficulty": 4,
+        "tips": [
+            "Ideal light: 6 or more hours of direct sunlight per day.",
+            "Tolerated light: Direct sunlight.",
+            "Watering: Keep moist between watering. Water when soil is half dry.",
+            "Soil: Use regular indoor potting soil with good drainage."
+        ]
     },
     {
         "id": 152,
@@ -5473,7 +6385,13 @@
         "size": "small",
         "watering_level": 5,
         "lighting_level": 4,
-        "difficulty": 4
+        "difficulty": 4,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: /",
+            "Watering: Keep moist between watering. Must not be dry between watering",
+            "Soil: Use soft, rich soil that stays slightly moist."
+        ]
     },
     {
         "id": 153,
@@ -5506,7 +6424,13 @@
         "size": "small",
         "watering_level": 5,
         "lighting_level": 4,
-        "difficulty": 4
+        "difficulty": 4,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: /",
+            "Watering: Keep moist between watering. Must not be dry between watering",
+            "Soil: Use soft, rich soil that stays slightly moist."
+        ]
     },
     {
         "id": 154,
@@ -5538,7 +6462,13 @@
         "size": "small",
         "watering_level": 5,
         "lighting_level": 4,
-        "difficulty": 4
+        "difficulty": 4,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: /",
+            "Watering: Keep moist between watering. Must not be dry between watering",
+            "Soil: Use soft, rich soil that stays slightly moist."
+        ]
     },
     {
         "id": 155,
@@ -5573,7 +6503,13 @@
         "size": "big",
         "watering_level": 5,
         "lighting_level": 5,
-        "difficulty": 5
+        "difficulty": 5,
+        "tips": [
+            "Ideal light: 6 or more hours of direct sunlight per day.",
+            "Tolerated light: Direct sunlight.",
+            "Watering: Keep moist between watering. Must not be dry between watering",
+            "Soil: Use rich potting soil with some sand or perlite so water drains well."
+        ]
     },
     {
         "id": 156,
@@ -5610,7 +6546,13 @@
         "size": "giant",
         "watering_level": 3,
         "lighting_level": 5,
-        "difficulty": 5
+        "difficulty": 5,
+        "tips": [
+            "Ideal light: 6 or more hours of direct sunlight per day.",
+            "Tolerated light: Direct sunlight.",
+            "Watering: Keep moist between watering. Water when soil is half dry.",
+            "Soil: Use regular indoor potting soil with good drainage."
+        ]
     },
     {
         "id": 157,
@@ -5642,7 +6584,13 @@
         "size": "small",
         "watering_level": 5,
         "lighting_level": 4,
-        "difficulty": 4
+        "difficulty": 4,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: /",
+            "Watering: Keep moist between watering. Must not be dry between watering",
+            "Soil: Use soft, rich soil that stays slightly moist."
+        ]
     },
     {
         "id": 158,
@@ -5674,7 +6622,13 @@
         "size": "medium",
         "watering_level": 3,
         "lighting_level": 4,
-        "difficulty": 4
+        "difficulty": 4,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Keep moist between watering. Water when soil is half dry.",
+            "Soil: Use soft, rich soil that stays slightly moist."
+        ]
     },
     {
         "id": 159,
@@ -5704,7 +6658,13 @@
         "size": "big",
         "watering_level": 3,
         "lighting_level": 4,
-        "difficulty": 5
+        "difficulty": 5,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Keep moist between watering. Water when soil is half dry.",
+            "Soil: Use light, airy soil: potting soil mixed with some bark and perlite."
+        ]
     },
     {
         "id": 160,
@@ -5742,7 +6702,13 @@
         "size": "giant",
         "watering_level": 3,
         "lighting_level": 5,
-        "difficulty": 5
+        "difficulty": 5,
+        "tips": [
+            "Ideal light: 6 or more hours of direct sunlight per day.",
+            "Tolerated light: Direct sunlight.",
+            "Watering: Keep moist between watering. Water when soil is half dry.",
+            "Soil: Use regular indoor potting soil with good drainage."
+        ]
     },
     {
         "id": 161,
@@ -5772,7 +6738,13 @@
         "size": "medium",
         "watering_level": 3,
         "lighting_level": 4,
-        "difficulty": 4
+        "difficulty": 4,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Keep moist between watering. Water when soil is half dry.",
+            "Soil: Use light, airy soil: potting soil mixed with some bark and perlite."
+        ]
     },
     {
         "id": 162,
@@ -5804,7 +6776,13 @@
         "size": "medium",
         "watering_level": 2,
         "lighting_level": 4,
-        "difficulty": 3
+        "difficulty": 3,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Water when soil is half dry. Can be dry between watering.",
+            "Soil: Use regular indoor potting soil with good drainage."
+        ]
     },
     {
         "id": 163,
@@ -5836,7 +6814,13 @@
         "size": "medium",
         "watering_level": 3,
         "lighting_level": 4,
-        "difficulty": 4
+        "difficulty": 4,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Keep moist between watering. Water when soil is half dry.",
+            "Soil: Use light, airy soil: potting soil mixed with some bark and perlite."
+        ]
     },
     {
         "id": 164,
@@ -5872,7 +6856,13 @@
         "size": "big",
         "watering_level": 5,
         "lighting_level": 5,
-        "difficulty": 5
+        "difficulty": 5,
+        "tips": [
+            "Ideal light: 6 or more hours of direct sunlight per day.",
+            "Tolerated light: Direct sunlight.",
+            "Watering: Keep moist between watering. Must not be dry between watering",
+            "Soil: Use regular indoor potting soil with good drainage."
+        ]
     },
     {
         "id": 165,
@@ -5905,7 +6895,13 @@
         "size": "small",
         "watering_level": 2,
         "lighting_level": 4,
-        "difficulty": 3
+        "difficulty": 3,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Water when soil is half dry. Can be dry between watering.",
+            "Soil: Use regular indoor potting soil with good drainage."
+        ]
     },
     {
         "id": 166,
@@ -5937,7 +6933,13 @@
         "size": "big",
         "watering_level": 2,
         "lighting_level": 4,
-        "difficulty": 4
+        "difficulty": 4,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Water when soil is half dry. Can be dry between watering.",
+            "Soil: Use regular indoor potting soil with good drainage."
+        ]
     },
     {
         "id": 167,
@@ -5973,7 +6975,13 @@
         "size": "giant",
         "watering_level": 3,
         "lighting_level": 5,
-        "difficulty": 5
+        "difficulty": 5,
+        "tips": [
+            "Ideal light: 6 or more hours of direct sunlight per day.",
+            "Tolerated light: Direct sunlight.",
+            "Watering: Keep moist between watering. Water when soil is half dry.",
+            "Soil: Use regular indoor potting soil with good drainage."
+        ]
     },
     {
         "id": 168,
@@ -6008,7 +7016,13 @@
         "size": "giant",
         "watering_level": 5,
         "lighting_level": 5,
-        "difficulty": 5
+        "difficulty": 5,
+        "tips": [
+            "Ideal light: 6 or more hours of direct sunlight per day.",
+            "Tolerated light: /",
+            "Watering: Keep moist between watering. Must not be dry between watering",
+            "Soil: Use rich potting soil with some sand or perlite so water drains well."
+        ]
     },
     {
         "id": 169,
@@ -6045,7 +7059,13 @@
         "size": "giant",
         "watering_level": 3,
         "lighting_level": 5,
-        "difficulty": 5
+        "difficulty": 5,
+        "tips": [
+            "Ideal light: 6 or more hours of direct sunlight per day.",
+            "Tolerated light: Direct sunlight.",
+            "Watering: Keep moist between watering. Water when soil is half dry.",
+            "Soil: Use regular indoor potting soil with good drainage."
+        ]
     },
     {
         "id": 170,
@@ -6082,7 +7102,13 @@
         "size": "giant",
         "watering_level": 3,
         "lighting_level": 5,
-        "difficulty": 5
+        "difficulty": 5,
+        "tips": [
+            "Ideal light: 6 or more hours of direct sunlight per day.",
+            "Tolerated light: Direct sunlight.",
+            "Watering: Keep moist between watering. Water when soil is half dry.",
+            "Soil: Use regular indoor potting soil with good drainage."
+        ]
     },
     {
         "id": 171,
@@ -6114,7 +7140,13 @@
         "size": "big",
         "watering_level": 3,
         "lighting_level": 4,
-        "difficulty": 5
+        "difficulty": 5,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Keep moist between watering. Water when soil is half dry.",
+            "Soil: Use light, airy soil: potting soil mixed with some bark and perlite."
+        ]
     },
     {
         "id": 172,
@@ -6146,7 +7178,13 @@
         "size": "small",
         "watering_level": 5,
         "lighting_level": 4,
-        "difficulty": 4
+        "difficulty": 4,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: /",
+            "Watering: Keep moist between watering. Must not be dry between watering",
+            "Soil: Use soft, rich soil that stays slightly moist."
+        ]
     },
     {
         "id": 173,
@@ -6178,7 +7216,13 @@
         "size": "big",
         "watering_level": 5,
         "lighting_level": 4,
-        "difficulty": 5
+        "difficulty": 5,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Keep moist between watering. Must not be dry between watering",
+            "Soil: Use rich potting soil with some sand or perlite so water drains well."
+        ]
     },
     {
         "id": 174,
@@ -6215,7 +7259,13 @@
         "size": "giant",
         "watering_level": 3,
         "lighting_level": 5,
-        "difficulty": 5
+        "difficulty": 5,
+        "tips": [
+            "Ideal light: 6 or more hours of direct sunlight per day.",
+            "Tolerated light: Direct sunlight.",
+            "Watering: Keep moist between watering. Water when soil is half dry.",
+            "Soil: Use regular indoor potting soil with good drainage."
+        ]
     },
     {
         "id": 175,
@@ -6250,7 +7300,13 @@
         "size": "big",
         "watering_level": 3,
         "lighting_level": 4,
-        "difficulty": 5
+        "difficulty": 5,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Keep moist between watering. Water when soil is half dry.",
+            "Soil: Use light, airy soil: potting soil mixed with some bark and perlite."
+        ]
     },
     {
         "id": 176,
@@ -6287,7 +7343,13 @@
         "size": "big",
         "watering_level": 5,
         "lighting_level": 5,
-        "difficulty": 5
+        "difficulty": 5,
+        "tips": [
+            "Ideal light: 6 or more hours of direct sunlight per day.",
+            "Tolerated light: Direct sunlight.",
+            "Watering: Keep moist between watering. Must not be dry between watering",
+            "Soil: Use rich potting soil with some sand or perlite so water drains well."
+        ]
     },
     {
         "id": 177,
@@ -6322,7 +7384,13 @@
         "size": "medium",
         "watering_level": 5,
         "lighting_level": 4,
-        "difficulty": 5
+        "difficulty": 5,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Keep moist between watering. Must not be dry between watering",
+            "Soil: Use light, airy soil: potting soil mixed with some bark and perlite."
+        ]
     },
     {
         "id": 178,
@@ -6357,7 +7425,13 @@
         "size": "small",
         "watering_level": 5,
         "lighting_level": 4,
-        "difficulty": 5
+        "difficulty": 5,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Keep moist between watering. Must not be dry between watering",
+            "Soil: Use light, airy soil: potting soil mixed with some bark and perlite."
+        ]
     },
     {
         "id": 179,
@@ -6387,7 +7461,13 @@
         "size": "small",
         "watering_level": 2,
         "lighting_level": 4,
-        "difficulty": 3
+        "difficulty": 3,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Change water regularly in the vase. Water when soil is half dry.",
+            "Soil: Use a very airy mix, mostly bark with little soil."
+        ]
     },
     {
         "id": 180,
@@ -6420,7 +7500,13 @@
         "size": "medium",
         "watering_level": 5,
         "lighting_level": 4,
-        "difficulty": 5
+        "difficulty": 5,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Keep moist between watering. Must not be dry between watering",
+            "Soil: Use rich potting soil that stays evenly, slightly moist."
+        ]
     },
     {
         "id": 181,
@@ -6450,7 +7536,13 @@
         "size": "small",
         "watering_level": 2,
         "lighting_level": 4,
-        "difficulty": 3
+        "difficulty": 3,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Change water regularly in the vase. Water when soil is half dry.",
+            "Soil: Use a very airy mix, mostly bark with little soil."
+        ]
     },
     {
         "id": 182,
@@ -6480,7 +7572,13 @@
         "size": "small",
         "watering_level": 2,
         "lighting_level": 4,
-        "difficulty": 3
+        "difficulty": 3,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Change water regularly in the vase. Water when soil is half dry.",
+            "Soil: Use a very airy mix, mostly bark with little soil."
+        ]
     },
     {
         "id": 183,
@@ -6521,7 +7619,13 @@
         "size": "small",
         "watering_level": 3,
         "lighting_level": 4,
-        "difficulty": 4
+        "difficulty": 4,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Keep moist between watering. Water when soil is half dry.",
+            "Soil: Use light, airy soil: potting soil mixed with some bark and perlite."
+        ]
     },
     {
         "id": 184,
@@ -6553,7 +7657,13 @@
         "size": "giant",
         "watering_level": 3,
         "lighting_level": 5,
-        "difficulty": 5
+        "difficulty": 5,
+        "tips": [
+            "Ideal light: 6 or more hours of direct sunlight per day.",
+            "Tolerated light: Direct sunlight.",
+            "Watering: Keep moist between watering. Water when soil is half dry.",
+            "Soil: Use rich potting soil with some sand or perlite so water drains well."
+        ]
     },
     {
         "id": 185,
@@ -6585,7 +7695,13 @@
         "size": "small",
         "watering_level": 2,
         "lighting_level": 4,
-        "difficulty": 3
+        "difficulty": 3,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Change water regularly in the vase. Water when soil is half dry.",
+            "Soil: Use a very airy mix, mostly bark with little soil."
+        ]
     },
     {
         "id": 186,
@@ -6615,7 +7731,13 @@
         "size": "small",
         "watering_level": 2,
         "lighting_level": 4,
-        "difficulty": 3
+        "difficulty": 3,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Change water regularly in the vase. Water when soil is half dry.",
+            "Soil: Use a very airy mix, mostly bark with little soil."
+        ]
     },
     {
         "id": 187,
@@ -6645,7 +7767,13 @@
         "size": "small",
         "watering_level": 2,
         "lighting_level": 4,
-        "difficulty": 3
+        "difficulty": 3,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Change water regularly in the vase. Water when soil is half dry.",
+            "Soil: Use a very airy mix, mostly bark with little soil."
+        ]
     },
     {
         "id": 188,
@@ -6680,7 +7808,13 @@
         "size": "big",
         "watering_level": 3,
         "lighting_level": 4,
-        "difficulty": 4
+        "difficulty": 4,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Keep moist between watering. Water when soil is half dry.",
+            "Soil: Use light, airy soil: potting soil mixed with some bark and perlite."
+        ]
     },
     {
         "id": 189,
@@ -6716,7 +7850,13 @@
         "size": "big",
         "watering_level": 4,
         "lighting_level": 5,
-        "difficulty": 5
+        "difficulty": 5,
+        "tips": [
+            "Ideal light: 6 or more hours of direct sunlight per day.",
+            "Tolerated light: Direct sunlight.",
+            "Watering: Keep moist between watering. Can dry between watering",
+            "Soil: Use rich potting soil that stays evenly, slightly moist."
+        ]
     },
     {
         "id": 190,
@@ -6751,7 +7891,13 @@
         "size": "big",
         "watering_level": 5,
         "lighting_level": 4,
-        "difficulty": 5
+        "difficulty": 5,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Keep moist between watering. Must not be dry between watering",
+            "Soil: Use light, airy soil: potting soil mixed with some bark and perlite."
+        ]
     },
     {
         "id": 191,
@@ -6786,7 +7932,13 @@
         "size": "small",
         "watering_level": 5,
         "lighting_level": 4,
-        "difficulty": 5
+        "difficulty": 5,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Keep moist between watering. Must not be dry between watering",
+            "Soil: Use light, airy soil: potting soil mixed with some bark and perlite."
+        ]
     },
     {
         "id": 192,
@@ -6818,7 +7970,13 @@
         "size": "small",
         "watering_level": 1,
         "lighting_level": 5,
-        "difficulty": 3
+        "difficulty": 3,
+        "tips": [
+            "Ideal light: 6 or more hours of direct sunlight per day.",
+            "Tolerated light: Direct sunlight.",
+            "Watering: Water only when the soil is dry. Must be dry between watering",
+            "Soil: Use cactus and succulent soil that drains very quickly."
+        ]
     },
     {
         "id": 193,
@@ -6853,7 +8011,13 @@
         "size": "small",
         "watering_level": 5,
         "lighting_level": 4,
-        "difficulty": 5
+        "difficulty": 5,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Keep moist between watering. Must not be dry between watering",
+            "Soil: Use light, airy soil: potting soil mixed with some bark and perlite."
+        ]
     },
     {
         "id": 194,
@@ -6894,7 +8058,13 @@
         "size": "small",
         "watering_level": 3,
         "lighting_level": 4,
-        "difficulty": 4
+        "difficulty": 4,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Keep moist between watering. Water when soil is half dry.",
+            "Soil: Use light, airy soil: potting soil mixed with some bark and perlite."
+        ]
     },
     {
         "id": 195,
@@ -6928,7 +8098,13 @@
         "size": "small",
         "watering_level": 2,
         "lighting_level": 4,
-        "difficulty": 3
+        "difficulty": 3,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Water when soil is half dry. Can be dry between watering.",
+            "Soil: Use light, airy soil: potting soil mixed with some bark and perlite."
+        ]
     },
     {
         "id": 196,
@@ -6960,7 +8136,13 @@
         "size": "big",
         "watering_level": 1,
         "lighting_level": 5,
-        "difficulty": 4
+        "difficulty": 4,
+        "tips": [
+            "Ideal light: 6 or more hours of direct sunlight per day.",
+            "Tolerated light: /",
+            "Watering: Water only when the soil is dry. Must be dry between watering",
+            "Soil: Use regular indoor potting soil with good drainage."
+        ]
     },
     {
         "id": 197,
@@ -6997,7 +8179,13 @@
         "size": "small",
         "watering_level": 3,
         "lighting_level": 5,
-        "difficulty": 4
+        "difficulty": 4,
+        "tips": [
+            "Ideal light: 6 or more hours of direct sunlight per day.",
+            "Tolerated light: Direct sunlight.",
+            "Watering: Keep moist between watering. Water when soil is half dry.",
+            "Soil: Use regular indoor potting soil with good drainage."
+        ]
     },
     {
         "id": 198,
@@ -7033,7 +8221,13 @@
         "size": "medium",
         "watering_level": 3,
         "lighting_level": 5,
-        "difficulty": 4
+        "difficulty": 4,
+        "tips": [
+            "Ideal light: 6 or more hours of direct sunlight per day.",
+            "Tolerated light: Direct sunlight.",
+            "Watering: Keep moist between watering. Water when soil is half dry.",
+            "Soil: Use regular indoor potting soil with good drainage."
+        ]
     },
     {
         "id": 199,
@@ -7069,7 +8263,13 @@
         "size": "medium",
         "watering_level": 3,
         "lighting_level": 5,
-        "difficulty": 4
+        "difficulty": 4,
+        "tips": [
+            "Ideal light: 6 or more hours of direct sunlight per day.",
+            "Tolerated light: Direct sunlight.",
+            "Watering: Keep moist between watering. Water when soil is half dry.",
+            "Soil: Use regular indoor potting soil with good drainage."
+        ]
     },
     {
         "id": 200,
@@ -7101,7 +8301,13 @@
         "size": "medium",
         "watering_level": 2,
         "lighting_level": 4,
-        "difficulty": 3
+        "difficulty": 3,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Water when soil is half dry. Can be dry between watering.",
+            "Soil: Use regular indoor potting soil with good drainage."
+        ]
     },
     {
         "id": 201,
@@ -7136,7 +8342,13 @@
         "size": "medium",
         "watering_level": 5,
         "lighting_level": 4,
-        "difficulty": 5
+        "difficulty": 5,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Keep moist between watering. Must not be dry between watering",
+            "Soil: Use light, airy soil: potting soil mixed with some bark and perlite."
+        ]
     },
     {
         "id": 202,
@@ -7173,7 +8385,13 @@
         "size": "medium",
         "watering_level": 3,
         "lighting_level": 5,
-        "difficulty": 4
+        "difficulty": 4,
+        "tips": [
+            "Ideal light: 6 or more hours of direct sunlight per day.",
+            "Tolerated light: Direct sunlight.",
+            "Watering: Keep moist between watering. Water when soil is half dry.",
+            "Soil: Use regular indoor potting soil with good drainage."
+        ]
     },
     {
         "id": 203,
@@ -7209,7 +8427,13 @@
         "size": "small",
         "watering_level": 5,
         "lighting_level": 4,
-        "difficulty": 5
+        "difficulty": 5,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Keep moist between watering. Must not be dry between watering",
+            "Soil: Use light, airy soil: potting soil mixed with some bark and perlite."
+        ]
     },
     {
         "id": 204,
@@ -7244,7 +8468,13 @@
         "size": "small",
         "watering_level": 5,
         "lighting_level": 4,
-        "difficulty": 5
+        "difficulty": 5,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Keep moist between watering. Must not be dry between watering",
+            "Soil: Use light, airy soil: potting soil mixed with some bark and perlite."
+        ]
     },
     {
         "id": 205,
@@ -7282,7 +8512,13 @@
         "size": "medium",
         "watering_level": 3,
         "lighting_level": 5,
-        "difficulty": 4
+        "difficulty": 4,
+        "tips": [
+            "Ideal light: 6 or more hours of direct sunlight per day.",
+            "Tolerated light: Direct sunlight.",
+            "Watering: Keep moist between watering. Water when soil is half dry.",
+            "Soil: Use regular indoor potting soil with good drainage."
+        ]
     },
     {
         "id": 206,
@@ -7317,7 +8553,13 @@
         "size": "small",
         "watering_level": 3,
         "lighting_level": 5,
-        "difficulty": 4
+        "difficulty": 4,
+        "tips": [
+            "Ideal light: 6 or more hours of direct sunlight per day.",
+            "Tolerated light: Direct sunlight.",
+            "Watering: Keep moist between watering. Water when soil is half dry.",
+            "Soil: Use regular indoor potting soil with good drainage."
+        ]
     },
     {
         "id": 207,
@@ -7349,7 +8591,13 @@
         "size": "small",
         "watering_level": 3,
         "lighting_level": 4,
-        "difficulty": 4
+        "difficulty": 4,
+        "tips": [
+            "Ideal light: Bright light",
+            "Tolerated light: Diffused",
+            "Watering: Keep moist between watering. Water when soil is half dry.",
+            "Soil: Use light, airy soil: potting soil mixed with some bark and perlite."
+        ]
     },
     {
         "id": 208,
@@ -7382,7 +8630,13 @@
         "size": "medium",
         "watering_level": 3,
         "lighting_level": 5,
-        "difficulty": 4
+        "difficulty": 4,
+        "tips": [
+            "Ideal light: 6 or more hours of direct sunlight per day.",
+            "Tolerated light: Direct sunlight.",
+            "Watering: Keep moist between watering. Water when soil is half dry.",
+            "Soil: Use regular indoor potting soil with good drainage."
+        ]
     },
     {
         "id": 301,
@@ -7414,7 +8668,13 @@
         "size": "medium",
         "watering_level": 3,
         "lighting_level": 2,
-        "difficulty": 3
+        "difficulty": 3,
+        "tips": [
+            "Ideal light: 4-6 hours of bright indirect light per day.",
+            "Tolerated light: Partial shade to full sun.",
+            "Watering: Keep soil evenly moist, but avoid overwatering.",
+            "Soil: Use regular indoor potting soil with good drainage."
+        ]
     },
     {
         "id": 302,
@@ -7447,7 +8707,13 @@
         "size": "medium",
         "watering_level": 3,
         "lighting_level": 3,
-        "difficulty": 4
+        "difficulty": 4,
+        "tips": [
+            "Ideal light: 6+ hours of bright sunlight per day.",
+            "Tolerated light: Full sun.",
+            "Watering: Water frequently, keep soil moist but not soggy.",
+            "Soil: Use regular indoor potting soil with good drainage."
+        ]
     },
     {
         "id": 303,
@@ -7481,7 +8747,13 @@
         "size": "medium",
         "watering_level": 3,
         "lighting_level": 2,
-        "difficulty": 3
+        "difficulty": 3,
+        "tips": [
+            "Ideal light: Bright indirect light for best growth.",
+            "Tolerated light: Low to bright indirect light.",
+            "Watering: Water when top 2-3 cm of soil is dry.",
+            "Soil: Use light, airy soil: potting soil mixed with some bark and perlite."
+        ]
     },
     {
         "id": 304,
@@ -7514,7 +8786,13 @@
         "size": "medium",
         "watering_level": 3,
         "lighting_level": 5,
-        "difficulty": 5
+        "difficulty": 5,
+        "tips": [
+            "Ideal light: 6+ hours of direct sunlight per day.",
+            "Tolerated light: Full sun preferred.",
+            "Watering: Water deeply 2-3 times per week.",
+            "Soil: Use regular indoor potting soil with good drainage."
+        ]
     },
     {
         "id": 305,
@@ -7548,7 +8826,13 @@
         "size": "medium",
         "watering_level": 3,
         "lighting_level": 4,
-        "difficulty": 4
+        "difficulty": 4,
+        "tips": [
+            "Ideal light: Bright light, avoid harsh midday sun.",
+            "Tolerated light: Partial shade to bright light.",
+            "Watering: Keep consistently moist, but well drained.",
+            "Soil: Use regular indoor potting soil with good drainage."
+        ]
     },
     {
         "id": 401,
@@ -7582,7 +8866,13 @@
         "size": "small",
         "watering_level": 3,
         "lighting_level": 2,
-        "difficulty": 3
+        "difficulty": 3,
+        "tips": [
+            "Ideal light: Bright indirect light.",
+            "Tolerated light: Low light to bright indirect.",
+            "Watering: Let soil dry almost completely between waterings.",
+            "Soil: Use cactus and succulent soil that drains very quickly."
+        ]
     },
     {
         "id": 402,
@@ -7613,7 +8903,13 @@
         "size": "medium",
         "watering_level": 3,
         "lighting_level": 3,
-        "difficulty": 4
+        "difficulty": 4,
+        "tips": [
+            "Ideal light: Bright, filtered light.",
+            "Tolerated light: Medium indirect light.",
+            "Watering: Water when medium is almost dry; avoid stagnation.",
+            "Soil: Use orchid bark mix instead of normal potting soil."
+        ]
     },
     {
         "id": 403,
@@ -7644,7 +8940,13 @@
         "size": "medium",
         "watering_level": 3,
         "lighting_level": 2,
-        "difficulty": 3
+        "difficulty": 3,
+        "tips": [
+            "Ideal light: Bright indirect light.",
+            "Tolerated light: Medium light; avoid deep shade.",
+            "Watering: Keep slightly moist; let topsoil dry between waterings.",
+            "Soil: Use regular indoor potting soil with good drainage."
+        ]
     },
     {
         "id": 404,
@@ -7675,7 +8977,13 @@
         "size": "medium",
         "watering_level": 3,
         "lighting_level": 2,
-        "difficulty": 3
+        "difficulty": 3,
+        "tips": [
+            "Ideal light: Bright indirect light.",
+            "Tolerated light: Medium light; avoid full sun.",
+            "Watering: Water when top layer is dry; avoid waterlogging.",
+            "Soil: Use regular indoor potting soil with good drainage."
+        ]
     },
     {
         "id": 500,
@@ -7707,6 +9015,12 @@
         "size": "medium",
         "watering_level": 3,
         "lighting_level": 4,
-        "difficulty": 3
+        "difficulty": 3,
+        "tips": [
+            "Ideal light: Gerbera plants thrive best in bright, indirect sunlight for most of the day. They prefer a well-lit environment where the light is diffused rather than harsh, helping maintain vibrant blooms and preventing leaf burn. A spot near an east-facing or lightly filtered south window is ideal.",
+            "Tolerated light: Partial shade to full sun.",
+            "Watering: Keep soil evenly moist, but avoid overwatering.",
+            "Soil: Use regular indoor potting soil with good drainage."
+        ]
     }
 ]

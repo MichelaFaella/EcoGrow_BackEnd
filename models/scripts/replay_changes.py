@@ -1,26 +1,39 @@
 # models/scripts/replay_changes.py
 from __future__ import annotations
-import os, json, logging
-from pathlib import Path
-from typing import Dict, List, Any, Optional
-from datetime import datetime, date  
-from sqlalchemy.orm import Session
-from sqlalchemy.dialects.mysql import insert as mysql_insert
+
+import json
+import logging
+import os
 import uuid
+from datetime import datetime, date
+from pathlib import Path
+from typing import Any, Dict, List, Optional
+
+from sqlalchemy.dialects.mysql import insert as mysql_insert
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import Session
+
 from models.base import SessionLocal
 from models.entities import (
-    Family, Plant, PlantPhoto,
-    User, UserPlant,
-    WateringPlan, WateringLog,
-    Reminder, Question,
-    Disease, PlantDisease,
-    SharedPlant, Friendship,
+    Family,
+    Plant,
+    PlantPhoto,
+    User,
+    UserPlant,
+    WateringPlan,
+    WateringLog,
+    Reminder,
+    Question,
+    Disease,
+    PlantDisease,
+    SharedPlant,
+    Friendship,
 )
 
 logger = logging.getLogger(__name__)
 
-# Mappa nome-tabella -> ORM class
-TABLES = {
+# Mappa nome tabella -> modello ORM
+TABLES: Dict[str, Any] = {
     "family": Family,
     "plant": Plant,
     "plant_photo": PlantPhoto,
@@ -40,49 +53,98 @@ TABLES = {
 DEFAULT_CHANGES = Path(__file__).parent / "fixtures" / "changes.json"
 CHANGES_PATH = Path(os.getenv("CHANGES_PATH", str(DEFAULT_CHANGES)))
 
+# Ordine logico di seed per rispettare le FK
+SEED_ORDER: List[str] = [
+    "family",
+    "plant",
+    "plant_photo",
+    "user",
+    "disease",
+    "plant_disease",
+    "watering_plan",
+    "user_plant",
+    "watering_log",
+    "shared_plant",
+    "friendship",
+    "reminder",
+    "question",
+]
 
-# -------------------------
-# Utilities file JSON
-# -------------------------
+# Chiavi che tendenzialmente rappresentano DATETIME sul DB
+_DATETIME_KEYS = {
+    "created_at",
+    "updated_at",
+    "ended_sharing_at",
+    "scheduled_at",
+    "done_at",
+    "next_due_at",
+    "detected_at",
+    "last_used_at",
+    "expires_at",
+}
+
+# Chiavi che tendenzialmente rappresentano DATE sul DB
+_DATE_KEYS = {
+    "since",
+}
+
+
+# ---------------------------------------------------------------------------
+# Utility JSON / path
+# ---------------------------------------------------------------------------
+
 def _ensure_parent(p: Path) -> None:
     p.parent.mkdir(parents=True, exist_ok=True)
 
+
 def _stable_disease_id(name: str) -> str:
     """
-    UUID deterministico basato sul nome della malattia.
+    UUID deterministico basato sul nome (o stable_key) della malattia.
     Così non creiamo nuovi id ad ogni riavvio.
     """
     base = f"ecogrow-disease::{name.strip().lower()}"
     return str(uuid.uuid5(uuid.NAMESPACE_DNS, base))
 
-def _json_default(o):
+
+def _json_default(o: Any) -> Any:
     if isinstance(o, (datetime, date)):
         return o.isoformat()
-    # fallback per UUID/Decimal/oggetti vari
     try:
         return str(o)
     except Exception:
-        return None   
+        return None
+
 
 def load_changes(path: str | Path) -> Dict[str, List[Dict[str, Any]]]:
+    """
+    Carica il changes.json. Se non esiste o è vuoto, restituisce {}.
+    Garantisce che ogni valore sia una lista.
+    """
     p = Path(path)
     if not p.exists():
         logger.info(f"[seed] changes file not found: {p}")
         return {}
+
     raw = p.read_bytes()
     if not raw.strip():
         logger.info(f"[seed] changes file empty: {p}")
         return {}
+
+    # Rimuovi eventuale BOM
     if raw.startswith(b"\xef\xbb\xbf"):
         raw = raw[3:]
+
     data = json.loads(raw)
     if not isinstance(data, dict):
         raise ValueError(f"[seed] invalid changes format (want object): {p}")
+
     # garantisci liste per ogni tabella
     for k, v in list(data.items()):
         if not isinstance(v, list):
             data[k] = []
+
     return data
+
 
 def save_changes(path: str | Path, data: Dict[str, List[Dict[str, Any]]]) -> None:
     """
@@ -90,13 +152,12 @@ def save_changes(path: str | Path, data: Dict[str, List[Dict[str, Any]]]) -> Non
     - Prova atomico: write su .tmp + replace.
     - Fallback robusto (bind-mount): lock + truncate+write+fsync sul file target.
     """
-    import io, json, os, errno
+    import json, os, errno
     from pathlib import Path
 
     p = Path(path)
     _ensure_parent(p)
 
-    # ⬇️ unica modifica: aggiunto default=_json_default
     payload = json.dumps(data, ensure_ascii=False, indent=2, default=_json_default)
 
     # 1) Tentativo atomico classico
@@ -106,80 +167,106 @@ def save_changes(path: str | Path, data: Dict[str, List[Dict[str, Any]]]) -> Non
         os.replace(tmp, p)  # atomic move
         return
     except OSError as e:
-        # Emblematico su bind-mount: [Errno 16] Device or resource busy
+        # Tipico su bind-mount di singolo file: [Errno 16] Device or resource busy
         try:
             if tmp.exists():
                 tmp.unlink()
         except Exception:
             pass
-        # continua con fallback
+        # Se NON è uno degli errori “attesi”, rilanciamo
         if e.errno not in (errno.EBUSY, errno.EXDEV, errno.EPERM, errno.EACCES):
-            # per altri errori, rilancia
             raise
+        # altrimenti continuiamo col fallback
 
     # 2) Fallback: scrittura in place con lock+fsync
-    # Nota: fcntl è Linux-only (ok nel container)
     try:
-        import fcntl
-    except Exception:
-        fcntl = None
-
-    # apri in lettura/scrittura, crea se non esiste
-    fd = os.open(p, os.O_RDWR | os.O_CREAT, 0o666)
-    try:
-        with os.fdopen(fd, "r+", encoding="utf-8") as f:
-            if fcntl:
-                try:
-                    fcntl.flock(f.fileno(), fcntl.LOCK_EX)
-                except Exception:
-                    pass
-            f.seek(0)
-            f.truncate()
-            f.write(payload)
-            f.flush()
-            os.fsync(f.fileno())
-            if fcntl:
-                try:
-                    fcntl.flock(f.fileno(), fcntl.LOCK_UN)
-                except Exception:
-                    pass
-    except Exception:
-        # in caso di problemi residui, ultimo tentativo: scrivi su /tmp e poi copia bytes
-        import shutil, tempfile
-        with tempfile.NamedTemporaryFile("w", delete=False, encoding="utf-8") as tf:
-            tf.write(payload)
-            tmp_path = tf.name
         try:
-            with open(tmp_path, "rb") as src, open(p, "wb") as dst:
-                shutil.copyfileobj(src, dst)
-                dst.flush()
-                os.fsync(dst.fileno())
-        finally:
+            import fcntl  # Linux only, ok in Docker
+        except Exception:
+            fcntl = None
+
+        fd = os.open(p, os.O_RDWR | os.O_CREAT, 0o666)
+        try:
+            with os.fdopen(fd, "r+", encoding="utf-8") as f:
+                if fcntl is not None:
+                    try:
+                        fcntl.flock(f.fileno(), fcntl.LOCK_EX)
+                    except Exception:
+                        pass
+
+                f.seek(0)
+                f.truncate()
+                f.write(payload)
+                f.flush()
+                os.fsync(f.fileno())
+
+                if fcntl is not None:
+                    try:
+                        fcntl.flock(f.fileno(), fcntl.LOCK_UN)
+                    except Exception:
+                        pass
+        except Exception:
+            # 3) Ultimo fallback: scrivo su /tmp e poi copio i bytes
+            import shutil, tempfile
+            with tempfile.NamedTemporaryFile("w", delete=False, encoding="utf-8") as tf:
+                tf.write(payload)
+                tmp_path = tf.name
             try:
-                os.unlink(tmp_path)
+                with open(tmp_path, "rb") as src, open(p, "wb") as dst:
+                    shutil.copyfileobj(src, dst)
+                    dst.flush()
+                    os.fsync(dst.fileno())
+            finally:
+                try:
+                    os.unlink(tmp_path)
+                except Exception:
+                    pass
+    except Exception:
+        # Se proprio qui va tutto male, allora sì: facciamo emergere l'errore
+        raise
+
+
+# ---------------------------------------------------------------------------
+# Normalizzazioni
+# ---------------------------------------------------------------------------
+
+def _coerce_datetimes_for_db(row: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Converte stringhe ISO (quando possibile) in datetime/date per certe chiavi note.
+    Se il parse fallisce, lascia il valore invariato (il DB/ORM gestirà).
+    """
+    out = dict(row)
+
+    for k in _DATETIME_KEYS:
+        v = out.get(k)
+        if isinstance(v, str):
+            try:
+                out[k] = datetime.fromisoformat(v.replace("Z", ""))
+            except Exception:
+                # lascio la stringa così com'è (MySQL sa gestire alcune stringhe ISO)
+                pass
+
+    for k in _DATE_KEYS:
+        v = out.get(k)
+        if isinstance(v, str) and len(v) == 10:
+            # forma tipica 'YYYY-MM-DD'
+            try:
+                out[k] = date.fromisoformat(v)
             except Exception:
                 pass
 
-# -------------------------
-# Normalizzazioni
-# -------------------------
-def _coerce_datetimes_for_db(row: dict) -> dict:
-    # converti stringhe ISO → datetime per colonne DATETIME
-    for k in ("created_at", "updated_at", "ended_sharing_at", "answered_at", "scheduled_at", "done_at", "next_due_at", "detected_at"):
-        v = row.get(k)
-        if isinstance(v, str):
-            try:
-                row[k] = datetime.fromisoformat(v.replace("Z", ""))
-            except Exception:
-                # se non interpretabile, lasciala fuori: verrà messo default ORM/DB
-                row.pop(k, None)
-    return row
+    return out
 
-def _normalize_for_file(table: str, row: dict) -> dict:
-    # Se mancano created_at/updated_at e la tabella li usa, aggiungili come ISO string
+
+def _normalize_for_file(table: str, row: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Normalizza una riga PRIMA di scriverla su changes.json.
+    In particolare aggiunge created_at/updated_at per alcune tabelle se mancanti.
+    """
     needs_created = table in {"plant", "user", "reminder", "plant_photo"}
     needs_updated = table in {"plant", "user"}
     now_iso = datetime.utcnow().isoformat(timespec="seconds")
+
     out = dict(row)
     if needs_created and "created_at" not in out:
         out["created_at"] = now_iso
@@ -188,56 +275,106 @@ def _normalize_for_file(table: str, row: dict) -> dict:
     return out
 
 
-# -------------------------
+# ---------------------------------------------------------------------------
 # DB helpers
-# -------------------------
-def _upsert_db(session: Session, model, row: dict) -> None:
+# ---------------------------------------------------------------------------
+
+def _upsert_db(session: Session, model: Any, row: Dict[str, Any]) -> None:
+    """
+    Esegue un INSERT ... ON DUPLICATE KEY UPDATE usando mysql_insert.
+    - Salta le colonne primary key
+    - Salta le colonne generated/computed (es. user_min/user_max in Friendship)
+    """
     table = model.__table__
     stmt = mysql_insert(table).values(**row)
-    update_cols = {c.name: stmt.inserted[c.name] for c in table.columns if not c.primary_key}
+
+    update_cols: Dict[str, Any] = {}
+
+    for c in table.columns:
+        # niente PK nell'UPDATE
+        if c.primary_key:
+            continue
+        # niente colonne generate (Computed) nell'UPDATE
+        if getattr(c, "computed", None) is not None:
+            continue
+
+        update_cols[c.name] = stmt.inserted[c.name]
+
+    # Se c'è updated_at, sovrascrivilo con l'UTC corrente
     if "updated_at" in update_cols:
         update_cols["updated_at"] = datetime.utcnow()
+
     stmt = stmt.on_duplicate_key_update(**update_cols)
     session.execute(stmt)
 
-def _delete_db(session: Session, model, row: dict) -> int:
-    # supponiamo PK singola 'id'
-    pk_cols = [c for c in model.__table__.columns if c.primary_key]
-    if not pk_cols:
-        return 0
-    _id = row.get("id")
-    if not _id:
-        return 0
-    return session.query(model).filter(pk_cols[0] == _id).delete()
+def _delete_db(session: Session, model: Any, row: Dict[str, Any]) -> int:
+    """
+    Cancella una riga in base a:
+    - id (se presente), oppure
+    - tutti i campi della primary key (se forniti).
+    Ritorna il numero di righe cancellate.
+    """
+    pk_cols = list(model.__table__.primary_key.columns)
+
+    # Caso semplice: se c'è id, usalo
+    if "id" in row and row["id"]:
+        return session.query(model).filter_by(id=row["id"]).delete()
+
+    # Altrimenti prova a usare tutte le PK
+    if pk_cols and all(col.name in row for col in pk_cols):
+        filt = {col.name: row[col.name] for col in pk_cols}
+        return session.query(model).filter_by(**filt).delete()
+
+    logger.warning(
+        "[seed] cannot build delete filter for table=%s from row=%s",
+        model.__tablename__,
+        row,
+    )
+    return 0
 
 
-# -------------------------
-# API per le route
-# -------------------------
-def write_changes_upsert(table: str, rows: List[Dict[str, Any]], path: str | Path | None = None) -> int:
+# ---------------------------------------------------------------------------
+# API per le route / aggiornamento changes.json
+# ---------------------------------------------------------------------------
+
+def write_changes_upsert(
+    table: str,
+    rows: List[Dict[str, Any]],
+    path: str | Path | None = None,
+) -> int:
     """
     Aggiorna il file changes.json facendo upsert per chiave 'id' nella tabella indicata.
-    Se un row non ha 'id', viene aggiunto così com'è (non deduplicabile).
+    Se una row non ha 'id', viene aggiunta così com'è (non deduplicabile).
     Ritorna quante righe sono state scritte/aggiornate.
     """
     p = Path(path) if path is not None else CHANGES_PATH
     data = load_changes(p)
 
     existing: List[Dict[str, Any]] = data.get(table, [])
-    index_by_id = {r.get("id"): i for i, r in enumerate(existing) if isinstance(r, dict) and r.get("id")}
+    if not isinstance(existing, list):
+        existing = []
+
+    index_by_id: Dict[str, int] = {
+        r.get("id"): i
+        for i, r in enumerate(existing)
+        if isinstance(r, dict) and r.get("id")
+    }
 
     applied = 0
     for r in rows:
         if not isinstance(r, dict):
             continue
-        r = _normalize_for_file(table, r)
-        rid = r.get("id")
+
+        r_norm = _normalize_for_file(table, r)
+        rid = r_norm.get("id")
+
         if rid and rid in index_by_id:
-            existing[index_by_id[rid]] = r
+            existing[index_by_id[rid]] = r_norm
         else:
-            existing.append(r)
+            existing.append(r_norm)
             if rid:
                 index_by_id[rid] = len(existing) - 1
+
         applied += 1
 
     data[table] = existing
@@ -246,7 +383,11 @@ def write_changes_upsert(table: str, rows: List[Dict[str, Any]], path: str | Pat
     return applied
 
 
-def write_changes_delete(table: str, id_value: str, path: str | Path | None = None) -> int:
+def write_changes_delete(
+    table: str,
+    id_value: str,
+    path: str | Path | None = None,
+) -> int:
     """
     Appende/aggiorna nel file una riga {id: ..., _delete: true} per la tabella indicata.
     """
@@ -255,12 +396,19 @@ def write_changes_delete(table: str, id_value: str, path: str | Path | None = No
     return write_changes_upsert(table, [{"id": id_value, "_delete": True}], path=path)
 
 
+# ---------------------------------------------------------------------------
+# Seed generale da changes.json
+# ---------------------------------------------------------------------------
+
 def seed_from_changes(path: str | Path | None = None) -> int:
     """
     Applica le modifiche in changes.json in modo idempotente.
     - upsert per righe normali
     - delete se {_delete: true}
     Ritorna il numero di operazioni DB applicate.
+
+    In caso di vincoli FK violati (IntegrityError) la singola riga viene
+    saltata e si prosegue con le successive.
     """
     p = Path(path) if path is not None else CHANGES_PATH
     changes = load_changes(p)
@@ -268,36 +416,79 @@ def seed_from_changes(path: str | Path | None = None) -> int:
         return 0
 
     total = 0
-    with SessionLocal() as session:
-        for table_name, entries in changes.items():
-            model = TABLES.get(table_name)
-            if model is None or not isinstance(entries, list):
+
+    def _apply_table(session: Session, table_name: str, entries: List[Any]) -> int:
+        model = TABLES.get(table_name)
+        if model is None or not isinstance(entries, list):
+            return 0
+
+        applied_here = 0
+
+        for raw_row in entries:
+            if not isinstance(raw_row, dict):
                 continue
 
-            applied_here = 0
-            for row in entries:
-                if not isinstance(row, dict):
-                    continue
+            # DELETE
+            if raw_row.get("_delete") is True:
+                try:
+                    deleted = _delete_db(session, model, raw_row)
+                    session.commit()
+                    applied_here += deleted
+                except IntegrityError as e:
+                    session.rollback()
+                    logger.warning(
+                        "[seed] IntegrityError on DELETE table=%s row=%s: %s – skipped",
+                        table_name,
+                        raw_row,
+                        e,
+                    )
+                except Exception:
+                    session.rollback()
+                    raise
+                continue
 
-                if row.get("_delete") is True:
-                    applied_here += _delete_db(session, model, row)
-                    continue
-
-                row_db = _coerce_datetimes_for_db(dict(row))
+            # UPSERT
+            row_db = _coerce_datetimes_for_db(raw_row)
+            try:
                 _upsert_db(session, model, row_db)
+                session.commit()
                 applied_here += 1
+            except IntegrityError as e:
+                session.rollback()
+                logger.warning(
+                    "[seed] IntegrityError on UPSERT table=%s row=%s: %s – skipped",
+                    table_name,
+                    row_db,
+                    e,
+                )
+            except Exception:
+                session.rollback()
+                raise
 
-            total += applied_here
-            logger.info(f"[seed] {table_name}: applied {applied_here}")
+        logger.info(f"[seed] {table_name}: applied {applied_here}")
+        return applied_here
 
-        session.commit()
+    with SessionLocal() as session:
+        # Prima le tabelle nell’ordine esplicito
+        for table_name in SEED_ORDER:
+            entries = changes.get(table_name, [])
+            if entries:
+                total += _apply_table(session, table_name, entries)
+
+        # Poi eventuali tabelle non elencate in SEED_ORDER
+        for table_name, entries in changes.items():
+            if table_name in SEED_ORDER:
+                continue
+            if entries:
+                total += _apply_table(session, table_name, entries)
 
     logger.info(f"[seed] total applied: {total} from {p}")
     return total
 def seed_disease_definitions_from_file(path: str | Path | None = None) -> int:
     """
-    Legge il file utils/plant_disease*.json (organizzato per famiglie) e fa:
-      - upsert nella tabella 'disease' (un disease per coppia family+disease)
+    Legge un file in utils/ (plant_disease.txt / plant_disease.json /
+    plant_disease_details.json) organizzato per famiglia e malattie, e fa:
+      - upsert nella tabella 'disease' (una row per coppia family + disease)
       - upsert anche in changes.json (tabella 'disease')
 
     Ritorna il numero di righe DB applicate.
@@ -306,7 +497,7 @@ def seed_disease_definitions_from_file(path: str | Path | None = None) -> int:
     if path is not None:
         p = Path(path)
     else:
-        root = Path(__file__).resolve().parents[2]  # /app
+        root = Path(__file__).resolve().parents[2]  # es. /app
         txt = root / "utils" / "plant_disease.txt"
         json_alt = root / "utils" / "plant_disease.json"
         details_alt = root / "utils" / "plant_disease_details.json"
@@ -430,7 +621,7 @@ def seed_disease_definitions_from_file(path: str | Path | None = None) -> int:
                 )
                 continue
 
-            row_db = {
+            row_db: Dict[str, Any] = {
                 "id": _stable_disease_id(r["stable_key"]),
                 "name": r["name"],
                 "description": r["description"],

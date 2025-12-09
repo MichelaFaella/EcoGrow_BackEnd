@@ -285,6 +285,7 @@ class RepositoryService:
             "min_temp_c": tmin,
             "max_temp_c": tmax,
             "size": it.get("size"),
+            "tips": it.get("tips"),
         }
 
     # =======================
@@ -593,6 +594,7 @@ class RepositoryService:
             )
             answers_by_qid: Dict[str, UserQuestionAnswer] = {
                 a.question_id: a for a in answers
+
             }
 
             out: List[Dict] = []

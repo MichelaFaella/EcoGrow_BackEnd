@@ -90,6 +90,7 @@ class Plant(Base):
     climate: Mapped[str] = mapped_column(String(100), nullable=False)  # ClimateEnum logico
     pests: Mapped[Optional[dict]] = mapped_column(MySQLJSON)  # es. ["aphid","whitefly"]
 
+    tips: Mapped[Optional[dict]] = mapped_column(MySQLJSON)  # es. ["Ideal light: …", "Tolerated light: …", ...]
     size: Mapped[SizeEnum] = mapped_column(
         SAEnum(
             SizeEnum,
@@ -466,9 +467,7 @@ class SharedPlant(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, default=datetime.utcnow)
     ended_sharing_at: Mapped[Optional[datetime]] = mapped_column(DateTime)
 
-    __table_args__ = (
-        UniqueConstraint("owner_user_id", "recipient_user_id", "plant_id", name="uq_shared_triplet"),
-    )
+
 
     owner_user: Mapped["User"] = relationship(
         foreign_keys=[owner_user_id],
