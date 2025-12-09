@@ -1678,5 +1678,22 @@ class RepositoryService:
 
             return up
 
+    def get_diseases_for_family(self, family_id: str) -> List[str]:
+        """
+        Ritorna la lista dei NOMI delle malattie associate a una famiglia.
+        Usata per filtrare le predizioni del modello.
+        """
+        if not family_id:
+            return []
+
+        with self.Session() as s:
+            diseases = (
+                s.query(Disease)
+                .filter(Disease.family_id == family_id)
+                .all()
+            )
+
+            return [d.name for d in diseases if d.name]
+
 
 

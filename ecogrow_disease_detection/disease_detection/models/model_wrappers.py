@@ -510,7 +510,7 @@ class ConvNextDetector:
         self.preprocess = preprocess
         self.train_backbone = bool(train_backbone)
 
-        model_name = model_kwargs.pop("model_name", "convnext_small")
+        model_name = model_kwargs.pop("model_name", "convnext_tiny")
         self.model = timm.create_model(
             model_name,
             pretrained=pretrained,

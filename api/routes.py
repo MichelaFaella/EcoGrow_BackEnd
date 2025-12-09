@@ -663,7 +663,6 @@ def ai_model_disease_detection():
         print("[ERROR] Missing 'image' file in request")
         return jsonify({"error": "Missing 'image' file in request."}), 400
 
-    # convertiamo l'immagine caricata in base64
     uploaded_image_file = request.files["image"]
     image_bytes = uploaded_image_file.read()
     print(f"[DEBUG] Uploaded image size (bytes): {len(image_bytes)}")
@@ -671,7 +670,6 @@ def ai_model_disease_detection():
     image_base64 = base64.b64encode(image_bytes).decode("utf-8")
     print(f"[DEBUG] Image converted to base64, length = {len(image_base64)}")
 
-    # (IMPORTANTE) riportiamo il file pointer all'inizio per riutilizzarlo
     uploaded_image_file.stream.seek(0)
     print("[DEBUG] Reset file stream pointer")
 
@@ -717,29 +715,39 @@ def ai_model_disease_detection():
         return jsonify({"error": f"Inference failed: {exc}"}), 502
 
     # ----------------------------------------------------------------------
-    # Find class with highest probability
+    # Get predicted classes
     # ----------------------------------------------------------------------
-    print("[DEBUG] Selecting best predicted class...")
     classes = (
         result.get("data", {})
         .get("predictions", [{}])[0]
         .get("classes", [])
     )
 
-    # DEBUG: print all predicted classes
     print("[DEBUG] Model returned classes:")
     for c in classes:
         print(f"    → {c.get('label')}: {c.get('probability')}")
 
-    print("[DEBUG] Selecting best predicted class...")
+    # ----------------------------------------------------------------------
+    # FAMILY FILTERING (NEW)
+    # ----------------------------------------------------------------------
+    valid_labels = set(repo.get_diseases_for_family(family)) if family else None
+    print(f"[DEBUG] Valid diseases for family {family}: {valid_labels}")
 
-    if classes:
-        best = max(classes, key=lambda x: x.get("probability", 0))
-        best_label = best.get("label")
-        print(f"[DEBUG] Best label = {best_label}")
+    if valid_labels:
+        filtered = [c for c in classes if c.get("label") in valid_labels]
+        if not filtered:
+            print("[DEBUG] No family-compatible class found → best_label = 'unknown'")
+            best_label = "unknown"
+        else:
+            best = max(filtered, key=lambda x: x.get("probability", 0))
+            best_label = best.get("label")
     else:
-        best_label = None
-        print("[DEBUG] No prediction classes returned from model")
+        # fallback normale
+        print("[DEBUG] No family provided → selecting best overall")
+        best = max(classes, key=lambda x: x.get("probability", 0)) if classes else None
+        best_label = best.get("label") if best else None
+
+    print(f"[DEBUG] Best label (after family filter) = {best_label}")
 
     # ----------------------------------------------------------------------
     # ENRICH PREDICTION WITH REPOSITORY
@@ -752,13 +760,11 @@ def ai_model_disease_detection():
     )
 
     # ---------------------------------------------------------
-    #  SALVATAGGI DOPO L'ARRICHIMENTO
+    # SAVE RESULTS
     # ---------------------------------------------------------
-
     plant_id = request.values.get("plant_id") or (body.get("plant_id") if isinstance(body, dict) else None)
     user_id = g.user_id
 
-    # 1 Salva la malattia rilevata in plant_disease
     detected_disease_id = enriched.get("id")
     repo.create_plant_disease_record(
         plant_id=plant_id,
@@ -769,14 +775,12 @@ def ai_model_disease_detection():
         status="detected"
     )
 
-    # 2 Salva la foto originale in plant_photo
     repo.add_plant_photo(
         plant_id=plant_id,
-        image_base64=image_base64,  # verrà convertita/hostata da repo
+        image_base64=image_base64,
         caption=f"Detection result: {best_label}",
     )
 
-    # 3️ Aggiorna lo stato della user_plant → sick
     repo.update_user_plant_status(
         user_id=user_id,
         plant_id=plant_id,
@@ -787,6 +791,7 @@ def ai_model_disease_detection():
         "model": result,
         "disease": enriched
     }), 200
+
 
 
 @api_blueprint.route("/ai/model/disease-latest", methods=["GET"])
