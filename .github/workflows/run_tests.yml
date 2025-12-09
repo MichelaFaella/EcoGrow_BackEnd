@@ -1,0 +1,40 @@
+name: Run Tests
+
+on:
+  push:
+    branches: [ "main", "master", "logic_testing" ]
+  pull_request:
+    branches: [ "main", "master" ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+
+    - name: Build and start services
+      run: |
+        docker compose up -d --build
+
+    - name: Wait for DB to be healthy
+      run: |
+        timeout 60s sh -c 'until docker compose ps db | grep "healthy"; do echo "Waiting for DB..."; sleep 2; done'
+
+    - name: Wait for API to be ready
+      run: |
+        timeout 60s sh -c 'until curl -s http://localhost:8000/health > /dev/null; do echo "Waiting for API..."; sleep 5; done' || true
+        sleep 10
+
+    - name: Wait for Model to be ready
+      run: |
+        timeout 60s sh -c 'until curl -s http://localhost:5000/ > /dev/null; do echo "Waiting for Model..."; sleep 5; done' || true
+        sleep 10
+
+    - name: Run Tests
+      run: |
+        docker compose exec -T api pytest
