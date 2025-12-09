@@ -2171,22 +2171,6 @@ def shared_plant_add():
         return jsonify({"error": "Cannot share with yourself"}), 400
 
     # -------------------------
-    # Check duplicate shared plant
-    # -------------------------
-    print("[CHECK] Checking existing shared plants…")
-    existing = repo.get_shared_plants_for_user(owner_id)
-
-    for row in existing:
-        if (
-                row["owner_user_id"] == owner_id and
-                row["recipient_user_id"] == recipient_id and
-                row["plant_id"] == plant_id and
-                row.get("ended_sharing_at") is None
-        ):
-            print("[ERROR] Already shared")
-            return jsonify({"error": "Already shared"}), 409
-
-    # -------------------------
     # Create SharedPlant
     # -------------------------
     data = {

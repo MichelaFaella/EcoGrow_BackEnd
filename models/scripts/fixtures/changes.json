@@ -1038,6 +1038,31 @@
       "light_level": 2,
       "common_name": "Mum",
       "max_temp_c": 25
+    },
+    {
+      "size": "medium",
+      "updated_at": "2025-12-09T08:55:27",
+      "id": "c3f6758a-98a5-4937-853c-108f58a796bc",
+      "origin": "China",
+      "max_temp_c": 25,
+      "category": "Flowering",
+      "family_id": "3f91821e-4b75-4ba8-b8c1-e28ad7459bad",
+      "water_level": 3,
+      "pests": null,
+      "tips": [
+        "Ideal light: 4-6 hours of bright indirect light per day.",
+        "Tolerated light: Partial shade to full sun.",
+        "Watering: Keep soil evenly moist, but avoid overwatering.",
+        "Soil: Use regular indoor potting soil with good drainage."
+      ],
+      "created_at": "2025-12-09T08:55:27",
+      "use": "Potted plant, Ornamental",
+      "common_name": "Mum",
+      "scientific_name": "Chrysanthemum × morifolium",
+      "light_level": 2,
+      "min_temp_c": 10,
+      "climate": "Temperate",
+      "difficulty": 3
     }
   ],
   "plant_photo": [
@@ -1255,6 +1280,14 @@
       "created_at": null,
       "order_index": 0,
       "url": "c2beb97c-a602-4e8a-8ede-24269f7a7b66.jpg"
+    },
+    {
+      "id": "df23eba6-3acf-4dba-9740-b45c953bf250",
+      "order_index": 0,
+      "plant_id": "c3f6758a-98a5-4937-853c-108f58a796bc",
+      "url": "df23eba6-3acf-4dba-9740-b45c953bf250.jpg",
+      "created_at": null,
+      "caption": null
     }
   ],
   "user_plant": [
@@ -1536,6 +1569,18 @@
       "plant_id": "442b14e4-c350-455c-ba7c-26911530a427",
       "location_note": null,
       "since": "2025-12-03"
+    },
+    {
+      "user_id": "55b11b16-1206-4bf4-b613-b81fc1c78e0c",
+      "plant_id": "c3f6758a-98a5-4937-853c-108f58a796bc",
+      "location_note": null,
+      "since": "2025-12-09"
+    },
+    {
+      "user_id": "f17e57ab-7f0d-4e98-868e-34dfa7b62dd9",
+      "plant_id": "c3f6758a-98a5-4937-853c-108f58a796bc",
+      "location_note": null,
+      "since": "2025-12-09"
     }
   ],
   "shared_plant": [
@@ -1646,6 +1691,24 @@
       "can_edit": true,
       "created_at": "2025-12-03T10:01:09",
       "ended_sharing_at": null
+    },
+    {
+      "id": "23cc06ea-352e-45a0-ae91-8c3a1fa7ab62",
+      "owner_user_id": "55b11b16-1206-4bf4-b613-b81fc1c78e0c",
+      "recipient_user_id": "f17e57ab-7f0d-4e98-868e-34dfa7b62dd9",
+      "plant_id": "c3f6758a-98a5-4937-853c-108f58a796bc",
+      "can_edit": true,
+      "created_at": "2025-12-09T09:11:18",
+      "ended_sharing_at": "2025-12-09T09:11:23"
+    },
+    {
+      "id": "a2f894cf-74a8-4f1a-96ec-448cdfae802d",
+      "owner_user_id": "55b11b16-1206-4bf4-b613-b81fc1c78e0c",
+      "recipient_user_id": "f17e57ab-7f0d-4e98-868e-34dfa7b62dd9",
+      "plant_id": "c3f6758a-98a5-4937-853c-108f58a796bc",
+      "can_edit": true,
+      "created_at": "2025-12-09T09:22:37",
+      "ended_sharing_at": null
     }
   ],
   "plant_disease": [
@@ -1705,6 +1768,22 @@
       "status": "accepted",
       "created_at": "2025-12-03T10:00:52",
       "updated_at": "2025-12-03T10:00:52"
+    },
+    {
+      "id": "a9af0055-f757-4ee5-b6b7-39bfe86d5d32",
+      "user_id_a": "55b11b16-1206-4bf4-b613-b81fc1c78e0c",
+      "user_id_b": "f17e57ab-7f0d-4e98-868e-34dfa7b62dd9",
+      "status": "accepted",
+      "created_at": "2025-12-09T09:10:38",
+      "updated_at": "2025-12-09T09:10:38"
+    },
+    {
+      "id": "fdf14928-7db3-43fc-8191-2ea44de2d134",
+      "user_id_a": "55b11b16-1206-4bf4-b613-b81fc1c78e0c",
+      "user_id_b": "e3baf3d4-23f1-4d1c-9b80-bbfe979bd9a8",
+      "status": "accepted",
+      "created_at": "2025-12-09T09:10:58",
+      "updated_at": "2025-12-09T09:10:58"
     }
   ],
   "user": [
@@ -1740,6 +1819,15 @@
       "email": "g.lanogmail.com",
       "password_hash": "scrypt:32768:8:1$zOtRq9AZ0DvEthPw$9cf4f82317819b9f6930690d2dcd37eb7c6c0514e89532f9502da2e053fc2d26b0701e9ec3ab84a68049e88fb3494319e984dc488800bb38a6d9398ad09363aa",
       "created_at": "2025-12-03T10:04:48"
+    },
+    {
+      "created_at": "2025-12-04T17:21:45",
+      "last_name": "Franco",
+      "id": "55b11b16-1206-4bf4-b613-b81fc1c78e0c",
+      "first_name": "Andrea",
+      "password_hash": "scrypt:32768:8:1$k0ef5fI06KjPfkVS$e54b5f7e2b10b8c6d7254e0cc9d784c59ed05c335d6675d458f47a880ebad40b70438bb1294b29f7fc5ce6bc413badbac05e4ec9b71e8207d032b1f8e5f4470e",
+      "updated_at": "2025-12-09T09:22:58",
+      "email": "a.franco@gmail.com"
     }
   ]
 }
