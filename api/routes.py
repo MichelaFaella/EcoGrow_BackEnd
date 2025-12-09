@@ -1666,9 +1666,14 @@ def plant_disease_delete(pdid: str):
 @require_jwt
 def user_all():
     with _session_ctx() as s:
-        rows = s.query(User).order_by(User.created_at.desc()).all()
+        # mostra solo l'utente corrente
+        rows = (
+            s.query(User)
+            .filter(User.id == g.user_id)
+            .order_by(User.created_at.desc())
+            .all()
+        )
         return jsonify([_serialize_instance(r) for r in rows]), 200
-
 
 @api_blueprint.route("/user/add", methods=["POST"])
 def user_add():
@@ -1884,10 +1889,11 @@ def user_plant_add():
 @api_blueprint.route("/user_plant/delete", methods=["DELETE"])
 @require_jwt
 def user_plant_delete():
-    user_id = request.args.get("user_id")
+    # l'utente è SEMPRE quello loggato
+    user_id = g.user_id
     plant_id = request.args.get("plant_id")
-    if not user_id or not plant_id:
-        return jsonify({"error": "user_id and plant_id are required"}), 400
+    if not plant_id:
+        return jsonify({"error": "plant_id is required"}), 400
     _ensure_uuid(user_id, "user_id")
     _ensure_uuid(plant_id, "plant_id")
     with _session_ctx() as s:
@@ -1895,9 +1901,12 @@ def user_plant_delete():
         if row:
             s.delete(row)
             _commit_or_409(s)
-        write_changes_upsert("user_plant", [{"user_id": user_id, "plant_id": plant_id, "_delete": True}])
-        return ("", 204)
 
+        write_changes_upsert(
+            "user_plant",
+            [{"user_id": user_id, "plant_id": plant_id, "_delete": True}],
+        )
+        return ("", 204)
 
 # ============================
 #         FRIENDSHIP
@@ -2040,11 +2049,22 @@ def friendship_add():
     repo = RepositoryService()
 
     data = _filter_fields_for_model(payload, Friendship)
-    required = ["user_id_a", "user_id_b", "status"]
-    missing = [k for k in required if not data.get(k)]
 
-    if missing:
-        return jsonify({"error": f"Required fields: {', '.join(missing)}"}), 400
+    # forza l'utente loggato come user_id_a
+    data["user_id_a"] = g.user_id
+    _ensure_uuid(data["user_id_a"], "user_id_a")
+
+    if not data.get("user_id_b"):
+        return jsonify({"error": "user_id_b is required"}), 400
+
+    _ensure_uuid(data["user_id_b"], "user_id_b")
+
+    if data["user_id_b"] == data["user_id_a"]:
+        return jsonify({"error": "Cannot create friendship with yourself"}), 400
+
+    # status obbligatorio
+    if not data.get("status"):
+        return jsonify({"error": "status is required"}), 400
 
     try:
         fr = repo.create_friendship(data)
@@ -2070,9 +2090,18 @@ def friendship_update(fid: str):
     fr = repo.get_friendship_by_id(fid)
     if not fr:
         return jsonify({"error": "Friendship not found"}), 404
+    # controllo: l'utente deve essere user_id_a o user_id_b
+    if str(fr.user_id_a) != str(g.user_id) and str(fr.user_id_b) != str(g.user_id):
+        return jsonify(
+            {"error": "Forbidden: non fai parte di questa friendship"}
+        ), 403
+
+    data = _filter_fields_for_model(payload, Friendship)
 
     try:
-        updated = repo.update_friendship(fid, payload)
+        updated = repo.update_friendship(fid, data)
+        if not updated:
+            return jsonify({"error": "Friendship not found"}), 404
         print(f"[API] friendship_update → updated {fid}")
     except Exception as e:
         print("[API] ERROR updating friendship:", e)
@@ -2094,6 +2123,11 @@ def friendship_delete(fid: str):
     fr = repo.get_friendship_by_id(fid)
     if not fr:
         return jsonify({"error": "Friendship not found"}), 404
+
+    if str(fr.user_id_a) != str(g.user_id) and str(fr.user_id_b) != str(g.user_id):
+        return jsonify(
+            {"error": "Forbidden: non fai parte di questa friendship"}
+        ), 403
 
     try:
         repo.delete_friendship(fid)
@@ -2234,14 +2268,19 @@ def shared_plant_update(sid: str):
     _ensure_uuid(sid, "shared_plant_id")
     payload = _parse_json_body()
     repo = RepositoryService()
-
+    # carico la shared_plant per controllare l'owner
+    sp = repo.get_shared_plant_by_id(sid)
+    if not sp:
+        return jsonify({"error": "SharedPlant not found"}), 404
+    if str(sp.owner_user_id) != str(g.user_id):
+        return jsonify(
+            {"error": "Forbidden: non sei l'owner di questa condivisione"}
+        ), 403
     # tieni solo i campi validi per SharedPlant
     data = _filter_fields_for_model(payload, SharedPlant)
-
     sp = repo.update_shared_plant(sid, data)
     if not sp:
         return jsonify({"error": "SharedPlant not found"}), 404
-
     return jsonify({"ok": True, "id": sp.id}), 200
 
 
@@ -2283,9 +2322,13 @@ def get_watering_plan_for_plant(plant_id: str):
 @require_jwt
 def watering_plan_all():
     with _session_ctx() as s:
-        rows = s.query(WateringPlan).order_by(WateringPlan.next_due_at.asc()).all()
+        rows = (
+            s.query(WateringPlan)
+            .filter(WateringPlan.user_id == g.user_id)
+            .order_by(WateringPlan.next_due_at.asc())
+            .all()
+        )
         return jsonify([_serialize_instance(r) for r in rows]), 200
-
 
 @api_blueprint.route("/watering_plan/add", methods=["POST"])
 @require_jwt
@@ -2317,7 +2360,11 @@ def watering_plan_update(wid: str):
     payload = _parse_json_body()
     with _session_ctx() as s:
         wp = s.get(WateringPlan, wid)
-        if not wp: return jsonify({"error": "WateringPlan not found"}), 404
+        if not wp:
+            return jsonify({"error": "WateringPlan not found"}), 404
+        # controllo ownership
+        if str(wp.user_id) != str(g.user_id):
+            return jsonify({"error": "Forbidden: non possiedi questo watering plan"}), 403
         for k, v in _filter_fields_for_model(payload, WateringPlan).items():
             setattr(wp, k, v)
         _commit_or_409(s)
@@ -2332,6 +2379,10 @@ def watering_plan_delete(wid: str):
     with _session_ctx() as s:
         wp = s.get(WateringPlan, wid)
         if wp:
+            if str(wp.user_id) != str(g.user_id):
+                return jsonify(
+                    {"error": "Forbidden: non possiedi questo watering plan"}
+                ), 403
             s.delete(wp)
             _commit_or_409(s)
         write_changes_delete("watering_plan", wid)
@@ -2343,7 +2394,12 @@ def watering_plan_delete(wid: str):
 @require_jwt
 def watering_log_all():
     with _session_ctx() as s:
-        rows = s.query(WateringLog).order_by(WateringLog.done_at.desc()).all()
+        rows = (
+            s.query(WateringLog)
+            .filter(WateringLog.user_id == g.user_id)
+            .order_by(WateringLog.done_at.desc())
+            .all()
+        )
         return jsonify([_serialize_instance(r) for r in rows]), 200
 
 
@@ -2377,7 +2433,12 @@ def watering_log_update(lid: str):
     payload = _parse_json_body()
     with _session_ctx() as s:
         wl = s.get(WateringLog, lid)
-        if not wl: return jsonify({"error": "WateringLog not found"}), 404
+        if not wl:
+            return jsonify({"error": "WateringLog not found"}), 404
+        if str(wl.user_id) != str(g.user_id):
+            return jsonify(
+                {"error": "Forbidden: non possiedi questo watering log"}
+            ), 403
         for k, v in _filter_fields_for_model(payload, WateringLog).items():
             setattr(wl, k, v)
         _commit_or_409(s)
@@ -2392,11 +2453,14 @@ def watering_log_delete(lid: str):
     with _session_ctx() as s:
         wl = s.get(WateringLog, lid)
         if wl:
+            if str(wl.user_id) != str(g.user_id):
+                return jsonify(
+                    {"error": "Forbidden: non possiedi questo watering log"}
+                ), 403
             s.delete(wl)
             _commit_or_409(s)
         write_changes_delete("watering_log", lid)
         return ("", 204)
-
 
 @api_blueprint.route("/question/all", methods=["GET"])
 @require_jwt
@@ -2967,7 +3031,12 @@ def watering_plan_calendar_export():
 @require_jwt
 def reminder_all():
     with _session_ctx() as s:
-        rows = s.query(Reminder).order_by(Reminder.scheduled_at.asc()).all()
+        rows = (
+            s.query(Reminder)
+            .filter(Reminder.user_id == g.user_id)
+            .order_by(Reminder.scheduled_at.asc())
+            .all()
+        )
         return jsonify([_serialize_instance(r) for r in rows]), 200
 
 
@@ -2998,13 +3067,17 @@ def reminder_update(rid: str):
     payload = _parse_json_body()
     with _session_ctx() as s:
         r = s.get(Reminder, rid)
-        if not r: return jsonify({"error": "Reminder not found"}), 404
+        if not r:
+            return jsonify({"error": "Reminder not found"}), 404
+        if str(r.user_id) != str(g.user_id):
+            return jsonify(
+                {"error": "Forbidden: non possiedi questo reminder"}
+            ), 403
         for k, v in _filter_fields_for_model(payload, Reminder).items():
             setattr(r, k, v)
         _commit_or_409(s)
         write_changes_upsert("reminder", [_serialize_instance(r)])
         return jsonify({"ok": True, "id": r.id}), 200
-
 
 @api_blueprint.route("/reminder/delete/<rid>", methods=["DELETE"])
 @require_jwt
@@ -3013,6 +3086,10 @@ def reminder_delete(rid: str):
     with _session_ctx() as s:
         r = s.get(Reminder, rid)
         if r:
+            if str(r.user_id) != str(g.user_id):
+                return jsonify(
+                    {"error": "Forbidden: non possiedi questo reminder"}
+                ), 403
             s.delete(r)
             _commit_or_409(s)
         write_changes_delete("reminder", rid)
