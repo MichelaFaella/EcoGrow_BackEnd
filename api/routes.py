@@ -18,7 +18,7 @@ from sqlalchemy.orm import selectinload
 from werkzeug.utils import secure_filename, send_from_directory
 from werkzeug.security import check_password_hash
 from werkzeug.security import generate_password_hash
-from sqlalchemy import func
+from sqlalchemy import func, or_
 from sqlalchemy.exc import IntegrityError, DataError
 from functools import wraps
 from datetime import datetime, timedelta
@@ -49,6 +49,7 @@ from models.entities import (
     WateringLog,
     WateringPlan,
     RefreshToken,
+    UserQuestionAnswer,
 )
 
 api_blueprint = Blueprint("api", __name__)
@@ -229,6 +230,161 @@ def require_jwt(fn):
 
 
 # ========= Helpers =========
+
+def _collect_plant_cascade_ids(session, plant_id: str):
+    """
+    Raccoglie TUTTE le entità figlie legate a una plant, per poi loggarle
+    in changes.json dopo la delete effettiva sul DB.
+    Restituisce un dict con liste di id / righe da loggare.
+    """
+    # plant_photo
+    photos = (
+        session.query(PlantPhoto)
+        .filter(PlantPhoto.plant_id == plant_id)
+        .all()
+    )
+    photo_ids = [pp.id for pp in photos]
+
+    # user_plant (PK composta → upsert con _delete=True)
+    ups = (
+        session.query(UserPlant)
+        .filter(UserPlant.plant_id == plant_id)
+        .all()
+    )
+    user_plant_pairs = [
+        {
+            "user_id": up.user_id,
+            "plant_id": up.plant_id,
+            "_delete": True,
+        }
+        for up in ups
+    ]
+
+    # watering_plan
+    wps = (
+        session.query(WateringPlan)
+        .filter(WateringPlan.plant_id == plant_id)
+        .all()
+    )
+    watering_plan_ids = [wp.id for wp in wps]
+
+    # watering_log
+    wls = (
+        session.query(WateringLog)
+        .filter(WateringLog.plant_id == plant_id)
+        .all()
+    )
+    watering_log_ids = [wl.id for wl in wls]
+
+    # plant_disease
+    pds = (
+        session.query(PlantDisease)
+        .filter(PlantDisease.plant_id == plant_id)
+        .all()
+    )
+    plant_disease_ids = [pd.id for pd in pds]
+
+    # shared_plant
+    sps = (
+        session.query(SharedPlant)
+        .filter(SharedPlant.plant_id == plant_id)
+        .all()
+    )
+    shared_plant_ids = [sp.id for sp in sps]
+
+    # question legate a questa plant (se schema le prevede)
+    qs = (
+        session.query(Question)
+        .filter(Question.plant_id == plant_id)
+        .all()
+    )
+    question_ids = [q.id for q in qs]
+
+    # reminder legati a questa plant (se schema le prevede)
+    rs = (
+        session.query(Reminder)
+        .filter(Reminder.plant_id == plant_id)
+        .all()
+    )
+    reminder_ids = [r.id for r in rs]
+
+    return {
+        "photos": photos,
+        "photo_ids": photo_ids,
+        "user_plant_pairs": user_plant_pairs,
+        "watering_plan_ids": watering_plan_ids,
+        "watering_log_ids": watering_log_ids,
+        "plant_disease_ids": plant_disease_ids,
+        "shared_plant_ids": shared_plant_ids,
+        "question_ids": question_ids,
+        "reminder_ids": reminder_ids,
+    }
+
+
+def _log_plant_cascade_to_changes(plant_id: str, cascade: dict):
+    """
+    Scrive su changes.json le delete coerenti con la cancellazione della plant.
+    """
+    # plant
+    write_changes_delete("plant", plant_id)
+
+    # plant_photo
+    for pid in cascade["photo_ids"]:
+        write_changes_delete("plant_photo", pid)
+
+    # user_plant (PK composta, via upsert con _delete=True)
+    if cascade["user_plant_pairs"]:
+        write_changes_upsert("user_plant", cascade["user_plant_pairs"])
+
+    # watering_plan
+    for wid in cascade["watering_plan_ids"]:
+        write_changes_delete("watering_plan", wid)
+
+    # watering_log
+    for lid in cascade["watering_log_ids"]:
+        write_changes_delete("watering_log", lid)
+
+    # plant_disease
+    for pdid in cascade["plant_disease_ids"]:
+        write_changes_delete("plant_disease", pdid)
+
+    # shared_plant
+    for sid in cascade["shared_plant_ids"]:
+        write_changes_delete("shared_plant", sid)
+
+    # question
+    for qid in cascade["question_ids"]:
+        write_changes_delete("question", qid)
+
+    # reminder
+    for rid in cascade["reminder_ids"]:
+        write_changes_delete("reminder", rid)
+
+
+def _remove_plant_files(photos):
+    """
+    Rimuove i file delle foto associati a una plant.
+    """
+    base = os.path.realpath(current_app.config["UPLOAD_DIR"])
+    for pp in photos:
+        if pp.url and pp.url.startswith("/uploads/"):
+            try:
+                rel = pp.url[len("/uploads/"):]
+                full = os.path.realpath(os.path.join(base, rel))
+                if full.startswith(base) and os.path.exists(full):
+                    os.remove(full)
+                    dirpath = os.path.dirname(full)
+                    try:
+                        os.rmdir(dirpath)
+                    except OSError:
+                        # cartella non vuota → ok
+                        pass
+            except Exception as e:
+                current_app.logger.warning(
+                    f"Unable to remove file for photo_id={pp.id}: {e}"
+                )
+
+
 def _model_columns(Model) -> set[str]:
     """Returns the SQLAlchemy column names of the Model."""
     return {c.name for c in Model.__table__.columns}
@@ -1322,30 +1478,74 @@ def create_plant():
 
 # ========= UPDATE Plant =========
 @api_blueprint.route("/plant/update/<plant_id>", methods=["PATCH", "PUT"])
+@require_jwt
 def update_plant(plant_id: str):
     if not plant_id:
         return jsonify({"error": "missing plant_id"}), 400
     _ensure_uuid(plant_id, "plant_id")
-    payload = _parse_json_body()
 
-    # --- size in update: if provided, validate and convert to Enum ---
+    payload = _parse_json_body() or {}
+
+    # --- size in update: se fornita, valida e converte a Enum ---
     if "size" in payload and payload["size"] is not None:
         size_val = str(payload["size"])
         if size_val not in ALLOWED_SIZES:
-            return jsonify({"error": f"size must be one of {sorted(ALLOWED_SIZES)}"}), 400
+            return jsonify(
+                {"error": f"size must be one of {sorted(ALLOWED_SIZES)}"}
+            ), 400
         payload["size"] = SizeEnum(size_val)
 
+    current_user_id = str(g.user_id)
+
     with _session_ctx() as s:
+        # 1) Recupero pianta
         p = s.get(Plant, plant_id)
         if p is None:
             return jsonify({"error": "Plant not found"}), 404
 
+        # 2) Controllo che l'utente abbia la pianta nel suo giardino (UserPlant)
+        up = s.get(UserPlant, (current_user_id, plant_id))
+        if up is None:
+            # L'utente non ha alcun legame con questa pianta → vietato
+            return jsonify(
+                {"error": "Forbidden: you do not own this plant"}
+            ), 403
+
+        # 3) Se la pianta è condivisa, consenti update solo all'OWNER
+        shared_rows = (
+            s.query(SharedPlant)
+            .filter(SharedPlant.plant_id == plant_id)
+            .all()
+        )
+        if shared_rows:
+            owner_ids = {str(sp.owner_user_id) for sp in shared_rows}
+            if current_user_id not in owner_ids:
+                # L'utente è solo recipient (o comunque non owner) → vietato
+                return jsonify(
+                    {
+                        "error": (
+                            "Forbidden: only the owner can update this shared plant"
+                        )
+                    }
+                ), 403
+
+        # 4) Aggiornamento campi consentiti
         allowed = [
-            "scientific_name", "common_name", "use", "origin",
-            "water_level", "light_level", "min_temp_c", "max_temp_c",
-            "category", "climate", "pests", "family_id",
-            "size",  # <--- added
+            "scientific_name",
+            "common_name",
+            "use",
+            "origin",
+            "water_level",
+            "light_level",
+            "min_temp_c",
+            "max_temp_c",
+            "category",
+            "climate",
+            "pests",
+            "family_id",
+            "size",
         ]
+
         for k, v in _filter_fields_for_model(payload, Plant).items():
             if k in allowed:
                 setattr(p, k, v)
@@ -1359,18 +1559,171 @@ def update_plant(plant_id: str):
 
 # ========= DELETE Plant =========
 @api_blueprint.route("/plant/delete/<plant_id>", methods=["DELETE"])
+@require_jwt
 def delete_plant(plant_id: str):
-    if not plant_id:
-        return jsonify({"error": "missing plant_id"}), 400
-    _ensure_uuid(plant_id, "plant_id")
+    """
+    Cancella una pianta verificando:
+    - che l'ID sia un UUID valido
+    - che l'utente corrente sia il proprietario “vero” (non un recipient)
+    Poi lascia fare al DB il CASCADE (PlantPhoto, UserPlant, WateringPlan, WateringLog,
+    PlantDisease, SharedPlant, Reminder legati alla pianta) e aggiorna changes.json.
+    """
+    try:
+        _ensure_uuid(plant_id, "plant_id")
+    except ValueError as e:
+        abort(400, description=str(e))
+
+    current_user_id = getattr(g, "user_id", None)
+    if not current_user_id:
+        abort(401, description="Unauthorized")
+
+    # Liste per logging su changes.json
+    photo_ids: list[str] = []
+    user_plant_pairs: list[dict] = []
+    watering_plan_ids: list[str] = []
+    watering_log_ids: list[str] = []
+    plant_disease_ids: list[str] = []
+    shared_ids: list[str] = []
+    reminder_ids: list[str] = []
 
     with _session_ctx() as s:
-        p = s.get(Plant, plant_id)
-        if p is not None:
-            s.delete(p)
-            _commit_or_409(s)
-        write_changes_delete("plant", plant_id)
-        return ("", 204)
+        plant: Plant | None = s.get(Plant, plant_id)
+        if not plant:
+            # Idempotente: se la pianta non esiste più, allineiamo comunque il JSON
+            write_changes_delete("plant", plant_id)
+            return "", 204
+
+        # ---------------------------
+        # 1) Controllo ownership
+        # ---------------------------
+        # Se esistono share attive, l’unico che può cancellare è l’owner_user_id.
+        active_shares = (
+            s.query(SharedPlant)
+            .filter(
+                SharedPlant.plant_id == plant_id,
+                SharedPlant.ended_sharing_at.is_(None),
+            )
+            .all()
+        )
+
+        if active_shares:
+            owner_ids = {sp.owner_user_id for sp in active_shares}
+            # In pratica owner_ids dovrebbe contenere un solo ID
+            if current_user_id not in owner_ids:
+                abort(403, description="You are not the owner of this plant.")
+        else:
+            # Nessuna share attiva: chiedo che esista un UserPlant per (current_user_id, plant_id)
+            owner_link = s.get(UserPlant, (current_user_id, plant_id))
+            if owner_link is None:
+                abort(403, description="You are not the owner of this plant.")
+
+        # ---------------------------
+        # 2) Raccolgo tutto ciò che verrà cancellato (per changes.json)
+        #    Importante: NON chiamiamo s.delete() sui figli, lascia fare al CASCADE.
+        # ---------------------------
+
+        # PlantPhoto via relazione
+        photo_ids = [p.id for p in plant.photos]
+
+        # Tutti i UserPlant legati a questa pianta (owner + recipient)
+        user_plant_links = (
+            s.query(UserPlant)
+            .filter(UserPlant.plant_id == plant_id)
+            .all()
+        )
+        user_plant_pairs = [
+            {"user_id": up.user_id, "plant_id": up.plant_id, "_delete": True}
+            for up in user_plant_links
+        ]
+
+        # WateringPlan
+        watering_plans = (
+            s.query(WateringPlan)
+            .filter(WateringPlan.plant_id == plant_id)
+            .all()
+        )
+        watering_plan_ids = [wp.id for wp in watering_plans]
+
+        # WateringLog
+        watering_logs = (
+            s.query(WateringLog)
+            .filter(WateringLog.plant_id == plant_id)
+            .all()
+        )
+        watering_log_ids = [wl.id for wl in watering_logs]
+
+        # PlantDisease
+        plant_diseases = (
+            s.query(PlantDisease)
+            .filter(PlantDisease.plant_id == plant_id)
+            .all()
+        )
+        plant_disease_ids = [pd.id for pd in plant_diseases]
+
+        # SharedPlant
+        shared_records = (
+            s.query(SharedPlant)
+            .filter(SharedPlant.plant_id == plant_id)
+            .all()
+        )
+        shared_ids = [sp.id for sp in shared_records]
+
+        # Reminder legati alla pianta (la logica esistente usa entity_type/entity_id)
+        reminders = (
+            s.query(Reminder)
+            .filter(
+                Reminder.entity_type == "plant",
+                Reminder.entity_id == plant_id,
+            )
+            .all()
+        )
+        reminder_ids = [r.id for r in reminders]
+
+        # ---------------------------
+        # 3) Cancellazione vera (DB CASCADE)
+        # ---------------------------
+        s.delete(plant)
+        _commit_or_409(s)
+
+    # ---------------------------
+    # 4) Logging su changes.json (fuori dalla sessione)
+    # ---------------------------
+
+    # plant
+    write_changes_delete("plant", plant_id)
+
+    # plant_photo
+    for pid in photo_ids:
+        write_changes_delete("plant_photo", pid)
+
+    # user_plant (PK composta, via upsert con _delete=True)
+    if user_plant_pairs:
+        write_changes_upsert("user_plant", user_plant_pairs)
+
+    # watering_plan
+    for wp_id in watering_plan_ids:
+        write_changes_delete("watering_plan", wp_id)
+
+    # watering_log
+    for wl_id in watering_log_ids:
+        write_changes_delete("watering_log", wl_id)
+
+    # plant_disease
+    for pd_id in plant_disease_ids:
+        write_changes_delete("plant_disease", pd_id)
+
+    # shared_plant
+    for sp_id in shared_ids:
+        write_changes_delete("shared_plant", sp_id)
+
+    # reminder
+    for rid in reminder_ids:
+        write_changes_delete("reminder", rid)
+
+    return "", 204
+
+
+
 
 
 # ========= Family =========
@@ -1764,37 +2117,54 @@ def user_update():
 
 @api_blueprint.route("/user/delete-me", methods=["DELETE"])
 @require_jwt
-def user_delete_me():
+def delete_me():
     """
-    Cancella l'account dell'utente loggato (g.user_id) e tutti i dati collegati.
-    Logga inoltre le delete in changes.json.
+    Cancella l'utente corrente e tutte le entità collegate, mantenendo
+    la stessa semantica di CASCADE del DB e aggiornando changes.json.
     """
-    current_user_id = getattr(g, "user_id", None)
-    if not current_user_id:
-        return jsonify({"error": "Unauthorized"}), 401
+    current_user_id = g.user_id
 
+    # Collezioni per aggiornare il changes.json
+    user_plant_pairs: list[dict] = []
     orphan_plant_ids: list[str] = []
     orphan_photo_ids: list[str] = []
-    user_plant_pairs: list[dict] = []
+    orphan_plant_disease_ids: list[str] = []
+    watering_plan_ids: list[str] = []
+    watering_log_ids: list[str] = []
+    reminder_ids: list[str] = []
+    shared_plant_ids: list[str] = []
+    friendship_ids: list[str] = []
 
     with _session_ctx() as s:
+        # 0) Carico l'utente
         u = s.get(User, current_user_id)
         if not u:
-            return jsonify({"error": "User non trovato"}), 404
+            return jsonify({"error": "User not found"}), 404
 
-        up_rows = (
+        # ------------------------------------------------------
+        # 1) USER_PLANT → salvo le coppie (user_id, plant_id)
+        #     (non le elimino a mano, ci pensa il CASCADE su user_id)
+        # ------------------------------------------------------
+        user_plants = (
             s.query(UserPlant)
             .filter(UserPlant.user_id == current_user_id)
             .all()
         )
-        for up in up_rows:
-            user_plant_pairs.append({
-                "user_id": up.user_id,
-                "plant_id": up.plant_id,
-                "_delete": True,
-            })
-        plant_ids = [up.plant_id for up in up_rows]
 
+        plant_ids: list[str] = []
+        for up in user_plants:
+            plant_ids.append(up.plant_id)
+            user_plant_pairs.append(
+                {
+                    "user_id": str(up.user_id),
+                    "plant_id": str(up.plant_id),
+                    "_delete": True,
+                }
+            )
+
+        # ------------------------------------------------------
+        # 2) Piante "orfane" = piante che hanno SOLO questo utente come proprietario
+        # ------------------------------------------------------
         if plant_ids:
             counts = (
                 s.query(UserPlant.plant_id, func.count(UserPlant.user_id))
@@ -1804,52 +2174,169 @@ def user_delete_me():
             )
             orphan_plant_ids = [pid for (pid, cnt) in counts if cnt == 1]
 
+        # ------------------------------------------------------
+        # 3) Per le piante orfane: foto, file su disco, malattie
+        # ------------------------------------------------------
+        photos = []
+        plant_diseases = []
+
         if orphan_plant_ids:
+            # Foto delle piante orfane
             photos = (
                 s.query(PlantPhoto)
                 .filter(PlantPhoto.plant_id.in_(orphan_plant_ids))
                 .all()
             )
 
+            # PlantDisease delle piante orfane
+            plant_diseases = (
+                s.query(PlantDisease)
+                .filter(PlantDisease.plant_id.in_(orphan_plant_ids))
+                .all()
+            )
+            orphan_plant_disease_ids = [pd.id for pd in plant_diseases]
+
+            # Cancellazione fisica dei file associati alle foto
             base = os.path.realpath(current_app.config["UPLOAD_DIR"])
             for pp in photos:
                 orphan_photo_ids.append(pp.id)
                 if pp.url and pp.url.startswith("/uploads/"):
                     try:
+                        # es. "/uploads/plant/<pid>/<uuid>.png"
                         rel = pp.url[len("/uploads/"):]
                         full = os.path.realpath(os.path.join(base, rel))
+                        # sicurezza: cancella solo dentro UPLOAD_DIR
                         if full.startswith(base) and os.path.exists(full):
                             os.remove(full)
+                            # opzionale: rimuovo dir se vuota
                             dirpath = os.path.dirname(full)
                             try:
                                 os.rmdir(dirpath)
                             except OSError:
+                                # cartella non vuota → ok così
                                 pass
                     except Exception as e:
                         current_app.logger.warning(
                             f"Impossibile rimuovere file per photo_id={pp.id}: {e}"
                         )
 
-            for pid in orphan_plant_ids:
-                plant = s.get(Plant, pid)
-                if plant:
-                    s.delete(plant)
+        # ------------------------------------------------------
+        # 4) WATERING_PLAN / WATERING_LOG / REMINDER dell'utente
+        # ------------------------------------------------------
+        wps = (
+            s.query(WateringPlan)
+            .filter(WateringPlan.user_id == current_user_id)
+            .all()
+        )
+        watering_plan_ids = [wp.id for wp in wps]
+
+        wls = (
+            s.query(WateringLog)
+            .filter(WateringLog.user_id == current_user_id)
+            .all()
+        )
+        watering_log_ids = [wl.id for wl in wls]
+
+        rems = (
+            s.query(Reminder)
+            .filter(Reminder.user_id == current_user_id)
+            .all()
+        )
+        reminder_ids = [r.id for r in rems]
+
+        # ------------------------------------------------------
+        # 5) SHARED_PLANT dove l'utente è owner o recipient
+        # ------------------------------------------------------
+        sps_owner = (
+            s.query(SharedPlant)
+            .filter(SharedPlant.owner_user_id == current_user_id)
+            .all()
+        )
+        sps_recipient = (
+            s.query(SharedPlant)
+            .filter(SharedPlant.recipient_user_id == current_user_id)
+            .all()
+        )
+        for sp in sps_owner + sps_recipient:
+            if sp.id not in shared_plant_ids:
+                shared_plant_ids.append(sp.id)
+
+        # ------------------------------------------------------
+        # 6) FRIENDSHIP dove l'utente è user_id_a o user_id_b
+        # ------------------------------------------------------
+        fr_a = (
+            s.query(Friendship)
+            .filter(Friendship.user_id_a == current_user_id)
+            .all()
+        )
+        fr_b = (
+            s.query(Friendship)
+            .filter(Friendship.user_id_b == current_user_id)
+            .all()
+        )
+        for fr in fr_a + fr_b:
+            if fr.id not in friendship_ids:
+                friendship_ids.append(fr.id)
+
+        # ------------------------------------------------------
+        # 7) Cancellazione effettiva nel DB
+        #    - piante orfane (con cascade su tutto ciò che ha FK plant_id)
+        #    - utente (con cascade su tutto ciò che ha FK user_id)
+        # ------------------------------------------------------
+        for pid in orphan_plant_ids:
+            plant = s.get(Plant, pid)
+            if plant:
+                s.delete(plant)
 
         s.delete(u)
         _commit_or_409(s)
 
+    # ------------------------------------------------------
+    # 8) LOGGING SU changes.json (fuori dalla sessione)
+    #    ATTENZIONE: qui passiamo solo ID singoli, mai liste.
+    # ------------------------------------------------------
+
+    # user
     write_changes_delete("user", current_user_id)
 
+    # user_plant (PK composta, via upsert con _delete=True)
     if user_plant_pairs:
         write_changes_upsert("user_plant", user_plant_pairs)
 
+    # piante orfane
     for pid in orphan_plant_ids:
         write_changes_delete("plant", pid)
 
+    # foto delle piante orfane
     for photo_id in orphan_photo_ids:
         write_changes_delete("plant_photo", photo_id)
 
+    # plant_disease delle piante orfane
+    for pdid in orphan_plant_disease_ids:
+        write_changes_delete("plant_disease", pdid)
+
+    # watering_plan / watering_log
+    for wid in watering_plan_ids:
+        write_changes_delete("watering_plan", wid)
+    for lid in watering_log_ids:
+        write_changes_delete("watering_log", lid)
+
+    # reminder
+    for rid in reminder_ids:
+        write_changes_delete("reminder", rid)
+
+    # shared_plant
+    for sid in shared_plant_ids:
+        write_changes_delete("shared_plant", sid)
+
+    # friendship
+    for fid in friendship_ids:
+        write_changes_delete("friendship", fid)
+
     return ("", 204)
+
+
+
 
 
 # ========= UserPlant (composite PK: user_id + plant_id) =========
@@ -2128,29 +2615,40 @@ def friendship_update(fid: str):
 #      DELETE FRIENDSHIP
 # ============================
 
-@api_blueprint.route("/friendship/delete/<fid>", methods=["DELETE"])
+# ========= DELETE Friendship =========
+@api_blueprint.route("/friendship/delete/<friendship_id>", methods=["DELETE"])
 @require_jwt
-def friendship_delete(fid: str):
-    _ensure_uuid(fid, "friendship_id")
-    repo = RepositoryService()
+def friendship_delete(friendship_id: str):
+    """
+    Elimina una friendship **solo se** l'utente loggato è uno degli estremi
+    (user_id_a o user_id_b). Aggiorna changes.json per la tabella friendship.
+    """
+    if not friendship_id:
+        return jsonify({"error": "missing friendship_id"}), 400
+    _ensure_uuid(friendship_id, "friendship_id")
 
-    fr = repo.get_friendship_by_id(fid)
-    if not fr:
-        return jsonify({"error": "Friendship not found"}), 404
+    current_user_id = getattr(g, "user_id", None)
+    if not current_user_id:
+        return jsonify({"error": "Unauthorized"}), 401
 
-    if str(fr.user_id_a) != str(g.user_id) and str(fr.user_id_b) != str(g.user_id):
-        return jsonify(
-            {"error": "Forbidden: non fai parte di questa friendship"}
-        ), 403
+    with _session_ctx() as s:
+        fr = s.get(Friendship, friendship_id)
+        if not fr:
+            write_changes_delete("friendship", friendship_id)
+            return ("", 204)
 
-    try:
-        repo.delete_friendship(fid)
-        print(f"[API] friendship_delete → removed {fid}")
-    except Exception as e:
-        print("[API] ERROR deleting friendship:", e)
-        return jsonify({"error": "Could not delete friendship"}), 500
+        if current_user_id not in (fr.user_id_a, fr.user_id_b):
+            return (
+                jsonify({"error": "Forbidden: non sei parte di questa amicizia"}),
+                403,
+            )
 
+        s.delete(fr)
+        _commit_or_409(s)
+
+    write_changes_delete("friendship", friendship_id)
     return ("", 204)
+
 
 
 # ========= SharedPlant =========
@@ -2202,6 +2700,13 @@ def shared_plant_add():
         if not plant:
             print("[ERROR] Plant not found")
             return jsonify({"error": "Plant not found"}), 404
+
+        # Verifica che l'utente loggato possieda questa pianta
+        up = s.get(UserPlant, (owner_id, plant_id))
+        if not up:
+            print("[ERROR] Owner does not own this plant")
+            return jsonify({"error": "Forbidden: non possiedi questa pianta"}), 403
+  
 
     # -------------------------
     # Resolve short_id → recipient
@@ -2282,18 +2787,41 @@ def shared_plant_update(sid: str):
     return jsonify({"ok": True, "id": sp.id}), 200
 
 
-@api_blueprint.route("/shared_plant/delete/<sid>", methods=["DELETE"])
+# ========= DELETE SharedPlant =========
+@api_blueprint.route("/shared_plant/delete/<shared_id>", methods=["DELETE"])
 @require_jwt
-def shared_plant_delete(sid: str):
-    _ensure_uuid(sid, "shared_plant_id")
-    repo = RepositoryService()
+def shared_plant_delete(shared_id: str):
+    """
+    Elimina una condivisione di pianta (shared_plant) **solo se** l'utente
+    loggato è l'owner della condivisione (owner_user_id).
+    Aggiorna changes.json per la tabella shared_plant.
+    """
+    if not shared_id:
+        return jsonify({"error": "missing shared_id"}), 400
+    _ensure_uuid(shared_id, "shared_id")
 
-    ok = repo.delete_shared_plant(sid, g.user_id)
+    current_user_id = getattr(g, "user_id", None)
+    if not current_user_id:
+        return jsonify({"error": "Unauthorized"}), 401
 
-    if not ok:
-        return jsonify({"error": "SharedPlant not found or unauthorized"}), 404
+    with _session_ctx() as s:
+        sp = s.get(SharedPlant, shared_id)
+        if not sp:
+            write_changes_delete("shared_plant", shared_id)
+            return ("", 204)
 
+        if sp.owner_user_id != current_user_id:
+            return (
+                jsonify({"error": "Forbidden: non sei il proprietario della condivisione"}),
+                403,
+            )
+
+        s.delete(sp)
+        _commit_or_409(s)
+
+    write_changes_delete("shared_plant", shared_id)
     return ("", 204)
+
 
 
 # ========= WateringPlan =========
@@ -2371,21 +2899,44 @@ def watering_plan_update(wid: str):
         return jsonify({"ok": True, "id": wp.id}), 200
 
 
-@api_blueprint.route("/watering_plan/delete/<wid>", methods=["DELETE"])
+# ========= DELETE WateringPlan =========
+@api_blueprint.route("/watering_plan/delete/<plan_id>", methods=["DELETE"])
 @require_jwt
-def watering_plan_delete(wid: str):
-    _ensure_uuid(wid, "watering_plan_id")
+def watering_plan_delete(plan_id: str):
+    """
+    Elimina un watering_plan **solo se** l'utente loggato possiede la pianta
+    associata (user_plant(user_id=g.user_id, plant_id=...)) e aggiorna
+    changes.json (tabella watering_plan).
+    """
+    if not plan_id:
+        return jsonify({"error": "missing plan_id"}), 400
+    _ensure_uuid(plan_id, "plan_id")
+
+    current_user_id = getattr(g, "user_id", None)
+    if not current_user_id:
+        return jsonify({"error": "Unauthorized"}), 401
+
     with _session_ctx() as s:
-        wp = s.get(WateringPlan, wid)
-        if wp:
-            if str(wp.user_id) != str(g.user_id):
-                return jsonify(
-                    {"error": "Forbidden: non possiedi questo watering plan"}
-                ), 403
-            s.delete(wp)
-            _commit_or_409(s)
-        write_changes_delete("watering_plan", wid)
-        return ("", 204)
+        wp = s.get(WateringPlan, plan_id)
+        if not wp:
+            # idempotente lato API, ma teniamo il JSON allineato
+            write_changes_delete("watering_plan", plan_id)
+            return ("", 204)
+
+        # Check di ownership tramite la pianta
+        owner_link = s.get(UserPlant, (current_user_id, wp.plant_id))
+        if not owner_link:
+            return (
+                jsonify({"error": "Forbidden: non possiedi questa pianta"}),
+                403,
+            )
+
+        s.delete(wp)
+        _commit_or_409(s)
+
+    write_changes_delete("watering_plan", plan_id)
+    return ("", 204)
+
 
 
 # ========= WateringLog =========
@@ -2401,19 +2952,23 @@ def watering_log_all():
         )
         return jsonify([_serialize_instance(r) for r in rows]), 200
 
-
 @api_blueprint.route("/watering_log/add", methods=["POST"])
 @require_jwt
 def watering_log_add():
     payload = _parse_json_body()
     data = _filter_fields_for_model(payload, WateringLog)
 
-    required = ["plant_id", "done_at", "amount_ml"]  # user_id rimosso
+    # `done_at` diventa opzionale: se manca, lo settiamo a ora.
+    required = ["plant_id", "amount_ml"]  # user_id e done_at non obbligatori in input
     missing = [k for k in required if not data.get(k)]
     if missing:
         return jsonify({"error": f"Campi obbligatori: {', '.join(missing)}"}), 400
 
+    if not data.get("done_at"):
+        data["done_at"] = datetime.utcnow()
+
     with _session_ctx() as s:
+        # Verifica che l'utente possieda la pianta
         if not s.get(UserPlant, (g.user_id, data["plant_id"])):
             return jsonify({"error": "Forbidden: non possiedi questa pianta"}), 403
 
@@ -2445,21 +3000,41 @@ def watering_log_update(lid: str):
         return jsonify({"ok": True, "id": wl.id}), 200
 
 
-@api_blueprint.route("/watering_log/delete/<lid>", methods=["DELETE"])
+# ========= DELETE WateringLog =========
+@api_blueprint.route("/watering_log/delete/<log_id>", methods=["DELETE"])
 @require_jwt
-def watering_log_delete(lid: str):
-    _ensure_uuid(lid, "watering_log_id")
+def watering_log_delete(log_id: str):
+    """
+    Elimina un watering_log **solo se** l'utente loggato possiede la pianta
+    associata (user_plant(user_id=g.user_id, plant_id=...)) e aggiorna
+    changes.json (tabella watering_log).
+    """
+    if not log_id:
+        return jsonify({"error": "missing log_id"}), 400
+    _ensure_uuid(log_id, "log_id")
+
+    current_user_id = getattr(g, "user_id", None)
+    if not current_user_id:
+        return jsonify({"error": "Unauthorized"}), 401
+
     with _session_ctx() as s:
-        wl = s.get(WateringLog, lid)
-        if wl:
-            if str(wl.user_id) != str(g.user_id):
-                return jsonify(
-                    {"error": "Forbidden: non possiedi questo watering log"}
-                ), 403
-            s.delete(wl)
-            _commit_or_409(s)
-        write_changes_delete("watering_log", lid)
-        return ("", 204)
+        wl = s.get(WateringLog, log_id)
+        if not wl:
+            write_changes_delete("watering_log", log_id)
+            return ("", 204)
+
+        owner_link = s.get(UserPlant, (current_user_id, wl.plant_id))
+        if not owner_link:
+            return (
+                jsonify({"error": "Forbidden: non possiedi questa pianta"}),
+                403,
+            )
+
+        s.delete(wl)
+        _commit_or_409(s)
+
+    write_changes_delete("watering_log", log_id)
+    return ("", 204)
 
 
 @api_blueprint.route("/question/all", methods=["GET"])
@@ -2590,23 +3165,58 @@ def question_update(qid: str):
         return jsonify({"ok": True, "id": str(q.id)}), 200
 
 
-@api_blueprint.route("/question/delete/<qid>", methods=["DELETE"])
+# ========= DELETE Question =========
+@api_blueprint.route("/question/delete/<question_id>", methods=["DELETE"])
 @require_jwt
-def question_delete(qid: str):
+def delete_question(question_id: str):
     """
-    Elimina una domanda globale.
-    Le QuestionOption e UserQuestionAnswer collegate
-    vengono eliminate in cascata (ON DELETE CASCADE).
+    Elimina una question **solo se** l'utente loggato è il proprietario
+    (question.user_id). Aggiorna changes.json per:
+
+    - question
+    - reminder (tutti quelli con question_id = question_id)
     """
-    _ensure_uuid(qid, "question_id")
+    if not question_id:
+        return jsonify({"error": "missing question_id"}), 400
+    _ensure_uuid(question_id, "question_id")
+
+    current_user_id = getattr(g, "user_id", None)
+    if not current_user_id:
+        return jsonify({"error": "Unauthorized"}), 401
+
+    reminder_ids: list[str] = []
+
     with _session_ctx() as s:
-        q = s.get(Question, qid)
-        if q:
-            s.delete(q)
-            _commit_or_409(s)
-            write_changes_delete("question", qid)
-        # 204 anche se la domanda non esiste (idempotente)
-        return ("", 204)
+        q = s.get(Question, question_id)
+        if not q:
+            # idempotente ma teniamo il JSON pulito
+            write_changes_delete("question", question_id)
+            return ("", 204)
+
+        if q.user_id != current_user_id:
+            return (
+                jsonify({"error": "Forbidden: non sei il proprietario della domanda"}),
+                403,
+            )
+
+        # raccogli reminder legati a questa question
+        qrs = (
+            s.query(Reminder)
+            .filter(Reminder.question_id == question_id)
+            .all()
+        )
+        reminder_ids = [qr.id for qr in qrs]
+
+        s.delete(q)
+        _commit_or_409(s)
+
+    # Logging su changes.json
+    write_changes_delete("question", question_id)
+    for rid in reminder_ids:
+        # Se nel tuo changes.json la tabella si chiama "reminder", cambia qui.
+        write_changes_delete("reminder", rid)
+
+    return ("", 204)
 
 
 # ========= Questionnaire (per utente loggato) =========
