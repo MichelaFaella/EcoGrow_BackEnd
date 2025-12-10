@@ -30,7 +30,6 @@ COPY infra/warm_assets.py /app/infra/warm_assets.py
 
 # (opzionali) artifacts baked nell'immagine
 COPY artifacts/detectors /app/artifacts/detectors
-COPY artifacts/pretrained /app/artifacts/pretrained
 
 # Crea le cartelle per cache/modelli
 RUN mkdir -p /app/artifacts/detectors /app/artifacts/pretrained
