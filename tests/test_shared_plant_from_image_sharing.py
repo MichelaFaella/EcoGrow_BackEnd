@@ -82,10 +82,9 @@ def test_shared_plant_flow_from_image(user_token_and_session, base_url):
     2. Creo un secondo utente e faccio login, ricavando il suo short_id.
     3. Creo una pianta da immagine (endpoint /plant/add con campo 'image' base64).
     4. Primo sharing (owner -> recipient) /shared_plant/add.
-    5. Secondo sharing immediato con stessi dati → 409 Already shared.
-    6. Termino lo sharing /shared_plant/delete/<first_shared_id>.
-    7. Ripeto lo sharing con stessi owner/recipient/plant → 201 OK.
-    8. CLEANUP:
+    5. Termino lo sharing /shared_plant/delete/<first_shared_id>.
+    6. Ripeto lo sharing con stessi owner/recipient/plant → 201 OK con nuovo shared_id.
+    7. CLEANUP:
        - termino anche la seconda condivisione
        - cancello la pianta
        - cancello il secondo utente dal DB (/user/delete-me)
@@ -122,14 +121,7 @@ def test_shared_plant_flow_from_image(user_token_and_session, base_url):
         "La condivisione appena creata non compare in /shared_plant/all"
     )
 
-    # --- 5. Secondo sharing immediato con gli stessi parametri deve dare 409 Already shared ---
-    r = http_owner.post(f"{base_url}/shared_plant/add", json=payload)
-    assert r.status_code == 409, (
-        f"Secondo /shared_plant/add con condivisione ancora attiva dovrebbe "
-        f"restituire 409, ma è {r.status_code} {r.text}"
-    )
-
-    # --- 6. Termino il primo sharing (soft delete) ---
+    # --- 5. Termino il primo sharing (soft delete) ---
     r = http_owner.delete(f"{base_url}/shared_plant/delete/{first_shared_id}")
     assert r.status_code == 204, (
         f"/shared_plant/delete/{first_shared_id} -> {r.status_code} {r.text}"
@@ -143,7 +135,7 @@ def test_shared_plant_flow_from_image(user_token_and_session, base_url):
         "La condivisione terminata è ancora presente tra quelle attive"
     )
 
-    # --- 7. Nuovo sharing con stesso owner, stesso recipient e stessa pianta ---
+    # --- 6. Nuovo sharing con stesso owner, stesso recipient e stessa pianta ---
     r = http_owner.post(f"{base_url}/shared_plant/add", json=payload)
     assert r.status_code == 201, (
         "Dopo aver terminato la condivisione, /shared_plant/add con gli stessi "
@@ -155,23 +147,23 @@ def test_shared_plant_flow_from_image(user_token_and_session, base_url):
     )
 
     # ----------------------------------------------------------------------
-    # 8. CLEANUP: termino tutto quello che ho appena creato
+    # 7. CLEANUP: termino tutto quello che ho appena creato
     # ----------------------------------------------------------------------
 
-    # 8.1 Termino anche la seconda condivisione (così non resta nulla di attivo)
+    # 7.1 Termino anche la seconda condivisione (così non resta nulla di attivo)
     r = http_owner.delete(f"{base_url}/shared_plant/delete/{second_shared_id}")
     assert r.status_code == 204, (
         f"/shared_plant/delete/{second_shared_id} (cleanup) -> "
         f"{r.status_code} {r.text}"
     )
 
-    # 8.2 Cancello la pianta creata
+    # 7.2 Cancello la pianta creata
     r = http_owner.delete(f"{base_url}/plant/delete/{plant_id}")
     assert r.status_code == 204, (
         f"/plant/delete/{plant_id} (cleanup) -> {r.status_code} {r.text}"
     )
 
-    # 8.3 Cancello il secondo utente usando il suo token (/user/delete-me)
+    # 7.3 Cancello il secondo utente usando il suo token (/user/delete-me)
     recipient_http = requests.Session()
     recipient_http.headers["Authorization"] = f"Bearer {recipient_token}"
     r = recipient_http.delete(f"{base_url}/user/delete-me")

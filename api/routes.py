@@ -1187,7 +1187,7 @@ def create_plant():
     try:
         body = _parse_json_body()
         print("[DEBUG] JSON PARSATO CORRETTAMENTE")
-        print("[DEBUG] BODY:", body)
+        #print("[DEBUG] BODY:", body)
     except Exception as e:
         print("[ERRORE] _parse_json_body() ha fallito:", e)
         return jsonify({"error": "Invalid JSON"}), 400
@@ -3166,57 +3166,27 @@ def question_update(qid: str):
 
 
 # ========= DELETE Question =========
-@api_blueprint.route("/question/delete/<question_id>", methods=["DELETE"])
+@api_blueprint.route("/question/delete/<qid>", methods=["DELETE"])
 @require_jwt
-def delete_question(question_id: str):
+def question_delete(qid: str):
     """
-    Elimina una question **solo se** l'utente loggato è il proprietario
-    (question.user_id). Aggiorna changes.json per:
-
-    - question
-    - reminder (tutti quelli con question_id = question_id)
+    Elimina una domanda globale.
+    Le QuestionOption e UserQuestionAnswer collegate
+    vengono eliminate in cascata (ON DELETE CASCADE).
     """
-    if not question_id:
-        return jsonify({"error": "missing question_id"}), 400
-    _ensure_uuid(question_id, "question_id")
-
-    current_user_id = getattr(g, "user_id", None)
-    if not current_user_id:
-        return jsonify({"error": "Unauthorized"}), 401
-
-    reminder_ids: list[str] = []
+    _ensure_uuid(qid, "question_id")
 
     with _session_ctx() as s:
-        q = s.get(Question, question_id)
-        if not q:
-            # idempotente ma teniamo il JSON pulito
-            write_changes_delete("question", question_id)
-            return ("", 204)
+        q = s.get(Question, qid)
+        if q:
+            s.delete(q)
+            _commit_or_409(s)
+            # log su changes.json
+            write_changes_delete("question", qid)
 
-        if q.user_id != current_user_id:
-            return (
-                jsonify({"error": "Forbidden: non sei il proprietario della domanda"}),
-                403,
-            )
-
-        # raccogli reminder legati a questa question
-        qrs = (
-            s.query(Reminder)
-            .filter(Reminder.question_id == question_id)
-            .all()
-        )
-        reminder_ids = [qr.id for qr in qrs]
-
-        s.delete(q)
-        _commit_or_409(s)
-
-    # Logging su changes.json
-    write_changes_delete("question", question_id)
-    for rid in reminder_ids:
-        # Se nel tuo changes.json la tabella si chiama "reminder", cambia qui.
-        write_changes_delete("reminder", rid)
-
+    # 204 anche se la domanda non esiste (idempotente)
     return ("", 204)
+
 
 
 # ========= Questionnaire (per utente loggato) =========
