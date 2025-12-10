@@ -501,6 +501,7 @@ def test_user_cannot_water_other_user_plant(user_token_and_session, additional_u
     r = http_b.post(f"{base_url}/watering_log/add", json={
         "plant_id": plant_id_a,
         "amount_ml": 100,
+        "done_at": _now_iso(),
         "note": "Malicious watering"
     })
     
