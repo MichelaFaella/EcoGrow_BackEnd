@@ -2,7 +2,7 @@ name: Run Tests
 
 on:
   push:
-    branches: [ "main", "master", "logic_testing" ]
+    branches: [ "main", "master", "add_github_actions" ]
   pull_request:
     branches: [ "main", "master" ]
 
