@@ -3239,7 +3239,31 @@ def questionnaire_submit_answers():
 
 
 # ========= Reminder =========
-st
+@api_blueprint.route("/reminders/check-plants", methods=["POST"])
+@require_jwt
+def reminders_check_plants():
+    print("\n==============================")
+    print("API CALL → /reminders/check-plants")
+    print("==============================")
+
+    print(f"→ USER ID from JWT: {g.user_id}")
+
+    try:
+        result = reminder_service.check_due_plants_for_user_using_repo(
+            user_id=g.user_id,
+            repo=repo,
+        )
+
+        print("→ SERVICE RESULT:")
+        print(result)
+
+        print("=== END /reminders/check-plants (OK) ===\n")
+        return jsonify(result), 200
+
+    except Exception as e:
+        print("=== ERROR in /reminders/check-plants ===")
+        print(e)
+        return jsonify({"error": "Internal server error"}), 500
 
 
 # ========= Watering – OVERVIEW SETTIMANALE =========
