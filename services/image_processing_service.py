@@ -8,6 +8,7 @@ from PIL import Image
 import io
 
 PLANT_NET_KEY = "2b10OOOA7FlnK64qRSChrFVO7"
+FALLBACK_PLANT_NET_KEY = "2b10sxb5k5CkMBTK4clgmxySDe"
 PLANT_NET_PATH = "https://my-api.plantnet.org/v2/identify/all"
 
 DISEASE_MODEL_URL = os.getenv("DISEASE_MODEL_URL", "http://model:8000/predict")
@@ -34,9 +35,14 @@ class ImageProcessingService:
             print("[ImageProcessingService] _identify_plant → sending POST to PlantNet…")
             resp = requests.post(url, files=files, data=data, timeout=30)
             print(f"[ImageProcessingService] _identify_plant → Response HTTP {resp.status_code}")
+            if resp.status_code == 429:
+                url = f"{base_url}?api-key={FALLBACK_PLANT_NET_KEY}"
+                resp = requests.post(url, files=files, data=data, timeout=30)
+                print(f"[ImageProcessingService] _identify_plant → Response HTTP {resp.status_code}")
             resp.raise_for_status()
         except Exception as e:
             print(f"[ImageProcessingService] _identify_plant → ERROR in POST: {e}")
+
             raise
 
         try:

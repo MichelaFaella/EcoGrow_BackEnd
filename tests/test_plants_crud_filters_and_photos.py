@@ -151,3 +151,19 @@ def test_plants_create_and_conflict_branch(user_token_and_session, base_url):
             or "Conflict" in r2.text
             or "already" in r2.text
         )
+
+
+# ==========================================
+# Error Handling Tests
+# ==========================================
+
+
+def test_plant_update_invalid_uuid(user_token_and_session, base_url):
+    """Verify that plant/update with malformed UUID returns 400."""
+    access, http = user_token_and_session
+
+    r = http.patch(f"{base_url}/plant/update/not-a-valid-uuid", json={
+        "common_name": "Test"
+    })
+    assert r.status_code in (400, 404), f"Expected 400/404, got {r.status_code}"
+

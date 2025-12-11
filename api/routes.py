@@ -2964,6 +2964,15 @@ def watering_log_add():
     if missing:
         return jsonify({"error": f"Campi obbligatori: {', '.join(missing)}"}), 400
 
+    # Validate amount_ml is positive
+    try:
+        amount = int(data["amount_ml"])
+        if amount < 0:
+            return jsonify({"error": "amount_ml deve essere positivo"}), 400
+        data["amount_ml"] = amount
+    except (TypeError, ValueError):
+        return jsonify({"error": "amount_ml deve essere un intero"}), 400
+
     if not data.get("done_at"):
         data["done_at"] = datetime.utcnow()
 

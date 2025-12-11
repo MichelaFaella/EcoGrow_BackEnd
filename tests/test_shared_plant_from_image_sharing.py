@@ -170,3 +170,40 @@ def test_shared_plant_flow_from_image(user_token_and_session, base_url):
     assert r.status_code == 204, (
         f"/user/delete-me (cleanup recipient) -> {r.status_code} {r.text}"
     )
+
+
+# ==========================================
+# Error Handling Tests
+# ==========================================
+
+
+def test_shared_plant_add_nonexistent_recipient(user_token_and_session, base_url):
+    """
+    Verify that sharing a plant with a non-existent short_id fails.
+    
+    Expected: 403 (Forbidden) or 404 (Not Found)
+    """
+    access, http = user_token_and_session
+    
+    # Get or create a plant
+    image_b64 = _load_test_image_base64()
+    r = http.post(f"{base_url}/plant/add", json={"image": image_b64})
+    
+    if r.status_code != 201:
+        # Try to get existing plant
+        r = http.get(f"{base_url}/user_plant/all")
+        if r.status_code == 200 and r.json():
+            plant_id = r.json()[0]["id"]
+        else:
+            return  # Skip if no plant available
+    else:
+        plant_id = r.json()["id"]
+
+    # Try to share with non-existent user
+    fake_short_id = "00000000"
+    r = http.post(f"{base_url}/shared_plant/add", json={
+        "plant_id": plant_id,
+        "short_id": fake_short_id
+    })
+    assert r.status_code in (403, 404), f"Expected 403/404, got {r.status_code}"
+
