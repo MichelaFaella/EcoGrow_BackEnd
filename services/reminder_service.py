@@ -15,7 +15,6 @@ from models.entities import (
     Reminder,
 )
 
-
 class ReminderService:
 
     def __init__(self, session_factory=SessionLocal):
@@ -111,7 +110,7 @@ class ReminderService:
                     id=str(uuid.uuid4()),
                     user_id=user_id,
                     plant_id=plant_id,
-                    done_at=next_due_at,          # data prevista
+                    done_at=next_due_at,  # data prevista
                     amount_ml=int(recommended_ml),
                     note=(
                         "SCHEDULED FROM PLAN "
@@ -184,10 +183,10 @@ class ReminderService:
 
         # Q1: frequenza
         q1_map = {
-            "1": 3,   # weekdays only
-            "2": 7,   # weekends
-            "3": 3,   # any day
-            "4": 2,   # every other day
+            "1": 3,  # weekdays only
+            "2": 7,  # weekends
+            "3": 3,  # any day
+            "4": 2,  # every other day
         }
         interval_days = q1_map.get(q("q1"), 3)
 
@@ -633,5 +632,90 @@ class ReminderService:
                 s.rollback()
                 print("[ERROR undo_watering]:", e)
                 return {"ok": False, "error": str(e)}
+
+    @staticmethod
+    def send_push_notification(token: str, title: str, body: str) -> None:
+        """
+        MOCK: backend attualmente configurato SENZA Firebase.
+        Questa funzione non invia push reali, ma logga solo cosa manderebbe.
+        Quando vorrai attivare Firebase, potrai implementare qui la logica reale.
+        """
+        print(f"[PUSH MOCK] Would send notification to token={token}: {title} - {body}")
+
+    def check_due_plants_for_user_using_repo(self, user_id: str, repo):
+        print("\n[ReminderService] START check_due_plants_for_user_using_repo")
+        print(f"→ Checking plants for USER: {user_id}")
+
+        try:
+            print("→ Fetching watering overview from repo...")
+            overview = repo.get_watering_overview_for_user(user_id)
+            print("→ OVERVIEW LOADED:")
+            print(overview)
+        except Exception as e:
+            print("→ ERROR loading overview:", e)
+            return {"ok": False, "error": str(e)}
+
+        now = datetime.utcnow()
+        print(f"→ CURRENT UTC TIME: {now}")
+
+        due_plants = []
+
+        for entry in overview:
+            plant_name = entry.get("plant_name")
+            print("\n--- Checking plant:", plant_name, " ---")
+
+            logs = entry.get("logs", [])
+            print("→ LOGS for plant:")
+            print(logs)
+
+            plant_is_due = False
+
+            for log in logs:
+                print("\n   → Checking log:", log)
+
+                note = (log.get("note") or "").upper()
+                done_at_str = log.get("done_at")
+
+                print(f"     note={note}")
+                print(f"     done_at={done_at_str}")
+
+                if not done_at_str:
+                    print("     → SKIP: done_at missing")
+                    continue
+
+                try:
+                    dt = datetime.fromisoformat(done_at_str)
+                    print(f"     → Parsed datetime: {dt}")
+                except:
+                    print("     → ERROR parsing datetime")
+                    continue
+
+                if "SCHEDULED" in note and dt <= now:
+                    print("     → This plant is DUE!")
+                    plant_is_due = True
+                    break
+                else:
+                    print("     → NOT due")
+
+            if plant_is_due:
+                print(f"→ Adding plant {plant_name} to DUE list")
+                due_plants.append(plant_name)
+            else:
+                print(f"→ Plant {plant_name} NOT due")
+
+        print("\nFINAL DUE PLANTS:")
+        print(due_plants)
+
+        print("[ReminderService] END check_due_plants_for_user_using_repo\n")
+
+        return {
+            "ok": True,
+            "due": len(due_plants) > 0,
+            "due_plants": due_plants,
+            "message": (
+                "You have plants that need watering."
+                if due_plants else None
+            )
+        }
 
 

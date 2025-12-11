@@ -492,16 +492,6 @@
       "family_id": "b9cbfcc6-ce18-47cd-ac15-3535712d8c45"
     },
     {
-      "id": "d947b068-4961-5004-b5ce-74d4aa9f54ec",
-      "name": "healthy",
-      "description": "No visible signs of disease; foliage and rhizomes appear healthy.",
-      "symptoms": null,
-      "cure_tips": [
-        "Maintain balanced moisture, good drainage, and inspect rhizomes at planting."
-      ],
-      "family_id": "471e4906-8e4a-417b-a395-6bd42f117deb"
-    },
-    {
       "id": "2990e9ba-67e5-5390-a100-1f66775ce710",
       "name": "aphids",
       "description": "Small sap-sucking insects clustering on new growth.",
@@ -638,9 +628,18 @@
         "Avoid sudden moves to full sunlight."
       ],
       "family_id": "e7a9c4b2-8a58-4c0e-a3f3-4b10e1d4c9f2"
+    },
+    {
+      "id": "d947b068-4961-5004-b5ce-74d4aa9f54ec",
+      "name": "healthy",
+      "description": "No visible signs of disease; foliage and rhizomes appear healthy.",
+      "symptoms": null,
+      "cure_tips": [
+        "Maintain balanced moisture, good drainage, and inspect rhizomes at planting."
+      ],
+      "family_id": "471e4906-8e4a-417b-a395-6bd42f117deb"
     }
   ],
-  "plant": [],
   "plant_photo": [
     {
       "id": "eb9e6769-2c1a-456c-91e7-aefb8056482e",
@@ -656,54 +655,383 @@
       "id": "65047feb-40c6-46a6-99f8-31c3fdd66dc7",
       "_delete": true,
       "created_at": "2025-12-02T19:04:26"
+    },
+    {
+      "created_at": null,
+      "order_index": 0,
+      "url": "e12e08ba-8087-43ef-9c13-05dff00129b4.jpg",
+      "caption": null,
+      "id": "e12e08ba-8087-43ef-9c13-05dff00129b4",
+      "plant_id": "54877e25-8810-4c06-b956-1d214267a518"
+    },
+    {
+      "created_at": null,
+      "order_index": 0,
+      "url": "dda8f755-e4ee-4037-a6e4-45a345952a21.jpg",
+      "caption": null,
+      "id": "dda8f755-e4ee-4037-a6e4-45a345952a21",
+      "plant_id": "ac66dc5f-a45c-4681-b3cb-be2a402773b8"
+    },
+    {
+      "created_at": null,
+      "order_index": 0,
+      "url": "1b0e7918-840a-47d9-817c-74fa409108f4.jpg",
+      "caption": null,
+      "id": "1b0e7918-840a-47d9-817c-74fa409108f4",
+      "plant_id": "850c85d0-7d3b-4f30-a3e0-595257c8e892"
+    },
+    {
+      "id": "0476e007-f545-44b7-b92f-b9ac2836f89e",
+      "plant_id": "850c85d0-7d3b-4f30-a3e0-595257c8e892",
+      "url": "39a3f315-c4e5-49cb-b452-71bb8752fad0.jpg",
+      "caption": "Detection result: black_spot",
+      "order_index": 1,
+      "created_at": "2025-12-10T09:32:31"
+    },
+    {
+      "id": "744a3b6b-2512-4542-a899-1fddcada93ca",
+      "plant_id": "ac66dc5f-a45c-4681-b3cb-be2a402773b8",
+      "url": "696d282b-9b78-4803-999a-9b2adfc37376.jpg",
+      "caption": "Detection result: chlorosis",
+      "order_index": 1,
+      "created_at": "2025-12-10T09:33:50"
+    },
+    {
+      "plant_id": "5cea5da4-2f9a-4e41-a9f4-5693e712e6e8",
+      "id": "eaf71335-2fd4-435b-a685-cdea60d2dbb9",
+      "url": "eaf71335-2fd4-435b-a685-cdea60d2dbb9.jpg",
+      "caption": null,
+      "created_at": null,
+      "order_index": 0
+    },
+    {
+      "plant_id": "ffc0b1a7-0be4-4c5a-b06c-ee239bf86b6d",
+      "id": "d5e9cede-1e5c-4390-a51a-5f6272271650",
+      "url": "d5e9cede-1e5c-4390-a51a-5f6272271650.jpg",
+      "caption": null,
+      "created_at": null,
+      "order_index": 0
+    },
+    {
+      "plant_id": "f6e243f8-ae07-45db-8128-fe2bc17d61a5",
+      "id": "84cfff39-548b-4432-8f33-8093e04390a4",
+      "url": "84cfff39-548b-4432-8f33-8093e04390a4.jpg",
+      "caption": null,
+      "created_at": null,
+      "order_index": 0
+    },
+    {
+      "plant_id": "87227ae4-05e1-41cd-80d8-e2f7799335df",
+      "id": "956e466f-abfc-41bc-beca-84a11e2e94af",
+      "url": "956e466f-abfc-41bc-beca-84a11e2e94af.jpg",
+      "caption": null,
+      "created_at": null,
+      "order_index": 0
+    },
+    {
+      "plant_id": "d051a7b1-53a7-42a6-8db5-244c7d7f48e5",
+      "id": "f1db6cbb-3771-43e0-aab2-0ac0f1058426",
+      "url": "f1db6cbb-3771-43e0-aab2-0ac0f1058426.jpg",
+      "caption": null,
+      "created_at": null,
+      "order_index": 0
+    },
+    {
+      "plant_id": "1a0aa8e7-aebe-4a4a-b98b-a74708be390c",
+      "id": "782248b1-e78a-443b-8ebb-4e76c4d67ecf",
+      "url": "782248b1-e78a-443b-8ebb-4e76c4d67ecf.jpg",
+      "caption": null,
+      "created_at": null,
+      "order_index": 0
+    },
+    {
+      "plant_id": "e94c4074-1db8-4b66-b5bb-85ace15cab92",
+      "id": "e2694117-840b-486b-8cd8-7741699be5c9",
+      "url": "e2694117-840b-486b-8cd8-7741699be5c9.jpg",
+      "caption": null,
+      "created_at": null,
+      "order_index": 0
+    },
+    {
+      "plant_id": "e137ecbb-0ab0-4435-957d-7b732e1f8815",
+      "id": "8933c489-3344-452f-afda-9c5cae9e0062",
+      "url": "8933c489-3344-452f-afda-9c5cae9e0062.jpg",
+      "caption": null,
+      "created_at": null,
+      "order_index": 0
+    },
+    {
+      "id": "1ddef91b-921f-44d8-895b-f1f130f571ff",
+      "url": "1ddef91b-921f-44d8-895b-f1f130f571ff.jpg",
+      "order_index": 0,
+      "created_at": null,
+      "plant_id": "9808d16c-704d-4aa2-8085-bf8c89b04ad5",
+      "caption": null
+    },
+    {
+      "id": "63fa3ce3-8366-4b29-9381-4ccf7cf58085",
+      "url": "63fa3ce3-8366-4b29-9381-4ccf7cf58085.jpg",
+      "order_index": 0,
+      "created_at": null,
+      "plant_id": "e9e2d434-01a5-47dd-88ff-9aeed23e60fa",
+      "caption": null
+    },
+    {
+      "id": "6942f194-b58c-4a36-a30e-0f13cf47b071",
+      "plant_id": "e9e2d434-01a5-47dd-88ff-9aeed23e60fa",
+      "url": "6be99278-9fe1-45eb-9f37-ef22dabf7946.jpg",
+      "caption": "Detection result: black_spot",
+      "order_index": 1,
+      "created_at": "2025-12-11T11:25:02"
+    },
+    {
+      "plant_id": "3a51b50f-0945-400a-b5ab-c0ad3b547dc9",
+      "order_index": 0,
+      "url": "3663abe5-76f6-4eb0-9cd5-a6c86d18a3b1.jpg",
+      "id": "3663abe5-76f6-4eb0-9cd5-a6c86d18a3b1",
+      "caption": null,
+      "created_at": null
     }
   ],
-  "user_plant": [],
-  "shared_plant": [],
-  "plant_disease": [],
-  "friendship": [],
+  "user_plant": [
+    {
+      "user_id": "dd1101f6-17ba-448a-a2c9-0f4b9b6e92d3",
+      "plant_id": "54877e25-8810-4c06-b956-1d214267a518",
+      "location_note": null,
+      "since": "2025-12-10"
+    },
+    {
+      "user_id": "dd1101f6-17ba-448a-a2c9-0f4b9b6e92d3",
+      "plant_id": "ac66dc5f-a45c-4681-b3cb-be2a402773b8",
+      "location_note": null,
+      "since": "2025-12-10"
+    },
+    {
+      "user_id": "dd1101f6-17ba-448a-a2c9-0f4b9b6e92d3",
+      "plant_id": "850c85d0-7d3b-4f30-a3e0-595257c8e892",
+      "location_note": null,
+      "since": "2025-12-10"
+    },
+    {
+      "user_id": "dd1101f6-17ba-448a-a2c9-0f4b9b6e92d3",
+      "plant_id": "850c85d0-7d3b-4f30-a3e0-595257c8e892",
+      "health_status": "sick",
+      "location_note": null,
+      "since": "2025-12-10"
+    },
+    {
+      "user_id": "dd1101f6-17ba-448a-a2c9-0f4b9b6e92d3",
+      "plant_id": "ac66dc5f-a45c-4681-b3cb-be2a402773b8",
+      "health_status": "sick",
+      "location_note": null,
+      "since": "2025-12-10"
+    },
+    {
+      "user_id": "1704dd75-7410-4051-84c0-a06fa7ddf7a3",
+      "plant_id": "54877e25-8810-4c06-b956-1d214267a518",
+      "location_note": null,
+      "since": "2025-12-10"
+    },
+    {
+      "user_id": "dd1101f6-17ba-448a-a2c9-0f4b9b6e92d3",
+      "plant_id": "5cea5da4-2f9a-4e41-a9f4-5693e712e6e8",
+      "location_note": null,
+      "since": "2025-12-11"
+    },
+    {
+      "user_id": "dd1101f6-17ba-448a-a2c9-0f4b9b6e92d3",
+      "plant_id": "ffc0b1a7-0be4-4c5a-b06c-ee239bf86b6d",
+      "location_note": null,
+      "since": "2025-12-11"
+    },
+    {
+      "user_id": "dd1101f6-17ba-448a-a2c9-0f4b9b6e92d3",
+      "plant_id": "f6e243f8-ae07-45db-8128-fe2bc17d61a5",
+      "location_note": null,
+      "since": "2025-12-11"
+    },
+    {
+      "user_id": "dd1101f6-17ba-448a-a2c9-0f4b9b6e92d3",
+      "plant_id": "87227ae4-05e1-41cd-80d8-e2f7799335df",
+      "location_note": null,
+      "since": "2025-12-11"
+    },
+    {
+      "user_id": "dd1101f6-17ba-448a-a2c9-0f4b9b6e92d3",
+      "plant_id": "d051a7b1-53a7-42a6-8db5-244c7d7f48e5",
+      "location_note": null,
+      "since": "2025-12-11"
+    },
+    {
+      "user_id": "99230b9d-6a0f-44da-b366-6135ae436560",
+      "plant_id": "1a0aa8e7-aebe-4a4a-b98b-a74708be390c",
+      "location_note": null,
+      "since": "2025-12-11"
+    },
+    {
+      "user_id": "99230b9d-6a0f-44da-b366-6135ae436560",
+      "plant_id": "e94c4074-1db8-4b66-b5bb-85ace15cab92",
+      "location_note": null,
+      "since": "2025-12-11"
+    },
+    {
+      "user_id": "99230b9d-6a0f-44da-b366-6135ae436560",
+      "plant_id": "e137ecbb-0ab0-4435-957d-7b732e1f8815",
+      "location_note": null,
+      "since": "2025-12-11"
+    },
+    {
+      "user_id": "99230b9d-6a0f-44da-b366-6135ae436560",
+      "plant_id": "9808d16c-704d-4aa2-8085-bf8c89b04ad5",
+      "location_note": null,
+      "since": "2025-12-11"
+    },
+    {
+      "user_id": "99230b9d-6a0f-44da-b366-6135ae436560",
+      "plant_id": "e9e2d434-01a5-47dd-88ff-9aeed23e60fa",
+      "location_note": null,
+      "since": "2025-12-11"
+    },
+    {
+      "user_id": "99230b9d-6a0f-44da-b366-6135ae436560",
+      "plant_id": "e9e2d434-01a5-47dd-88ff-9aeed23e60fa",
+      "health_status": "sick",
+      "location_note": null,
+      "since": "2025-12-11"
+    },
+    {
+      "user_id": "5be9ef9c-1c70-4a3a-b4b2-160e34800e4a",
+      "plant_id": "3a51b50f-0945-400a-b5ab-c0ad3b547dc9",
+      "location_note": null,
+      "since": "2025-12-11"
+    }
+  ],
+  "shared_plant": [
+    {
+      "id": "07224b73-07a0-46fa-b942-70a3d8f4ce8f",
+      "owner_user_id": "dd1101f6-17ba-448a-a2c9-0f4b9b6e92d3",
+      "recipient_user_id": "1704dd75-7410-4051-84c0-a06fa7ddf7a3",
+      "plant_id": "54877e25-8810-4c06-b956-1d214267a518",
+      "can_edit": true,
+      "created_at": "2025-12-10T09:38:18",
+      "ended_sharing_at": null
+    }
+  ],
+  "plant_disease": [
+    {
+      "id": "5caac2ee-070b-447d-b431-5a82a02ae330",
+      "plant_id": "850c85d0-7d3b-4f30-a3e0-595257c8e892",
+      "disease_id": "e04eb1cb-239d-58c3-827d-67adc8517d05",
+      "detected_at": "2025-12-10",
+      "severity": null,
+      "notes": null,
+      "status": "detected"
+    },
+    {
+      "id": "1ab33310-5d2d-4758-92ae-a66292aff47a",
+      "plant_id": "ac66dc5f-a45c-4681-b3cb-be2a402773b8",
+      "disease_id": "66b51af0-c8b2-52c9-82f2-0a1b0dbea673",
+      "detected_at": "2025-12-10",
+      "severity": null,
+      "notes": null,
+      "status": "detected"
+    },
+    {
+      "id": "58d9b53b-99c3-4e56-9c91-19e7b4bb584a",
+      "plant_id": "e9e2d434-01a5-47dd-88ff-9aeed23e60fa",
+      "disease_id": "e04eb1cb-239d-58c3-827d-67adc8517d05",
+      "detected_at": "2025-12-11",
+      "severity": null,
+      "notes": null,
+      "status": "detected"
+    }
+  ],
+  "friendship": [
+    {
+      "id": "d658349d-2ac6-47a8-87fa-1ffadcca6e21",
+      "_delete": true
+    },
+    {
+      "id": "262539e7-67ea-4030-ad1f-f58938acf310",
+      "_delete": true
+    },
+    {
+      "id": "6a00ac38-d303-4e51-a26d-efd671b03df8",
+      "_delete": true
+    }
+  ],
   "user": [
     {
-      "first_name": "Albert",
-      "updated_at": "2025-12-03T09:55:14",
-      "last_name": "Genovese",
       "id": "dd1101f6-17ba-448a-a2c9-0f4b9b6e92d3",
-      "email": "alb.genovese@gmail.com",
-      "password_hash": "scrypt:32768:8:1$zIzZojqXzUBlTUP2$18fa4ee6f269d8cb3a0494bfbaf6057f81ffd2b187f2134c619202c297d4b1b53e1b980ca1b2d966e4ec5855ba5dc55e7b18c053c88408b89a61022c27e02f4d",
-      "created_at": "2025-11-28T11:23:34"
-    },
-    {
-      "id": "d2b805fd-5ac6-440b-b649-64af3cbd41ad",
       "_delete": true,
-      "created_at": "2025-12-02T19:04:25",
-      "updated_at": "2025-12-02T19:04:25"
+      "created_at": "2025-12-11T15:05:04",
+      "updated_at": "2025-12-11T15:05:04"
     },
     {
-      "id": "6c79caf6-3be8-4a86-806a-b2ef1fce8469",
+      "email": "alb.genovese@gmail.com",
+      "updated_at": "2025-12-11T15:08:15",
+      "password_hash": "scrypt:32768:8:1$oHcdgb2Jsx9rcDHg$ba5a4b127eef1e7b28f37d9a4cc8499d4f6c96e2767c1dd093d8832ef00dec4ccd1366f03be730afadea4b97066167310a44cb7c353eab8f508606babe27c2b3",
+      "last_name": "Genovese",
+      "id": "5be9ef9c-1c70-4a3a-b4b2-160e34800e4a",
+      "first_name": "Alberto",
+      "created_at": "2025-12-11T15:08:15"
+    },
+    {
+      "id": "a898613b-cfdd-4af5-a3a5-80ac63b6a5c4",
       "last_name": "Faella",
-      "password_hash": "scrypt:32768:8:1$lFcfwl3YE1spiWFs$d31f61ff7a7c2ec5f87e84162b4e033cefaa86e48db483e649a2bd2c781bf5fb79590573a5196d40e534c9802d708ab6951c3198b18fa9f44464601bfb1a0d32",
-      "first_name": "Massimo",
+      "updated_at": "2025-12-11T15:57:54",
+      "first_name": "Michela",
       "email": "m.faella@gmail.com",
-      "updated_at": "2025-12-02T19:33:46",
-      "created_at": "2025-12-02T19:33:46"
+      "password_hash": "scrypt:32768:8:1$0L1HSFnI36Jdfu34$0348976194b6c15fc32cb0a936f36d6e6d0b9b142a4054e6567f0f1904da11d9870909c582aafc117d00175b59e1fd1bb40b3672a87f2ddb5667b9f28d41a524",
+      "created_at": "2025-12-11T15:57:54"
     },
     {
-      "first_name": "Gaetano",
-      "updated_at": "2025-12-03T10:04:48",
-      "last_name": "Lano",
-      "id": "8a419703-0884-4f3f-8857-c5620dc409b2",
-      "email": "g.lanogmail.com",
-      "password_hash": "scrypt:32768:8:1$zOtRq9AZ0DvEthPw$9cf4f82317819b9f6930690d2dcd37eb7c6c0514e89532f9502da2e053fc2d26b0701e9ec3ab84a68049e88fb3494319e984dc488800bb38a6d9398ad09363aa",
-      "created_at": "2025-12-03T10:04:48"
+      "id": "60da3d06-5584-4e19-8324-388fddee1c1d",
+      "last_name": "Pucci",
+      "updated_at": "2025-12-11T15:59:06",
+      "first_name": "Franco",
+      "email": "ff.pucci@gmail.com",
+      "password_hash": "scrypt:32768:8:1$uM25jLIpDYnvoQRB$d6460f8afbd10f14e9715359e97674a44b72d16872047b6200d0c27648ccd6bfe8d520827c805b3076689087033dbaaaca8e4b70f2ae46e6fcef61e56c67079f",
+      "created_at": "2025-12-11T15:59:06"
+    }
+  ],
+  "reminder": [
+    {
+      "id": "11a9a7d3-336f-41a0-8c9a-c9fb407751b3",
+      "_delete": true,
+      "created_at": "2025-12-11T15:05:04"
     },
     {
-      "created_at": "2025-12-04T17:21:45",
-      "last_name": "Franco",
-      "id": "55b11b16-1206-4bf4-b613-b81fc1c78e0c",
-      "first_name": "Andrea",
-      "password_hash": "scrypt:32768:8:1$k0ef5fI06KjPfkVS$e54b5f7e2b10b8c6d7254e0cc9d784c59ed05c335d6675d458f47a880ebad40b70438bb1294b29f7fc5ce6bc413badbac05e4ec9b71e8207d032b1f8e5f4470e",
-      "updated_at": "2025-12-09T09:22:58",
-      "email": "a.franco@gmail.com"
+      "id": "8997a18c-5958-42dd-b1fd-cf86fe88ec44",
+      "_delete": true,
+      "created_at": "2025-12-11T15:05:04"
+    }
+  ],
+  "plant": [
+    {
+      "climate": "Tropical humid",
+      "pests": null,
+      "scientific_name": "Aechmea fasciata",
+      "updated_at": "2025-12-11T15:09:12",
+      "light_level": 4,
+      "use": "Flower, Table top, Tertiary",
+      "tips": [
+        "Ideal light: Bright light",
+        "Tolerated light: Diffused",
+        "Watering: Water when soil is half dry. Change water in the vase regularly.",
+        "Soil: Use a very airy mix, mostly bark with little soil."
+      ],
+      "id": "3a51b50f-0945-400a-b5ab-c0ad3b547dc9",
+      "origin": "Hybrid",
+      "common_name": "Silver vase",
+      "difficulty": 3,
+      "min_temp_c": 12,
+      "category": "Bromeliad",
+      "family_id": "8947b2cf-d9bc-4e16-b5b1-d3f180c45d7a",
+      "created_at": "2025-12-11T15:09:12",
+      "max_temp_c": 30,
+      "water_level": 2,
+      "size": "small"
     }
   ]
 }

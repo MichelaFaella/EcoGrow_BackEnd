@@ -949,7 +949,6 @@ def ai_model_disease_detection():
     }), 200
 
 
-
 @api_blueprint.route("/ai/model/disease-latest", methods=["GET"])
 @require_jwt
 def ai_model_disease_latest():
@@ -1187,7 +1186,7 @@ def create_plant():
     try:
         body = _parse_json_body()
         print("[DEBUG] JSON PARSATO CORRETTAMENTE")
-        #print("[DEBUG] BODY:", body)
+        # print("[DEBUG] BODY:", body)
     except Exception as e:
         print("[ERRORE] _parse_json_body() ha fallito:", e)
         return jsonify({"error": "Invalid JSON"}), 400
@@ -1721,9 +1720,6 @@ def delete_plant(plant_id: str):
         write_changes_delete("reminder", rid)
 
     return "", 204
-
-
-
 
 
 # ========= Family =========
@@ -2336,9 +2332,6 @@ def delete_me():
     return ("", 204)
 
 
-
-
-
 # ========= UserPlant (composite PK: user_id + plant_id) =========
 @api_blueprint.route("/user_plant/all", methods=["GET"])
 @require_jwt
@@ -2650,7 +2643,6 @@ def friendship_delete(friendship_id: str):
     return ("", 204)
 
 
-
 # ========= SharedPlant =========
 @api_blueprint.route("/shared_plant/all", methods=["GET"])
 @require_jwt
@@ -2706,7 +2698,6 @@ def shared_plant_add():
         if not up:
             print("[ERROR] Owner does not own this plant")
             return jsonify({"error": "Forbidden: non possiedi questa pianta"}), 403
-  
 
     # -------------------------
     # Resolve short_id → recipient
@@ -2823,7 +2814,6 @@ def shared_plant_delete(shared_id: str):
     return ("", 204)
 
 
-
 # ========= WateringPlan =========
 @api_blueprint.route("/plant/<plant_id>/watering-plan", methods=["GET"])
 @require_jwt
@@ -2938,7 +2928,6 @@ def watering_plan_delete(plan_id: str):
     return ("", 204)
 
 
-
 # ========= WateringLog =========
 @api_blueprint.route("/watering_log/all", methods=["GET"])
 @require_jwt
@@ -2951,6 +2940,7 @@ def watering_log_all():
             .all()
         )
         return jsonify([_serialize_instance(r) for r in rows]), 200
+
 
 @api_blueprint.route("/watering_log/add", methods=["POST"])
 @require_jwt
@@ -3188,7 +3178,6 @@ def question_delete(qid: str):
     return ("", 204)
 
 
-
 # ========= Questionnaire (per utente loggato) =========
 
 @api_blueprint.route("/questionnaire/questions", methods=["GET"])
@@ -3250,6 +3239,8 @@ def questionnaire_submit_answers():
 
 
 # ========= Reminder =========
+st
+
 
 # ========= Watering – OVERVIEW SETTIMANALE =========
 @api_blueprint.route("/watering/overview", methods=["GET"])

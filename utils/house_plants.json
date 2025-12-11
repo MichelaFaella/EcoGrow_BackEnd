@@ -8875,43 +8875,6 @@
         ]
     },
     {
-        "id": 402,
-        "latin": "Phalaenopsis sp.",
-        "family": "Orchidaceae",
-        "common": [
-            "Moth Orchid"
-        ],
-        "category": "Flowering",
-        "origin": "Southeast Asia",
-        "climate": "Tropical",
-        "tempmax": {
-            "celsius": 30,
-            "fahrenheit": 86
-        },
-        "tempmin": {
-            "celsius": 16,
-            "fahrenheit": 60.8
-        },
-        "ideallight": "Bright, filtered light.",
-        "toleratedlight": "Medium indirect light.",
-        "watering": "Water when medium is almost dry; avoid stagnation.",
-        "insects": "Mealybugs, Scale, Aphids, Spider mites",
-        "diseases": "Root rot, Fungal spots",
-        "use": [
-            "Ornamental"
-        ],
-        "size": "medium",
-        "watering_level": 3,
-        "lighting_level": 3,
-        "difficulty": 4,
-        "tips": [
-            "Ideal light: Bright, filtered light.",
-            "Tolerated light: Medium indirect light.",
-            "Watering: Water when medium is almost dry; avoid stagnation.",
-            "Soil: Use orchid bark mix instead of normal potting soil."
-        ]
-    },
-    {
         "id": 403,
         "latin": "Ficus elastica",
         "family": "Moraceae",
