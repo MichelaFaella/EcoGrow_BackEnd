@@ -246,3 +246,80 @@ def test_disease_detection_with_threshold(user_token_and_session, base_url):
         assert "disease" in resp
 
     http.delete(f"{base_url}/plant/delete/{plant_id}")
+
+
+# ==========================================
+# Cascade Delete Tests
+# ==========================================
+
+
+def _create_or_get_plant(http, base_url, must_create=False):
+    """Helper to robustly create or reuse a plant THE USER OWNS."""
+    import pytest
+    image_b64 = get_test_image_base64()
+    r = http.post(f"{base_url}/plant/add", json={"image": image_b64})
+    
+    if r.status_code == 201:
+        return r.json()["id"]
+    
+    if must_create:
+        pytest.skip(f"Plant creation failed with {r.status_code} - skipping test")
+    
+    r = http.get(f"{base_url}/user_plant/all")
+    if r.status_code == 200:
+        user_plants = r.json()
+        if user_plants:
+            return user_plants[0]["id"]
+    
+    pytest.skip("Could not create or find a plant owned by user")
+
+
+def test_delete_plant_cascades_plant_diseases(user_token_and_session, base_url):
+    """
+    Verify that deleting a plant also deletes its PlantDisease records.
+    """
+    access, http = user_token_and_session
+
+    # Create a disease
+    disease_name = f"TestDisease_{uuid.uuid4().hex[:6]}"
+    r = http.post(f"{base_url}/disease/add", json={
+        "name": disease_name,
+        "description": "Test disease for cascade"
+    })
+    assert r.status_code == 201, f"disease/add failed: {r.text}"
+    disease_id = r.json()["id"]
+
+    # Create plant (must be fresh for cascade test)
+    plant_id = _create_or_get_plant(http, base_url, must_create=True)
+
+    # Link disease to plant
+    r = http.post(f"{base_url}/plant_disease/add", json={
+        "plant_id": plant_id,
+        "disease_id": disease_id,
+        "severity": 2,
+        "notes": "Test link"
+    })
+    assert r.status_code in (200, 201), f"plant_disease/add failed: {r.text}"
+    plant_disease_id = r.json().get("id")
+
+    # Verify link exists
+    r = http.get(f"{base_url}/plant_disease/all")
+    assert r.status_code == 200
+    links_before = [pd["id"] for pd in r.json()]
+    assert plant_disease_id in links_before
+
+    # Delete plant (should cascade)
+    r = http.delete(f"{base_url}/plant/delete/{plant_id}")
+    assert r.status_code == 204
+
+    # Verify PlantDisease is gone
+    r = http.get(f"{base_url}/plant_disease/all")
+    assert r.status_code == 200
+    links_after = [pd["id"] for pd in r.json()]
+    assert plant_disease_id not in links_after, (
+        f"CASCADE ERROR: PlantDisease {plant_disease_id} still exists after plant delete!"
+    )
+
+    # Cleanup disease
+    http.delete(f"{base_url}/disease/delete/{disease_id}")
+
