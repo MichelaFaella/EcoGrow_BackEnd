@@ -1678,6 +1678,12 @@ def delete_plant(plant_id: str):
         )
         reminder_ids = [r.id for r in reminders]
 
+        # Guardando entities.py, la tabella Reminder non ha una FK vera verso Plant:
+        # è solo un campo stringa generico, quindi il DB non può fare CASCADE automaticamente.
+        # I reminder devono essere cancellati manualmente.
+        for rem in reminders:
+            s.delete(rem)
+
         # ---------------------------
         # 3) Cancellazione vera (DB CASCADE)
         # ---------------------------
@@ -1968,8 +1974,16 @@ def get_disease_symptoms_by_family(family_id):
 @require_jwt
 def plant_disease_all():
     with _session_ctx() as s:
-        rows = s.query(PlantDisease).order_by(PlantDisease.detected_at.desc().nulls_last()).all()
-        return jsonify([_serialize_instance(r) for r in rows]), 200
+        try:
+            # RIMOSSO .nulls_last() → MySQL non lo supporta
+            rows = s.query(PlantDisease).order_by(PlantDisease.detected_at.desc()).all()
+            serialized = [_serialize_instance(r) for r in rows]
+            return jsonify(serialized), 200
+        except Exception as e:
+            print(f"[ERROR] plant_disease_all serialization failed: {e}")
+            import traceback
+            traceback.print_exc()
+            return jsonify({"error": str(e)}), 500
 
 
 @api_blueprint.route("/plant_disease/add", methods=["POST"])
