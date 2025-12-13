@@ -791,6 +791,102 @@
       "id": "3663abe5-76f6-4eb0-9cd5-a6c86d18a3b1",
       "caption": null,
       "created_at": null
+    },
+    {
+      "created_at": null,
+      "caption": null,
+      "id": "09c71f66-3779-4f69-b23d-0f592807c53d",
+      "plant_id": "b29fa6a4-2fd7-4538-9ae9-60ddb3a52baa",
+      "url": "09c71f66-3779-4f69-b23d-0f592807c53d.jpg",
+      "order_index": 0
+    },
+    {
+      "created_at": null,
+      "caption": null,
+      "id": "230e7141-a6b6-4399-8573-a285c361e2cc",
+      "plant_id": "d0bf58ff-2b26-492f-812d-353c4e2accb5",
+      "url": "230e7141-a6b6-4399-8573-a285c361e2cc.jpg",
+      "order_index": 0
+    },
+    {
+      "id": "86a0aace-282c-4060-accd-d814930f92d7",
+      "plant_id": "b29fa6a4-2fd7-4538-9ae9-60ddb3a52baa",
+      "url": "e75a4fac-6986-48a8-8345-5f2593e75e54.jpg",
+      "caption": "Detection result: black_spot",
+      "order_index": 1,
+      "created_at": "2025-12-12T21:07:39"
+    },
+    {
+      "created_at": null,
+      "caption": null,
+      "id": "df19209e-8978-4cbe-9b6a-87e458f024db",
+      "plant_id": "11e778e8-4c14-4c1c-88ea-de84c7893a7c",
+      "url": "df19209e-8978-4cbe-9b6a-87e458f024db.jpg",
+      "order_index": 0
+    },
+    {
+      "id": "39a7e143-ffb4-4508-8550-0d1ec03c929c",
+      "plant_id": "11e778e8-4c14-4c1c-88ea-de84c7893a7c",
+      "url": "a5868f5f-75aa-464f-9122-71f386bb7565.jpg",
+      "caption": "Detection result: chlorosis",
+      "order_index": 1,
+      "created_at": "2025-12-12T21:09:09"
+    },
+    {
+      "id": "2699e711-487b-4e6d-969f-ac9368f17b7d",
+      "plant_id": "b29fa6a4-2fd7-4538-9ae9-60ddb3a52baa",
+      "url": "9403c382-69d8-4dc0-968f-ca51d6c9cc9a.jpg",
+      "caption": "Detection result: black_spot",
+      "order_index": 2,
+      "created_at": "2025-12-13T14:06:14"
+    },
+    {
+      "created_at": null,
+      "id": "eaffd4da-8b12-444e-a9b2-f580ce78d32f",
+      "caption": null,
+      "url": "eaffd4da-8b12-444e-a9b2-f580ce78d32f.jpg",
+      "plant_id": "bca911b6-27aa-4a6f-88e7-4f9fd99344b8",
+      "order_index": 0
+    },
+    {
+      "created_at": null,
+      "id": "03b4ac8b-5093-4bb3-80e0-89c486709e40",
+      "caption": null,
+      "url": "03b4ac8b-5093-4bb3-80e0-89c486709e40.jpg",
+      "plant_id": "225bc82d-7444-48f2-a6ee-08cc09ed7048",
+      "order_index": 0
+    },
+    {
+      "created_at": null,
+      "id": "3cca7d9b-c352-4da4-ae4b-bab708ac2f06",
+      "caption": null,
+      "url": "3cca7d9b-c352-4da4-ae4b-bab708ac2f06.jpg",
+      "plant_id": "59e7c178-4242-476b-8b3f-d84ac6cdf9f7",
+      "order_index": 0
+    },
+    {
+      "created_at": null,
+      "id": "c10b0e0c-0c05-462e-b7ce-13753fa3fb5f",
+      "caption": null,
+      "url": "c10b0e0c-0c05-462e-b7ce-13753fa3fb5f.jpg",
+      "plant_id": "5b1bdd8d-cd86-45ab-9f5e-e9591bc9f828",
+      "order_index": 0
+    },
+    {
+      "created_at": null,
+      "id": "6e864961-d241-41e7-a937-64eea26758e9",
+      "caption": null,
+      "url": "6e864961-d241-41e7-a937-64eea26758e9.jpg",
+      "plant_id": "41a9916e-085d-44f3-9fae-178794f837f2",
+      "order_index": 0
+    },
+    {
+      "id": "b4922633-1aad-4f66-ad8e-635cb0f3a4e1",
+      "plant_id": "41a9916e-085d-44f3-9fae-178794f837f2",
+      "url": "b28c598a-84ab-420c-adb9-160ed0df9fdc.jpg",
+      "caption": "Detection result: chlorosis",
+      "order_index": 1,
+      "created_at": "2025-12-13T14:22:19"
     }
   ],
   "user_plant": [
@@ -904,6 +1000,94 @@
       "plant_id": "3a51b50f-0945-400a-b5ab-c0ad3b547dc9",
       "location_note": null,
       "since": "2025-12-11"
+    },
+    {
+      "user_id": "6dd2ae06-594f-4820-8907-feb3f58ca27d",
+      "plant_id": "b29fa6a4-2fd7-4538-9ae9-60ddb3a52baa",
+      "location_note": null,
+      "since": "2025-12-12"
+    },
+    {
+      "user_id": "6dd2ae06-594f-4820-8907-feb3f58ca27d",
+      "plant_id": "d0bf58ff-2b26-492f-812d-353c4e2accb5",
+      "location_note": null,
+      "since": "2025-12-12"
+    },
+    {
+      "user_id": "6dd2ae06-594f-4820-8907-feb3f58ca27d",
+      "plant_id": "b29fa6a4-2fd7-4538-9ae9-60ddb3a52baa",
+      "health_status": "sick",
+      "location_note": null,
+      "since": "2025-12-12"
+    },
+    {
+      "user_id": "6dd2ae06-594f-4820-8907-feb3f58ca27d",
+      "plant_id": "11e778e8-4c14-4c1c-88ea-de84c7893a7c",
+      "location_note": null,
+      "since": "2025-12-12"
+    },
+    {
+      "user_id": "6dd2ae06-594f-4820-8907-feb3f58ca27d",
+      "plant_id": "11e778e8-4c14-4c1c-88ea-de84c7893a7c",
+      "health_status": "sick",
+      "location_note": null,
+      "since": "2025-12-12"
+    },
+    {
+      "user_id": "5be9ef9c-1c70-4a3a-b4b2-160e34800e4a",
+      "plant_id": "b29fa6a4-2fd7-4538-9ae9-60ddb3a52baa",
+      "location_note": null,
+      "since": "2025-12-12"
+    },
+    {
+      "user_id": "5be9ef9c-1c70-4a3a-b4b2-160e34800e4a",
+      "plant_id": "b29fa6a4-2fd7-4538-9ae9-60ddb3a52baa",
+      "health_status": "sick",
+      "location_note": null,
+      "since": "2025-12-12"
+    },
+    {
+      "user_id": "5be9ef9c-1c70-4a3a-b4b2-160e34800e4a",
+      "plant_id": "bca911b6-27aa-4a6f-88e7-4f9fd99344b8",
+      "location_note": null,
+      "since": "2025-12-13"
+    },
+    {
+      "user_id": "17d51dfa-bde7-4802-b07b-ea8fc45e457e",
+      "plant_id": "225bc82d-7444-48f2-a6ee-08cc09ed7048",
+      "location_note": null,
+      "since": "2025-12-13"
+    },
+    {
+      "user_id": "17d51dfa-bde7-4802-b07b-ea8fc45e457e",
+      "plant_id": "59e7c178-4242-476b-8b3f-d84ac6cdf9f7",
+      "location_note": null,
+      "since": "2025-12-13"
+    },
+    {
+      "user_id": "17d51dfa-bde7-4802-b07b-ea8fc45e457e",
+      "plant_id": "5b1bdd8d-cd86-45ab-9f5e-e9591bc9f828",
+      "location_note": null,
+      "since": "2025-12-13"
+    },
+    {
+      "user_id": "17d51dfa-bde7-4802-b07b-ea8fc45e457e",
+      "plant_id": "41a9916e-085d-44f3-9fae-178794f837f2",
+      "location_note": null,
+      "since": "2025-12-13"
+    },
+    {
+      "user_id": "17d51dfa-bde7-4802-b07b-ea8fc45e457e",
+      "plant_id": "41a9916e-085d-44f3-9fae-178794f837f2",
+      "health_status": "sick",
+      "location_note": null,
+      "since": "2025-12-13"
+    },
+    {
+      "user_id": "6dd2ae06-594f-4820-8907-feb3f58ca27d",
+      "plant_id": "41a9916e-085d-44f3-9fae-178794f837f2",
+      "location_note": null,
+      "since": "2025-12-13"
     }
   ],
   "shared_plant": [
@@ -914,6 +1098,19 @@
       "plant_id": "54877e25-8810-4c06-b956-1d214267a518",
       "can_edit": true,
       "created_at": "2025-12-10T09:38:18",
+      "ended_sharing_at": null
+    },
+    {
+      "id": "8d4beb7e-5f93-49e9-a724-58512ed35497",
+      "_delete": true
+    },
+    {
+      "id": "34e01457-f4ae-450e-8596-a4dde909dc28",
+      "owner_user_id": "17d51dfa-bde7-4802-b07b-ea8fc45e457e",
+      "recipient_user_id": "6dd2ae06-594f-4820-8907-feb3f58ca27d",
+      "plant_id": "41a9916e-085d-44f3-9fae-178794f837f2",
+      "can_edit": true,
+      "created_at": "2025-12-13T14:27:02",
       "ended_sharing_at": null
     }
   ],
@@ -944,6 +1141,42 @@
       "severity": null,
       "notes": null,
       "status": "detected"
+    },
+    {
+      "id": "ec975809-e9e3-4e23-88c0-fff09c9c9588",
+      "plant_id": "b29fa6a4-2fd7-4538-9ae9-60ddb3a52baa",
+      "disease_id": "e04eb1cb-239d-58c3-827d-67adc8517d05",
+      "detected_at": "2025-12-12",
+      "severity": null,
+      "notes": null,
+      "status": "detected"
+    },
+    {
+      "id": "6626e14c-37f7-40c4-a9e5-67e0199798e4",
+      "plant_id": "11e778e8-4c14-4c1c-88ea-de84c7893a7c",
+      "disease_id": "66b51af0-c8b2-52c9-82f2-0a1b0dbea673",
+      "detected_at": "2025-12-12",
+      "severity": null,
+      "notes": null,
+      "status": "detected"
+    },
+    {
+      "id": "42a88934-5ebe-4aec-889b-ba89edd2a1d1",
+      "plant_id": "b29fa6a4-2fd7-4538-9ae9-60ddb3a52baa",
+      "disease_id": "e04eb1cb-239d-58c3-827d-67adc8517d05",
+      "detected_at": "2025-12-13",
+      "severity": null,
+      "notes": null,
+      "status": "detected"
+    },
+    {
+      "id": "276f57e2-370b-40bd-812c-12d8a09f6ff5",
+      "plant_id": "41a9916e-085d-44f3-9fae-178794f837f2",
+      "disease_id": "66b51af0-c8b2-52c9-82f2-0a1b0dbea673",
+      "detected_at": "2025-12-13",
+      "severity": null,
+      "notes": null,
+      "status": "detected"
     }
   ],
   "friendship": [
@@ -958,6 +1191,18 @@
     {
       "id": "6a00ac38-d303-4e51-a26d-efd671b03df8",
       "_delete": true
+    },
+    {
+      "id": "d24f7d22-890a-4e9f-9403-40ac0d1ac519",
+      "_delete": true
+    },
+    {
+      "id": "8cc12072-473f-4a77-a5f8-c20c6232ea97",
+      "user_id_a": "17d51dfa-bde7-4802-b07b-ea8fc45e457e",
+      "user_id_b": "6dd2ae06-594f-4820-8907-feb3f58ca27d",
+      "status": "accepted",
+      "created_at": "2025-12-13T14:26:51",
+      "updated_at": "2025-12-13T14:26:51"
     }
   ],
   "user": [
@@ -993,6 +1238,24 @@
       "email": "ff.pucci@gmail.com",
       "password_hash": "scrypt:32768:8:1$uM25jLIpDYnvoQRB$d6460f8afbd10f14e9715359e97674a44b72d16872047b6200d0c27648ccd6bfe8d520827c805b3076689087033dbaaaca8e4b70f2ae46e6fcef61e56c67079f",
       "created_at": "2025-12-11T15:59:06"
+    },
+    {
+      "email": "m.gerace@gmail.com",
+      "created_at": "2025-12-12T21:02:26",
+      "updated_at": "2025-12-12T21:02:26",
+      "first_name": "Miriana",
+      "id": "6dd2ae06-594f-4820-8907-feb3f58ca27d",
+      "last_name": "Geraci",
+      "password_hash": "scrypt:32768:8:1$bFA5bjjgs5WMEUOi$7e503de4165be9d87237983ca5f843580573724a37eb040fcad551396983a77a80799246900ada7522335fc157408e58ab9dbef2e4a445bf0427acd071ed5577"
+    },
+    {
+      "password_hash": "scrypt:32768:8:1$3IXPxdMdMsd6Z8Pg$203dda80aae4cd8f957d06e3201bb9f15d30e248600872f54bccbd24339c4852693cc4755eb0149eff6ba1ffbe0cd272a6ef71269bacc9c85813e7f30d629652",
+      "created_at": "2025-12-13T14:17:37",
+      "id": "17d51dfa-bde7-4802-b07b-ea8fc45e457e",
+      "updated_at": "2025-12-13T14:17:37",
+      "email": "a.cossu@gmail.com",
+      "first_name": "Andrea",
+      "last_name": "Cossu"
     }
   ],
   "reminder": [
@@ -1032,6 +1295,206 @@
       "max_temp_c": 30,
       "water_level": 2,
       "size": "small"
+    },
+    {
+      "size": "medium",
+      "tips": [
+        "Ideal light: 6+ hours of direct sunlight per day.",
+        "Tolerated light: Full sun preferred.",
+        "Watering: Water deeply 2-3 times per week.",
+        "Soil: Use regular indoor potting soil with good drainage."
+      ],
+      "category": "Flowering shrub",
+      "created_at": "2025-12-12T21:05:37",
+      "light_level": 5,
+      "water_level": 3,
+      "updated_at": "2025-12-12T21:05:37",
+      "min_temp_c": 5,
+      "max_temp_c": 28,
+      "scientific_name": "Rosa lucieae",
+      "id": "b29fa6a4-2fd7-4538-9ae9-60ddb3a52baa",
+      "common_name": "Rose",
+      "climate": "Temperate",
+      "family_id": "b9cbfcc6-ce18-47cd-ac15-3535712d8c45",
+      "use": "Garden plant, Cut flowers, Ornamental",
+      "difficulty": 3,
+      "pests": null,
+      "origin": "Asia"
+    },
+    {
+      "size": "medium",
+      "tips": [
+        "Ideal light: Gerbera plants thrive best in bright, indirect sunlight for most of the day. They prefer a well-lit environment where the light is diffused rather than harsh, helping maintain vibrant blooms and preventing leaf burn. A spot near an east-facing or lightly filtered south window is ideal.",
+        "Tolerated light: Partial shade to full sun.",
+        "Watering: Keep soil evenly moist, but avoid overwatering.",
+        "Soil: Use regular indoor potting soil with good drainage."
+      ],
+      "category": "Flowering",
+      "created_at": "2025-12-12T21:06:46",
+      "light_level": 4,
+      "water_level": 3,
+      "updated_at": "2025-12-12T21:06:46",
+      "min_temp_c": 12,
+      "max_temp_c": 27,
+      "scientific_name": "Gerbera jamesonii",
+      "id": "d0bf58ff-2b26-492f-812d-353c4e2accb5",
+      "common_name": "Gerbera Daisy",
+      "climate": "Temperate",
+      "family_id": "3f91821e-4b75-4ba8-b8c1-e28ad7459bad",
+      "use": "Cut flower, Ornamental",
+      "difficulty": 3,
+      "pests": null,
+      "origin": "South Africa"
+    },
+    {
+      "size": "small",
+      "tips": [
+        "Ideal light: Bright light",
+        "Tolerated light: Diffused",
+        "Watering: Keep moist between watering. Must not be dry between watering",
+        "Soil: Use light, airy soil: potting soil mixed with some bark and perlite."
+      ],
+      "category": "Spathiphyllum",
+      "created_at": "2025-12-12T21:08:47",
+      "light_level": 4,
+      "water_level": 5,
+      "updated_at": "2025-12-12T21:08:47",
+      "min_temp_c": 15,
+      "max_temp_c": 28,
+      "scientific_name": "Spathiphyllum cannifolium",
+      "id": "11e778e8-4c14-4c1c-88ea-de84c7893a7c",
+      "common_name": "Peace lily",
+      "climate": "Tropical",
+      "family_id": "ddc38e06-6633-48eb-988e-af2579ef2b53",
+      "use": "Table top, Tertiary",
+      "difficulty": 3,
+      "pests": null,
+      "origin": "Cultivar"
+    },
+    {
+      "difficulty": 3,
+      "origin": "South Africa",
+      "category": "Flowering",
+      "id": "bca911b6-27aa-4a6f-88e7-4f9fd99344b8",
+      "climate": "Temperate",
+      "family_id": "3f91821e-4b75-4ba8-b8c1-e28ad7459bad",
+      "created_at": "2025-12-13T14:06:48",
+      "tips": [
+        "Ideal light: Gerbera plants thrive best in bright, indirect sunlight for most of the day. They prefer a well-lit environment where the light is diffused rather than harsh, helping maintain vibrant blooms and preventing leaf burn. A spot near an east-facing or lightly filtered south window is ideal.",
+        "Tolerated light: Partial shade to full sun.",
+        "Watering: Keep soil evenly moist, but avoid overwatering.",
+        "Soil: Use regular indoor potting soil with good drainage."
+      ],
+      "updated_at": "2025-12-13T14:06:48",
+      "use": "Cut flower, Ornamental",
+      "pests": null,
+      "size": "medium",
+      "min_temp_c": 12,
+      "max_temp_c": 27,
+      "common_name": "Gerbera Daisy",
+      "scientific_name": "Gerbera jamesonii",
+      "water_level": 3,
+      "light_level": 4
+    },
+    {
+      "difficulty": 3,
+      "origin": "South Africa",
+      "category": "Flowering",
+      "id": "225bc82d-7444-48f2-a6ee-08cc09ed7048",
+      "climate": "Temperate",
+      "family_id": "3f91821e-4b75-4ba8-b8c1-e28ad7459bad",
+      "created_at": "2025-12-13T14:18:13",
+      "tips": [
+        "Ideal light: Gerbera plants thrive best in bright, indirect sunlight for most of the day. They prefer a well-lit environment where the light is diffused rather than harsh, helping maintain vibrant blooms and preventing leaf burn. A spot near an east-facing or lightly filtered south window is ideal.",
+        "Tolerated light: Partial shade to full sun.",
+        "Watering: Keep soil evenly moist, but avoid overwatering.",
+        "Soil: Use regular indoor potting soil with good drainage."
+      ],
+      "updated_at": "2025-12-13T14:18:13",
+      "use": "Cut flower, Ornamental",
+      "pests": null,
+      "size": "medium",
+      "min_temp_c": 12,
+      "max_temp_c": 27,
+      "common_name": "Gerbera Daisy",
+      "scientific_name": "Gerbera jamesonii",
+      "water_level": 3,
+      "light_level": 4
+    },
+    {
+      "difficulty": 3,
+      "origin": "Asia",
+      "category": "Flower",
+      "id": "59e7c178-4242-476b-8b3f-d84ac6cdf9f7",
+      "climate": "Tropical",
+      "family_id": "e9082b4c-5538-4250-b747-4943d9a447ec",
+      "created_at": "2025-12-13T14:19:04",
+      "tips": [
+        "Ideal light: 6 or more hours of direct sunlight per day.",
+        "Tolerated light: Direct sunlight.",
+        "Watering: Keep moist between watering. Must not be dry between watering",
+        "Soil: Use rich potting soil that stays evenly, slightly moist."
+      ],
+      "updated_at": "2025-12-13T14:19:04",
+      "use": "Flower, Secondary",
+      "pests": null,
+      "size": "medium",
+      "min_temp_c": 10,
+      "max_temp_c": 28,
+      "common_name": "Hibiscus",
+      "scientific_name": "Hibiscus rosa-sinensis",
+      "water_level": 5,
+      "light_level": 5
+    },
+    {
+      "difficulty": 3,
+      "origin": "Brazil",
+      "category": "Fern",
+      "id": "5b1bdd8d-cd86-45ab-9f5e-e9591bc9f828",
+      "climate": "Tropical",
+      "family_id": "13a6ceee-6f0a-4ab6-b530-12a049ad2317",
+      "created_at": "2025-12-13T14:21:28",
+      "tips": [
+        "Ideal light: Bright light",
+        "Tolerated light: Diffused",
+        "Watering: Keep moist between watering. Must not be dry between watering",
+        "Soil: Use soft, rich soil that stays slightly moist."
+      ],
+      "updated_at": "2025-12-13T14:21:28",
+      "use": "Potted plant, Ground cover, Table top",
+      "pests": null,
+      "size": "small",
+      "min_temp_c": 12,
+      "max_temp_c": 30,
+      "common_name": "Maindenhair",
+      "scientific_name": "Adiantum raddianum",
+      "water_level": 5,
+      "light_level": 4
+    },
+    {
+      "difficulty": 3,
+      "origin": "Cultivar",
+      "category": "Spathiphyllum",
+      "id": "41a9916e-085d-44f3-9fae-178794f837f2",
+      "climate": "Tropical",
+      "family_id": "ddc38e06-6633-48eb-988e-af2579ef2b53",
+      "created_at": "2025-12-13T14:21:43",
+      "tips": [
+        "Ideal light: Bright light",
+        "Tolerated light: Diffused",
+        "Watering: Keep moist between watering. Must not be dry between watering",
+        "Soil: Use light, airy soil: potting soil mixed with some bark and perlite."
+      ],
+      "updated_at": "2025-12-13T14:21:43",
+      "use": "Table top, Tertiary",
+      "pests": null,
+      "size": "small",
+      "min_temp_c": 15,
+      "max_temp_c": 28,
+      "common_name": "Peace lily",
+      "scientific_name": "Spathiphyllum wallisii",
+      "water_level": 5,
+      "light_level": 4
     }
   ]
 }

@@ -642,7 +642,8 @@ class ReminderService:
         """
         print(f"[PUSH MOCK] Would send notification to token={token}: {title} - {body}")
 
-    def check_due_plants_for_user_using_repo(self, user_id: str, repo):
+    @staticmethod
+    def check_due_plants_for_user_using_repo(user_id: str, repo):
         print("\n[ReminderService] START check_due_plants_for_user_using_repo")
         print(f"→ Checking plants for USER: {user_id}")
 

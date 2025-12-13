@@ -76,7 +76,6 @@ class RepositoryService:
             "image_base64": image_base64,
         }
 
-
     @staticmethod
     def _build_ordered_regex(tokens: List[str]) -> re.Pattern:
         # token1.*token2.*token3 (match ordinato ma permissivo)
