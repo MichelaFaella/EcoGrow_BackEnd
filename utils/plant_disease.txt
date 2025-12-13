@@ -1,16 +1,9 @@
 {
   "Asparagaceae": {
-    "healthy": {
-      "disease": "Healthy",
-      "description": "Plant shows no signs of disease or nutrient deficiency; foliage is uniformly colored and turgid, growth is consistent with species expectations.",
-      "symptoms": [],
-      "cure_tips": [
-        "No treatment required; maintain regular good cultural practices such as proper watering and light."
-      ]
-    },
+
     "anthracnose": {
       "disease": "Anthracnose",
-      "description": "A fungal disease causing dark, sunken lesions on leaves, stems, or fruit; favours warm, wet conditions and can cause premature defoliation and disfigurement.",
+      "description": "Anthracnose is a fungal disease that manifests as dark, sunken lesions on leaves, stems, or fruit. It thrives in warm, humid conditions and can lead to severe defoliation and aesthetic damage. Specifically on Asparagaceae, it often starts as small water-soaked spots on the fleshy leaves that enlarge into sunken, dark lesions with pinkish spore masses.",
       "symptoms": [
         { "name": "dark lesions" },
         { "name": "yellow leaves" },
@@ -24,7 +17,7 @@
     },
     "leaf_withering": {
       "disease": "Leaf Withering",
-      "description": "A symptom complex where leaves wilt and brown due to water stress, root problems, vascular disease, or environmental extremes; underlying causes must be diagnosed for correct treatment.",
+      "description": "Leaf withering is a complex symptom where foliage droops and turns brown, often signaling underlying issues like water stress, root rot, or vascular disease. Accurate diagnosis is essential. Specifically on Asparagaceae, dehydration causes the tips of the long leaves to turn brown and crispy, progressing towards the base.",
       "symptoms": [
         { "name": "leaf wilting" },
         { "name": "brown margins" },
@@ -38,7 +31,7 @@
     },
     "fungal_leaf_spot": {
       "disease": "Fungal Leaf Spot",
-      "description": "Caused by various fungal pathogens producing small to large necrotic spots on leaves; spread is promoted by moisture and crowded plants, reducing photosynthetic area and vigor.",
+      "description": "Fungal leaf spot is caused by pathogens creating necrotic spots ranging from small dots to large patches. High moisture accelerates its spread. Specifically on Asparagaceae, spots are often reddish-brown with yellow halos, commonly appearing on older foliage first and sometimes merging to kill entire leaves.",
       "symptoms": [
         { "name": "brown spots" },
         { "name": "pale halos" },
@@ -52,7 +45,7 @@
     },
     "foliar_necrosis": {
       "disease": "Foliar Necrosis",
-      "description": "Localized death of leaf tissue resulting from severe disease, chemical injury, or abiotic stress; appears as brown or black dead patches and can indicate systemic problems.",
+      "description": "Foliar necrosis involves the localized death of leaf tissue, appearing as brown or black dead patches. It results from severe stress or infection. Specifically on Asparagaceae, it manifests as large, irregular dead patches on the leaf blades, often starting from the margins or tips and moving inward.",
       "symptoms": [
         { "name": "dead tissue" },
         { "name": "chlorotic halo" },
@@ -67,17 +60,10 @@
   },
 
   "Araceae": {
-    "healthy": {
-      "disease": "Healthy",
-      "description": "No visible disease signs; leaves are firm and evenly colored, and growth is consistent with normal species characteristics under current care.",
-      "symptoms": [],
-      "cure_tips": [
-        "Maintain stable moisture, moderate light, and inspect regularly for pests to keep plants healthy."
-      ]
-    },
+
     "bacterial_wilt": {
       "disease": "Bacterial Wilt",
-      "description": "A bacterial disease that blocks vascular tissue causing rapid wilting and plant collapse; often fatal and spread by contaminated soil, tools, or water.",
+      "description": "Bacterial wilt involves bacteria blocking the vascular system, causing rapid wilting and collapse. It is often fatal and spreads via contaminated soil/tools. Specifically on Araceae, leaves may yellow rapidly and petioles collapse, often leading to a mushy, foul-smelling rot at the base of the stems.",
       "symptoms": [
         { "name": "sudden wilting" },
         { "name": "stem ooze" },
@@ -91,7 +77,7 @@
     },
     "chlorosis": {
       "disease": "Chlorosis",
-      "description": "Yellowing of leaf tissue due to insufficient chlorophyll from nutrient deficiencies, poor root health, or alkaline soils reducing nutrient availability.",
+      "description": "Chlorosis is the yellowing of leaf tissue due to a lack of chlorophyll, often caused by nutrient deficiencies or poor root health. Specifically on Araceae, the broad leaves turn pale green to yellow between the veins (interveinal chlorosis), while the veins themselves often remain boldly green.",
       "symptoms": [
         { "name": "yellow leaves" },
         { "name": "pale foliage" },
@@ -105,7 +91,7 @@
     },
     "manganese_toxicity": {
       "disease": "Manganese Toxicity",
-      "description": "Excess manganese accumulation in acidic or waterlogged soils causing leaf spotting, interveinal chlorosis, and reduced growth.",
+      "description": "Manganese toxicity occurs when excess manganese accumulates in tissues, typically in acidic/waterlogged soils. Specifically on Araceae, it typically appears as dark brown or black spotting on older leaves, often accompanied by yellowing margins and cupping of the foliage.",
       "symptoms": [
         { "name": "brown spots" },
         { "name": "leaf bronzing" },
@@ -120,17 +106,10 @@
   },
 
   "Asteraceae": {
-    "healthy": {
-      "disease": "Healthy",
-      "description": "Plant appears vigorous with normal leaf color and flower production, showing no signs of disease or nutrient stress.",
-      "symptoms": [],
-      "cure_tips": [
-        "Continue good cultural practices: adequate watering, balanced fertilization, and monitoring for pests and diseases."
-      ]
-    },
+
     "bacterial_leaf_spot": {
       "disease": "Bacterial Leaf Spot",
-      "description": "Bacterial pathogens create water-soaked lesions that dry into tan or brown spots; spread by splashing water, contaminated tools, and infected transplants.",
+      "description": "Bacterial leaf spot manifests as water-soaked lesions that dry into tan or brown spots, often with yellow halos. Specifically on Asteraceae, look for angular, dark spots limited by the net-like leaf veins, which may coalesce to form large blighted areas on the foliage.",
       "symptoms": [
         { "name": "dark spots" },
         { "name": "yellow halos" },
@@ -144,7 +123,7 @@
     },
     "septoria_leaf_spot": {
       "disease": "Septoria Leaf Spot",
-      "description": "A fungal disease causing numerous small tan to brown leaf spots that thrive in wet, crowded conditions.",
+      "description": "Septoria leaf spot produces numerous small, circular tan to brown spots on leaves, prevalent in wet conditions. Specifically on Asteraceae, the lower leaves are usually affected first, developing circular spots with gray centers and tiny black fruiting bodies visible within the lesions.",
       "symptoms": [
         { "name": "tan spots" },
         { "name": "yellow leaves" },
@@ -159,17 +138,10 @@
   },
 
   "Malvaceae": {
-    "healthy": {
-      "disease": "Healthy",
-      "description": "No disease signs present; leaves, stems, and blooms show normal color and turgor.",
-      "symptoms": [],
-      "cure_tips": [
-        "Maintain balanced watering and fertilization; monitor regularly for pests."
-      ]
-    },
+
     "blight": {
       "disease": "Blight",
-      "description": "A rapid, severe disease causing extensive browning and dieback of foliage and stems.",
+      "description": "Blight is a rapid disease causing extensive browning and death of leaves and stems. Specifically on Malvaceae, leaves may droop suddenly and turn black or gray, with stems showing dark streaks or girdling lesions that cut off water supply to the upper plant.",
       "symptoms": [
         { "name": "leaf browning" },
         { "name": "stem dieback" },
@@ -183,7 +155,7 @@
     },
     "foliar_necrosis": {
       "disease": "Foliar Necrosis",
-      "description": "Localized death of leaf tissue caused by severe disease, chemical injury, or environmental stress.",
+      "description": "Foliar necrosis refers to the death of leaf tissue, presenting as dry, brown patches. It results from stress or infection. Specifically on Malvaceae, necrosis often appears as marginal browning ('scorching') that advances inward between the main veins, often leaving a green 'Christmas tree' pattern.",
       "symptoms": [
         { "name": "brown patches" },
         { "name": "dry tissue" },
@@ -197,7 +169,7 @@
     },
     "sun_scorch": {
       "disease": "Sun Scorch",
-      "description": "Tissue damage from excessive direct sunlight or sudden exposure.",
+      "description": "Sun scorch is damage from excessive sunlight, leading to bleached/brown patches. Specifically on Malvaceae, large white or bleached patches appear on the leaves most exposed to the sun; these spots eventually become thin and papery, contrasting with the dark green healthy tissue.",
       "symptoms": [
         { "name": "bleached patches" },
         { "name": "dry edges" },
@@ -212,17 +184,10 @@
   },
 
   "Rosaceae": {
-    "healthy": {
-      "disease": "Healthy",
-      "description": "Plant displays expected vigor with healthy foliage and flower development.",
-      "symptoms": [],
-      "cure_tips": [
-        "Continue good cultural care and monitor for pests and diseases common in Rosaceae."
-      ]
-    },
+
     "black_spot": {
       "disease": "Black Spot",
-      "description": "A fungal disease causing round black spots with fringed edges on leaves.",
+      "description": "Black spot is a fungal disease identified by round black spots with feathery margins. Specifically on Rosaceae, these characteristic black spots develop on the upper leaf surface, causing the surrounding tissue to yellow and the entire leaf to drop prematurely, weakening the shrub.",
       "symptoms": [
         { "name": "black spots" },
         { "name": "yellow leaves" },
@@ -236,7 +201,7 @@
     },
     "downy_mildew": {
       "disease": "Downy Mildew",
-      "description": "Oomycetes producing fuzzy growth on leaf undersides, causing chlorosis and necrosis.",
+      "description": "Downy mildew appears as fuzzy growth on leaf undersides, often with yellow patches on top. Specifically on Rosaceae, purplish-red to dark brown angular spots appear on leaves, with a sparse downy grayish growth on the underside, often leading to rapid defoliation.",
       "symptoms": [
         { "name": "yellow patches" },
         { "name": "fuzzy underside" },
@@ -250,7 +215,7 @@
     },
     "generic_insect_damage": {
       "disease": "Generic Insect Damage",
-      "description": "Damage caused by chewing or sucking insects producing holes, skeletonization, or distortion.",
+      "description": "Insect damage encompasses harm from chewing or sucking pests, resulting in holes or distortion. Specifically on Rosaceae, look for skeletonized leaves from sawfly larvae (leaving only veins) or fine stippling and webbing from spider mites on the leaf surface.",
       "symptoms": [
         { "name": "chewed leaves" },
         { "name": "curled foliage" },
@@ -264,7 +229,7 @@
     },
     "mosaic_virus": {
       "disease": "Mosaic Virus",
-      "description": "Viral infections producing mottled patterns on leaves, reducing growth.",
+      "description": "Mosaic virus causes mottled patterns and stunted growth. Specifically on Rosaceae, symptoms include yellow wavy lines, ring spots, or oak-leaf patterns on the foliage, often appearing most vividly in spring and fading in summer heat.",
       "symptoms": [
         { "name": "mottled leaves" },
         { "name": "stunted growth" },
@@ -278,7 +243,7 @@
     },
     "mildew": {
       "disease": "Mildew",
-      "description": "Powdery or downy fungal infections forming white or gray growth on leaves.",
+      "description": "Powdery mildew appears as a white powdery coating on leaves and buds. Specifically on Rosaceae, distinct white powdery patches form on young leaves, flower buds, and shoots, causing them to curl and distort, effectively ruining the bloom quality.",
       "symptoms": [
         { "name": "white coating" },
         { "name": "leaf curling" },
@@ -292,7 +257,7 @@
     },
     "rust": {
       "disease": "Rust",
-      "description": "Fungal disease producing orange pustules on leaf undersides.",
+      "description": "Rust produces rusty-orange pustules on leaves. Specifically on Rosaceae, bright orange-red powder-like pustules form on the undersides of leaves, with corresponding small yellow spots visible on the upper surface, often appearing in cool, moist weather.",
       "symptoms": [
         { "name": "orange pustules" },
         { "name": "yellow leaves" },
@@ -306,7 +271,7 @@
     },
     "yellow_mosaic_virus": {
       "disease": "Yellow Mosaic Virus",
-      "description": "A viral disease causing yellow mosaic patterns on leaves.",
+      "description": "Yellow mosaic virus causes bright yellow mottling on leaves. Specifically on Rosaceae, bright yellow mottling or line patterns cover the leaves, often without the distinct ring spots seen in other viruses, significantly reducing the plant's vigor.",
       "symptoms": [
         { "name": "yellow mosaic" },
         { "name": "stunted growth" },
@@ -321,17 +286,10 @@
   },
 
   "Zingiberaceae": {
-    "healthy": {
-      "disease": "Healthy",
-      "description": "No visible signs of disease; foliage and rhizomes appear healthy.",
-      "symptoms": [],
-      "cure_tips": [
-        "Maintain balanced moisture, good drainage, and inspect rhizomes at planting."
-      ]
-    },
+
     "aphids": {
       "disease": "Aphids",
-      "description": "Small sap-sucking insects clustering on new growth.",
+      "description": "Aphids are small insects clustering on new growth, sucking sap. Specifically on Zingiberaceae, colonies cluster on the undersides of the large leaves and around the delicate flowering spikes, causing distortion and depositing sticky honeydew that attracts ants.",
       "symptoms": [
         { "name": "insect clusters" },
         { "name": "sticky honeydew" },
@@ -345,7 +303,7 @@
     },
     "necrotic_fungal_lesion": {
       "disease": "Necrotic Fungal Lesion",
-      "description": "Dead spots on leaves caused by fungal pathogens.",
+      "description": "Necrotic fungal lesions are dead areas caused by fungus. Specifically on Zingiberaceae, lesions are often oval or streak-like running parallel to the leaf veins, expanding rapidly in causing the leaf to split or look shredded.",
       "symptoms": [
         { "name": "brown lesions" },
         { "name": "dead patches" },
@@ -359,7 +317,7 @@
     },
     "foliar_necrosis": {
       "disease": "Foliar Necrosis",
-      "description": "Death of leaf tissue due to pathogens or stress.",
+      "description": "Foliar necrosis is the death of leaf tissue. Specifically on Zingiberaceae, the tip and margins of the large leaves dry out and turn brown, often rolling inward, which can be a sign of drought stress or salt buildup in the soil.",
       "symptoms": [
         { "name": "brown patches" },
         { "name": "brittle tissue" },
@@ -373,7 +331,7 @@
     },
     "fungal_leaf_spot": {
       "disease": "Fungal Leaf Spot",
-      "description": "Foliar fungi producing discrete spots, spreading rapidly in moisture.",
+      "description": "Fungal leaf spot involves distinct spots on foliage. Specifically on Zingiberaceae, spots may be diamond-shaped or oval with a gray center and brown margin, surrounded by a yellow halo, disrupting the clean appearance of the broad leaves.",
       "symptoms": [
         { "name": "brown spots" },
         { "name": "yellow leaves" },
@@ -388,17 +346,10 @@
   },
 
   "Asphodelaceae": {
-    "healthy": {
-      "disease": "Healthy",
-      "description": "No disease symptoms observed; foliage shows normal color and form.",
-      "symptoms": [],
-      "cure_tips": [
-        "Maintain consistent care, avoid overwatering, and monitor for fungi and pests."
-      ]
-    },
+
     "anthracnose": {
       "disease": "Anthracnose",
-      "description": "Fungal disease producing dark sunken lesions on leaves or stems.",
+      "description": "Anthracnose causes sunken lesions. Specifically on Asphodelaceae, it causes soft, sunken black rot spots on the succulent leaves, which may exude a pinkish spore mass in wet weather, potentially rotting the entire rosette.",
       "symptoms": [
         { "name": "dark lesions" },
         { "name": "yellow leaves" },
@@ -412,7 +363,7 @@
     },
     "generic_fungal_leaf_spot": {
       "disease": "Generic Fungal Leaf Spot",
-      "description": "Multiple fungal pathogens causing discrete leaf spots.",
+      "description": "Generic fungal leaf spot refers to discrete necrotic spots. Specifically on Asphodelaceae, small, raised, black or brown scabs form on the leaf surface, marring the skin like freckles, but often not penetrating deep into the succulent tissue.",
       "symptoms": [
         { "name": "dark spots" },
         { "name": "yellow leaves" },
@@ -426,7 +377,7 @@
     },
     "rust": {
       "disease": "Rust",
-      "description": "Fungal infection producing rust-colored pustules on leaf undersides.",
+      "description": "Rust appears as spore masses on leaves. Specifically on Asphodelaceae, it appears as black or dark brown raised pustules primarily on the undersides or both sides of the fleshy leaves, leading to ugly scarring but rarely killing the plant.",
       "symptoms": [
         { "name": "brown pustules" },
         { "name": "yellow leaves" },
@@ -440,7 +391,7 @@
     },
     "sun_scorch": {
       "disease": "Sun Scorch",
-      "description": "Leaf damage due to excessive sunlight or sudden exposure.",
+      "description": "Sun scorch results from intense sunlight. Specifically on Asphodelaceae, the plant turns reddish or brown (stress colors) before developing permanent bleached, sunken burn marks on the sun-facing side of the rosette.",
       "symptoms": [
         { "name": "bleached patches" },
         { "name": "dry edges" },
