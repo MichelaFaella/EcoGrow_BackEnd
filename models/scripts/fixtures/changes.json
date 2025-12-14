@@ -817,6 +817,46 @@
       "caption": "Detection result: chlorosis",
       "order_index": 1,
       "created_at": "2025-12-13T14:22:19"
+    },
+    {
+      "caption": null,
+      "plant_id": "5cf04a7b-c2ea-453a-bb1c-9d33f2d8b4f0",
+      "order_index": 0,
+      "created_at": null,
+      "id": "82529b9d-464d-44f2-bb57-6c6a24dbabfe",
+      "url": "82529b9d-464d-44f2-bb57-6c6a24dbabfe.jpg"
+    },
+    {
+      "caption": null,
+      "plant_id": "39b2e1c9-469f-45cd-8d47-4a071de1f8ed",
+      "order_index": 0,
+      "created_at": null,
+      "id": "4d28c38c-1952-495a-94e6-df05add698f9",
+      "url": "4d28c38c-1952-495a-94e6-df05add698f9.jpg"
+    },
+    {
+      "caption": null,
+      "plant_id": "0eb8af80-33a4-4485-a13f-c4200b1c8576",
+      "order_index": 0,
+      "created_at": null,
+      "id": "65b2331c-3eb1-496f-b060-e444e03c6727",
+      "url": "65b2331c-3eb1-496f-b060-e444e03c6727.jpg"
+    },
+    {
+      "caption": null,
+      "plant_id": "ea9bec98-faeb-47f4-ae4c-e435930f157c",
+      "order_index": 0,
+      "created_at": null,
+      "id": "25656514-2919-48f4-add7-8d5cc273386b",
+      "url": "25656514-2919-48f4-add7-8d5cc273386b.jpg"
+    },
+    {
+      "caption": null,
+      "plant_id": "8837256f-8d84-4c4d-8f0d-9afe49a2e521",
+      "order_index": 0,
+      "created_at": null,
+      "id": "815f8396-668c-4e5b-9ecb-4c8c26e7778d",
+      "url": "815f8396-668c-4e5b-9ecb-4c8c26e7778d.jpg"
     }
   ],
   "user_plant": [
@@ -1018,6 +1058,36 @@
       "plant_id": "41a9916e-085d-44f3-9fae-178794f837f2",
       "location_note": null,
       "since": "2025-12-13"
+    },
+    {
+      "user_id": "94157e78-134b-4012-9a1f-b117dd6929a3",
+      "plant_id": "5cf04a7b-c2ea-453a-bb1c-9d33f2d8b4f0",
+      "location_note": null,
+      "since": "2025-12-14"
+    },
+    {
+      "user_id": "94157e78-134b-4012-9a1f-b117dd6929a3",
+      "plant_id": "39b2e1c9-469f-45cd-8d47-4a071de1f8ed",
+      "location_note": null,
+      "since": "2025-12-14"
+    },
+    {
+      "user_id": "94157e78-134b-4012-9a1f-b117dd6929a3",
+      "plant_id": "0eb8af80-33a4-4485-a13f-c4200b1c8576",
+      "location_note": null,
+      "since": "2025-12-14"
+    },
+    {
+      "user_id": "94157e78-134b-4012-9a1f-b117dd6929a3",
+      "plant_id": "ea9bec98-faeb-47f4-ae4c-e435930f157c",
+      "location_note": null,
+      "since": "2025-12-14"
+    },
+    {
+      "user_id": "94157e78-134b-4012-9a1f-b117dd6929a3",
+      "plant_id": "8837256f-8d84-4c4d-8f0d-9afe49a2e521",
+      "location_note": null,
+      "since": "2025-12-14"
     }
   ],
   "shared_plant": [
@@ -1133,6 +1203,22 @@
       "status": "accepted",
       "created_at": "2025-12-13T14:26:51",
       "updated_at": "2025-12-13T14:26:51"
+    },
+    {
+      "id": "4814d01b-3a71-43a5-b98c-c86034499994",
+      "user_id_a": "94157e78-134b-4012-9a1f-b117dd6929a3",
+      "user_id_b": "5be9ef9c-1c70-4a3a-b4b2-160e34800e4a",
+      "status": "accepted",
+      "created_at": "2025-12-14T19:22:21",
+      "updated_at": "2025-12-14T19:22:21"
+    },
+    {
+      "id": "17ad9fc5-766d-4875-8db9-767b109d77e4",
+      "user_id_a": "94157e78-134b-4012-9a1f-b117dd6929a3",
+      "user_id_b": "60da3d06-5584-4e19-8324-388fddee1c1d",
+      "status": "accepted",
+      "created_at": "2025-12-14T19:22:57",
+      "updated_at": "2025-12-14T19:22:57"
     }
   ],
   "user": [
@@ -1186,6 +1272,15 @@
       "email": "a.cossu@gmail.com",
       "first_name": "Andrea",
       "last_name": "Cossu"
+    },
+    {
+      "first_name": "Michela",
+      "last_name": "Faella",
+      "created_at": "2025-12-14T19:00:20",
+      "updated_at": "2025-12-14T19:00:20",
+      "id": "94157e78-134b-4012-9a1f-b117dd6929a3",
+      "email": "m.faella@gmail.com",
+      "password_hash": "scrypt:32768:8:1$hqxH3ra0AjHrx8H2$a128e9d9080cfb034daa96760c68c171233a4143dfb9f6d0f0f139a45461606610eb1ca2c5b02e2c32d9b0e7e0e44dcc9ce15a88d41b9e13cde53365c87c15e3"
     }
   ],
   "reminder": [
@@ -1425,6 +1520,131 @@
       "scientific_name": "Spathiphyllum wallisii",
       "water_level": 5,
       "light_level": 4
+    },
+    {
+      "difficulty": 3,
+      "category": "Flowering shrub",
+      "max_temp_c": 28,
+      "pests": null,
+      "family_id": "b9cbfcc6-ce18-47cd-ac15-3535712d8c45",
+      "min_temp_c": 5,
+      "origin": "Asia",
+      "water_level": 3,
+      "scientific_name": "Rosa lucieae",
+      "tips": [
+        "Ideal light: 6+ hours of direct sunlight per day.",
+        "Tolerated light: Full sun preferred.",
+        "Watering: Water deeply 2-3 times per week.",
+        "Soil: Use regular indoor potting soil with good drainage."
+      ],
+      "created_at": "2025-12-14T19:02:13",
+      "id": "5cf04a7b-c2ea-453a-bb1c-9d33f2d8b4f0",
+      "updated_at": "2025-12-14T19:02:13",
+      "size": "medium",
+      "light_level": 5,
+      "climate": "Temperate",
+      "common_name": "Rose",
+      "use": "Garden plant, Cut flowers, Ornamental"
+    },
+    {
+      "difficulty": 3,
+      "category": "Flowering shrub",
+      "max_temp_c": 28,
+      "pests": null,
+      "family_id": "b9cbfcc6-ce18-47cd-ac15-3535712d8c45",
+      "min_temp_c": 5,
+      "origin": "Asia",
+      "water_level": 3,
+      "scientific_name": "Rosa lucieae",
+      "tips": [
+        "Ideal light: 6+ hours of direct sunlight per day.",
+        "Tolerated light: Full sun preferred.",
+        "Watering: Water deeply 2-3 times per week.",
+        "Soil: Use regular indoor potting soil with good drainage."
+      ],
+      "created_at": "2025-12-14T19:06:49",
+      "id": "39b2e1c9-469f-45cd-8d47-4a071de1f8ed",
+      "updated_at": "2025-12-14T19:06:49",
+      "size": "medium",
+      "light_level": 5,
+      "climate": "Temperate",
+      "common_name": "Rose",
+      "use": "Garden plant, Cut flowers, Ornamental"
+    },
+    {
+      "difficulty": 3,
+      "category": "Spathiphyllum",
+      "max_temp_c": 28,
+      "pests": null,
+      "family_id": "ddc38e06-6633-48eb-988e-af2579ef2b53",
+      "min_temp_c": 15,
+      "origin": "Cultivar",
+      "water_level": 5,
+      "scientific_name": "Spathiphyllum cannifolium",
+      "tips": [
+        "Ideal light: Bright light",
+        "Tolerated light: Diffused",
+        "Watering: Keep moist between watering. Must not be dry between watering",
+        "Soil: Use light, airy soil: potting soil mixed with some bark and perlite."
+      ],
+      "created_at": "2025-12-14T19:13:10",
+      "id": "0eb8af80-33a4-4485-a13f-c4200b1c8576",
+      "updated_at": "2025-12-14T19:13:10",
+      "size": "small",
+      "light_level": 4,
+      "climate": "Tropical",
+      "common_name": "Peace lily",
+      "use": "Table top, Tertiary"
+    },
+    {
+      "difficulty": 3,
+      "category": "Herb",
+      "max_temp_c": 35,
+      "pests": null,
+      "family_id": "471e4906-8e4a-417b-a395-6bd42f117deb",
+      "min_temp_c": 18,
+      "origin": "India",
+      "water_level": 3,
+      "scientific_name": "Curcuma alismatifolia",
+      "tips": [
+        "Ideal light: Bright light, avoid harsh midday sun.",
+        "Tolerated light: Partial shade to bright light.",
+        "Watering: Keep consistently moist, but well drained.",
+        "Soil: Use regular indoor potting soil with good drainage."
+      ],
+      "created_at": "2025-12-14T19:14:04",
+      "id": "ea9bec98-faeb-47f4-ae4c-e435930f157c",
+      "updated_at": "2025-12-14T19:14:04",
+      "size": "medium",
+      "light_level": 4,
+      "climate": "Tropical",
+      "common_name": "Turmeric",
+      "use": "Medicinal, Culinary, Ornamental"
+    },
+    {
+      "difficulty": 3,
+      "category": "Flowering",
+      "max_temp_c": 27,
+      "pests": null,
+      "family_id": "3f91821e-4b75-4ba8-b8c1-e28ad7459bad",
+      "min_temp_c": 12,
+      "origin": "South Africa",
+      "water_level": 3,
+      "scientific_name": "Gerbera jamesonii",
+      "tips": [
+        "Ideal light: Gerbera plants thrive best in bright, indirect sunlight for most of the day. They prefer a well-lit environment where the light is diffused rather than harsh, helping maintain vibrant blooms and preventing leaf burn. A spot near an east-facing or lightly filtered south window is ideal.",
+        "Tolerated light: Partial shade to full sun.",
+        "Watering: Keep soil evenly moist, but avoid overwatering.",
+        "Soil: Use regular indoor potting soil with good drainage."
+      ],
+      "created_at": "2025-12-14T19:18:07",
+      "id": "8837256f-8d84-4c4d-8f0d-9afe49a2e521",
+      "updated_at": "2025-12-14T19:18:07",
+      "size": "medium",
+      "light_level": 4,
+      "climate": "Temperate",
+      "common_name": "Gerbera Daisy",
+      "use": "Cut flower, Ornamental"
     }
   ]
 }

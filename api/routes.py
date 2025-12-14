@@ -2646,7 +2646,7 @@ def friendship_delete(friendship_id: str):
 
         if current_user_id not in (fr.user_id_a, fr.user_id_b):
             return (
-                jsonify({"error": "Forbidden: non sei parte di questa amicizia"}),
+                jsonify({"error": "Forbidden: you are not part of this friendship"}),
                 403,
             )
 
@@ -2782,7 +2782,7 @@ def shared_plant_update(sid: str):
         return jsonify({"error": "SharedPlant not found"}), 404
     if str(sp.owner_user_id) != str(g.user_id):
         return jsonify(
-            {"error": "Forbidden: non sei l'owner di questa condivisione"}
+            {"error": "Forbidden: you are not the owner of this share"}
         ), 403
     # tieni solo i campi validi per SharedPlant
     data = _filter_fields_for_model(payload, SharedPlant)
