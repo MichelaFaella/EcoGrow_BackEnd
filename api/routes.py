@@ -2817,7 +2817,7 @@ def shared_plant_delete(shared_id: str):
 
         if sp.owner_user_id != current_user_id:
             return (
-                jsonify({"error": "Forbidden: non sei il proprietario della condivisione"}),
+                jsonify({"error": "Forbidden: you are not the owner!"}),
                 403,
             )
 

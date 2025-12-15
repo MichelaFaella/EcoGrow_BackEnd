@@ -857,6 +857,110 @@
       "created_at": null,
       "id": "815f8396-668c-4e5b-9ecb-4c8c26e7778d",
       "url": "815f8396-668c-4e5b-9ecb-4c8c26e7778d.jpg"
+    },
+    {
+      "caption": null,
+      "plant_id": "521820a8-3701-4639-ab8a-769d73ac42c5",
+      "order_index": 0,
+      "created_at": null,
+      "id": "5f4ff849-20f7-4972-bc4b-4b02f775964f",
+      "url": "5f4ff849-20f7-4972-bc4b-4b02f775964f.jpg"
+    },
+    {
+      "id": "ecf1f294-4feb-4fe2-9aba-3b8acb929ba9",
+      "plant_id": "0eb8af80-33a4-4485-a13f-c4200b1c8576",
+      "url": "7892b06c-38ee-4fcb-bb7e-c95a74a541d1.jpg",
+      "caption": "Detection result: chlorosis",
+      "order_index": 1,
+      "created_at": "2025-12-14T20:10:57"
+    },
+    {
+      "id": "e9303804-7142-4fc1-81f6-d8f570a8d885",
+      "plant_id": "39b2e1c9-469f-45cd-8d47-4a071de1f8ed",
+      "url": "fc9886fc-6bd0-4320-a248-5429a1c3a287.jpg",
+      "caption": "Detection result: black_spot",
+      "order_index": 1,
+      "created_at": "2025-12-14T20:11:41"
+    },
+    {
+      "caption": null,
+      "plant_id": "77c1b194-2355-46ce-963b-3f694100b72f",
+      "order_index": 0,
+      "created_at": null,
+      "id": "22dfecb2-5b32-427f-b23f-8f8f6e2eba4d",
+      "url": "22dfecb2-5b32-427f-b23f-8f8f6e2eba4d.jpg"
+    },
+    {
+      "caption": null,
+      "plant_id": "c4e0d638-2ae4-43ec-a49d-616e8ed3cf56",
+      "order_index": 0,
+      "created_at": null,
+      "id": "c49f18c5-f0b8-4608-8a26-249fc683ea95",
+      "url": "c49f18c5-f0b8-4608-8a26-249fc683ea95.jpg"
+    },
+    {
+      "id": "98a6fe6a-cf95-4883-bc3b-c8700f22fd4c",
+      "plant_id": "0eb8af80-33a4-4485-a13f-c4200b1c8576",
+      "url": "4c1a9252-ca40-48b6-b400-d7c9012dee5c.jpg",
+      "caption": "Detection result: chlorosis",
+      "order_index": 2,
+      "created_at": "2025-12-14T20:41:54"
+    },
+    {
+      "id": "87f490e7-e4bd-44ab-976f-5fdc1e1c5a44",
+      "plant_id": "39b2e1c9-469f-45cd-8d47-4a071de1f8ed",
+      "url": "69a19a2a-9a40-4ce3-876e-e919641f7752.jpg",
+      "caption": "Detection result: black_spot",
+      "order_index": 2,
+      "created_at": "2025-12-14T20:42:20"
+    },
+    {
+      "caption": null,
+      "plant_id": "70731474-be17-447e-a37b-07eeea03cbfc",
+      "order_index": 0,
+      "created_at": null,
+      "id": "882d6652-2c28-40b1-b670-154e4c3e8753",
+      "url": "882d6652-2c28-40b1-b670-154e4c3e8753.jpg"
+    },
+    {
+      "id": "c40c3bd2-7416-4f40-96c1-0cc63e360950",
+      "plant_id": "0eb8af80-33a4-4485-a13f-c4200b1c8576",
+      "url": "471416bb-ee68-4b03-afea-da5b76dbd752.jpg",
+      "caption": "Detection result: bacterial_wilt",
+      "order_index": 3,
+      "created_at": "2025-12-14T21:02:56"
+    },
+    {
+      "id": "29c8b4c2-7163-497e-9d89-e05d8fef5bec",
+      "plant_id": "39b2e1c9-469f-45cd-8d47-4a071de1f8ed",
+      "url": "d03daa18-10c0-4c94-8d7f-eaedd927ed76.jpg",
+      "caption": "Detection result: black_spot",
+      "order_index": 3,
+      "created_at": "2025-12-14T21:03:38"
+    },
+    {
+      "caption": null,
+      "plant_id": "935862ee-0167-4ac9-92b8-7d4052c3a769",
+      "order_index": 0,
+      "created_at": null,
+      "id": "a1aa6200-33f8-412a-bd20-bdc6a6c945e0",
+      "url": "a1aa6200-33f8-412a-bd20-bdc6a6c945e0.jpg"
+    },
+    {
+      "id": "9cd606d4-d36c-4d07-a504-268dec055180",
+      "plant_id": "0eb8af80-33a4-4485-a13f-c4200b1c8576",
+      "url": "148cc0e4-ecfc-4538-b1cc-823e84d5b377.jpg",
+      "caption": "Detection result: chlorosis",
+      "order_index": 4,
+      "created_at": "2025-12-14T21:23:30"
+    },
+    {
+      "id": "a8470582-77e5-48ea-a1a3-29fbd54f57b8",
+      "plant_id": "39b2e1c9-469f-45cd-8d47-4a071de1f8ed",
+      "url": "efd7a473-9375-41b2-9bf6-e356dd94100d.jpg",
+      "caption": "Detection result: black_spot",
+      "order_index": 4,
+      "created_at": "2025-12-14T21:24:05"
     }
   ],
   "user_plant": [
@@ -881,14 +985,14 @@
     {
       "user_id": "dd1101f6-17ba-448a-a2c9-0f4b9b6e92d3",
       "plant_id": "850c85d0-7d3b-4f30-a3e0-595257c8e892",
-      "health_status": "sick",
+      "health_status": "healthy",
       "location_note": null,
       "since": "2025-12-10"
     },
     {
       "user_id": "dd1101f6-17ba-448a-a2c9-0f4b9b6e92d3",
       "plant_id": "ac66dc5f-a45c-4681-b3cb-be2a402773b8",
-      "health_status": "sick",
+      "health_status": "healthy",
       "location_note": null,
       "since": "2025-12-10"
     },
@@ -961,7 +1065,7 @@
     {
       "user_id": "99230b9d-6a0f-44da-b366-6135ae436560",
       "plant_id": "e9e2d434-01a5-47dd-88ff-9aeed23e60fa",
-      "health_status": "sick",
+      "health_status": "healthy",
       "location_note": null,
       "since": "2025-12-11"
     },
@@ -986,7 +1090,7 @@
     {
       "user_id": "6dd2ae06-594f-4820-8907-feb3f58ca27d",
       "plant_id": "b29fa6a4-2fd7-4538-9ae9-60ddb3a52baa",
-      "health_status": "sick",
+      "health_status": "healthy",
       "location_note": null,
       "since": "2025-12-12"
     },
@@ -999,7 +1103,7 @@
     {
       "user_id": "6dd2ae06-594f-4820-8907-feb3f58ca27d",
       "plant_id": "11e778e8-4c14-4c1c-88ea-de84c7893a7c",
-      "health_status": "sick",
+      "health_status": "healthy",
       "location_note": null,
       "since": "2025-12-12"
     },
@@ -1012,7 +1116,7 @@
     {
       "user_id": "5be9ef9c-1c70-4a3a-b4b2-160e34800e4a",
       "plant_id": "b29fa6a4-2fd7-4538-9ae9-60ddb3a52baa",
-      "health_status": "sick",
+      "health_status": "healthy",
       "location_note": null,
       "since": "2025-12-12"
     },
@@ -1049,7 +1153,7 @@
     {
       "user_id": "17d51dfa-bde7-4802-b07b-ea8fc45e457e",
       "plant_id": "41a9916e-085d-44f3-9fae-178794f837f2",
-      "health_status": "sick",
+      "health_status": "healthy",
       "location_note": null,
       "since": "2025-12-13"
     },
@@ -1088,6 +1192,132 @@
       "plant_id": "8837256f-8d84-4c4d-8f0d-9afe49a2e521",
       "location_note": null,
       "since": "2025-12-14"
+    },
+    {
+      "user_id": "68739cf5-c132-404a-80e9-3bf396d0ea6f",
+      "plant_id": "521820a8-3701-4639-ab8a-769d73ac42c5",
+      "location_note": null,
+      "since": "2025-12-14"
+    },
+    {
+      "user_id": "94157e78-134b-4012-9a1f-b117dd6929a3",
+      "plant_id": "521820a8-3701-4639-ab8a-769d73ac42c5",
+      "location_note": null,
+      "since": "2025-12-14"
+    },
+    {
+      "user_id": "94157e78-134b-4012-9a1f-b117dd6929a3",
+      "plant_id": "0eb8af80-33a4-4485-a13f-c4200b1c8576",
+      "health_status": "healthy",
+      "location_note": null,
+      "since": "2025-12-14"
+    },
+    {
+      "user_id": "94157e78-134b-4012-9a1f-b117dd6929a3",
+      "plant_id": "39b2e1c9-469f-45cd-8d47-4a071de1f8ed",
+      "health_status": "healthy",
+      "location_note": null,
+      "since": "2025-12-14"
+    },
+    {
+      "user_id": "68739cf5-c132-404a-80e9-3bf396d0ea6f",
+      "plant_id": "521820a8-3701-4639-ab8a-769d73ac42c5",
+      "_delete": true
+    },
+    {
+      "user_id": "4924d6a9-9f2d-4d50-ad2b-a45ddc349bf6",
+      "plant_id": "77c1b194-2355-46ce-963b-3f694100b72f",
+      "location_note": null,
+      "since": "2025-12-14"
+    },
+    {
+      "user_id": "94157e78-134b-4012-9a1f-b117dd6929a3",
+      "plant_id": "77c1b194-2355-46ce-963b-3f694100b72f",
+      "location_note": null,
+      "since": "2025-12-14"
+    },
+    {
+      "user_id": "4924d6a9-9f2d-4d50-ad2b-a45ddc349bf6",
+      "plant_id": "c4e0d638-2ae4-43ec-a49d-616e8ed3cf56",
+      "location_note": null,
+      "since": "2025-12-14"
+    },
+    {
+      "user_id": "94157e78-134b-4012-9a1f-b117dd6929a3",
+      "plant_id": "c4e0d638-2ae4-43ec-a49d-616e8ed3cf56",
+      "location_note": null,
+      "since": "2025-12-14"
+    },
+    {
+      "user_id": "94157e78-134b-4012-9a1f-b117dd6929a3",
+      "plant_id": "0eb8af80-33a4-4485-a13f-c4200b1c8576",
+      "health_status": "healthy",
+      "location_note": null,
+      "since": "2025-12-14"
+    },
+    {
+      "user_id": "94157e78-134b-4012-9a1f-b117dd6929a3",
+      "plant_id": "39b2e1c9-469f-45cd-8d47-4a071de1f8ed",
+      "health_status": "healthy",
+      "location_note": null,
+      "since": "2025-12-14"
+    },
+    {
+      "user_id": "4924d6a9-9f2d-4d50-ad2b-a45ddc349bf6",
+      "plant_id": "c4e0d638-2ae4-43ec-a49d-616e8ed3cf56",
+      "_delete": true
+    },
+    {
+      "user_id": "05f20f79-1d6d-41be-be8e-f68dd140cf1c",
+      "plant_id": "70731474-be17-447e-a37b-07eeea03cbfc",
+      "location_note": null,
+      "since": "2025-12-14"
+    },
+    {
+      "user_id": "94157e78-134b-4012-9a1f-b117dd6929a3",
+      "plant_id": "70731474-be17-447e-a37b-07eeea03cbfc",
+      "location_note": null,
+      "since": "2025-12-14"
+    },
+    {
+      "user_id": "94157e78-134b-4012-9a1f-b117dd6929a3",
+      "plant_id": "0eb8af80-33a4-4485-a13f-c4200b1c8576",
+      "health_status": "healthy",
+      "location_note": null,
+      "since": "2025-12-14"
+    },
+    {
+      "user_id": "94157e78-134b-4012-9a1f-b117dd6929a3",
+      "plant_id": "39b2e1c9-469f-45cd-8d47-4a071de1f8ed",
+      "health_status": "healthy",
+      "location_note": null,
+      "since": "2025-12-14"
+    },
+    {
+      "user_id": "062dbd4a-ae5f-416d-b093-472193e676ba",
+      "plant_id": "935862ee-0167-4ac9-92b8-7d4052c3a769",
+      "location_note": null,
+      "since": "2025-12-14"
+    },
+    {
+      "user_id": "94157e78-134b-4012-9a1f-b117dd6929a3",
+      "plant_id": "935862ee-0167-4ac9-92b8-7d4052c3a769",
+      "location_note": null,
+      "since": "2025-12-14"
+    },
+    {
+      "user_id": "94157e78-134b-4012-9a1f-b117dd6929a3",
+      "plant_id": "0eb8af80-33a4-4485-a13f-c4200b1c8576",
+      "health_status": "healthy",
+      "location_note": null,
+      "since": "2025-12-14"
+    },
+    {
+      "user_id": "94157e78-134b-4012-9a1f-b117dd6929a3",
+      "plant_id": "39b2e1c9-469f-45cd-8d47-4a071de1f8ed",
+      "health_status": "healthy",
+      "location_note": null,
+      "since": "2025-12-14"
     }
   ],
   "shared_plant": [
@@ -1111,6 +1341,41 @@
       "plant_id": "41a9916e-085d-44f3-9fae-178794f837f2",
       "can_edit": true,
       "created_at": "2025-12-13T14:27:02",
+      "ended_sharing_at": null
+    },
+    {
+      "id": "8d9fa1c2-9177-405e-96d1-865c895cf3fa",
+      "_delete": true
+    },
+    {
+      "id": "435e31b7-f499-4b3a-a923-02da5c44453f",
+      "owner_user_id": "4924d6a9-9f2d-4d50-ad2b-a45ddc349bf6",
+      "recipient_user_id": "94157e78-134b-4012-9a1f-b117dd6929a3",
+      "plant_id": "77c1b194-2355-46ce-963b-3f694100b72f",
+      "can_edit": true,
+      "created_at": "2025-12-14T20:32:17",
+      "ended_sharing_at": null
+    },
+    {
+      "id": "cfac6295-ac0d-4e34-b604-ed252c9a81f2",
+      "_delete": true
+    },
+    {
+      "id": "05905916-1e53-41af-9582-27e4d7a58f66",
+      "owner_user_id": "05f20f79-1d6d-41be-be8e-f68dd140cf1c",
+      "recipient_user_id": "94157e78-134b-4012-9a1f-b117dd6929a3",
+      "plant_id": "70731474-be17-447e-a37b-07eeea03cbfc",
+      "can_edit": true,
+      "created_at": "2025-12-14T20:58:26",
+      "ended_sharing_at": null
+    },
+    {
+      "id": "8851f975-064e-4061-ae30-40143c26182e",
+      "owner_user_id": "062dbd4a-ae5f-416d-b093-472193e676ba",
+      "recipient_user_id": "94157e78-134b-4012-9a1f-b117dd6929a3",
+      "plant_id": "935862ee-0167-4ac9-92b8-7d4052c3a769",
+      "can_edit": true,
+      "created_at": "2025-12-14T21:19:49",
       "ended_sharing_at": null
     }
   ],
@@ -1177,6 +1442,78 @@
       "severity": null,
       "notes": null,
       "status": "detected"
+    },
+    {
+      "id": "a12d3037-ccf6-4c4e-a70c-1ce359da9dec",
+      "plant_id": "0eb8af80-33a4-4485-a13f-c4200b1c8576",
+      "disease_id": "66b51af0-c8b2-52c9-82f2-0a1b0dbea673",
+      "detected_at": "2025-12-14",
+      "severity": null,
+      "notes": null,
+      "status": "detected"
+    },
+    {
+      "id": "9bb92e5b-5172-42f7-ba8a-c877e96facd9",
+      "plant_id": "39b2e1c9-469f-45cd-8d47-4a071de1f8ed",
+      "disease_id": "e04eb1cb-239d-58c3-827d-67adc8517d05",
+      "detected_at": "2025-12-14",
+      "severity": null,
+      "notes": null,
+      "status": "detected"
+    },
+    {
+      "id": "6ae7f627-a5c9-460e-bf59-a70029785cf2",
+      "plant_id": "0eb8af80-33a4-4485-a13f-c4200b1c8576",
+      "disease_id": "66b51af0-c8b2-52c9-82f2-0a1b0dbea673",
+      "detected_at": "2025-12-14",
+      "severity": null,
+      "notes": null,
+      "status": "detected"
+    },
+    {
+      "id": "9ff61d23-0165-4db2-9246-c2b25593cccd",
+      "plant_id": "39b2e1c9-469f-45cd-8d47-4a071de1f8ed",
+      "disease_id": "e04eb1cb-239d-58c3-827d-67adc8517d05",
+      "detected_at": "2025-12-14",
+      "severity": null,
+      "notes": null,
+      "status": "detected"
+    },
+    {
+      "id": "3a9a5bdd-f3fd-4f04-85c5-1937297df901",
+      "plant_id": "0eb8af80-33a4-4485-a13f-c4200b1c8576",
+      "disease_id": "69e06ac7-9d71-514d-96c1-13d95c18f395",
+      "detected_at": "2025-12-14",
+      "severity": null,
+      "notes": null,
+      "status": "detected"
+    },
+    {
+      "id": "0f66e166-0c55-4073-800d-0b692039383f",
+      "plant_id": "39b2e1c9-469f-45cd-8d47-4a071de1f8ed",
+      "disease_id": "e04eb1cb-239d-58c3-827d-67adc8517d05",
+      "detected_at": "2025-12-14",
+      "severity": null,
+      "notes": null,
+      "status": "detected"
+    },
+    {
+      "id": "f09a4774-1a95-4e7b-bebc-a9d43d9523fe",
+      "plant_id": "0eb8af80-33a4-4485-a13f-c4200b1c8576",
+      "disease_id": "66b51af0-c8b2-52c9-82f2-0a1b0dbea673",
+      "detected_at": "2025-12-14",
+      "severity": null,
+      "notes": null,
+      "status": "detected"
+    },
+    {
+      "id": "a53feb37-b4b2-4f32-a84d-274aa09fd348",
+      "plant_id": "39b2e1c9-469f-45cd-8d47-4a071de1f8ed",
+      "disease_id": "e04eb1cb-239d-58c3-827d-67adc8517d05",
+      "detected_at": "2025-12-14",
+      "severity": null,
+      "notes": null,
+      "status": "detected"
     }
   ],
   "friendship": [
@@ -1219,6 +1556,30 @@
       "status": "accepted",
       "created_at": "2025-12-14T19:22:57",
       "updated_at": "2025-12-14T19:22:57"
+    },
+    {
+      "id": "6ddd78f4-6a84-4b04-a762-c691bc45c093",
+      "_delete": true
+    },
+    {
+      "id": "4d0360f0-afa7-4620-9293-35ca0553f8b6",
+      "_delete": true
+    },
+    {
+      "id": "a67057e6-6f4d-4d41-9012-c279f5f3ee7e",
+      "user_id_a": "05f20f79-1d6d-41be-be8e-f68dd140cf1c",
+      "user_id_b": "94157e78-134b-4012-9a1f-b117dd6929a3",
+      "status": "accepted",
+      "created_at": "2025-12-14T20:58:17",
+      "updated_at": "2025-12-14T20:58:17"
+    },
+    {
+      "id": "21bcad77-cc92-42ee-be37-993ff21ce2d1",
+      "user_id_a": "062dbd4a-ae5f-416d-b093-472193e676ba",
+      "user_id_b": "94157e78-134b-4012-9a1f-b117dd6929a3",
+      "status": "accepted",
+      "created_at": "2025-12-14T21:19:42",
+      "updated_at": "2025-12-14T21:19:42"
     }
   ],
   "user": [
@@ -1277,10 +1638,46 @@
       "first_name": "Michela",
       "last_name": "Faella",
       "created_at": "2025-12-14T19:00:20",
-      "updated_at": "2025-12-14T19:00:20",
+      "updated_at": "2025-12-14T20:12:41",
       "id": "94157e78-134b-4012-9a1f-b117dd6929a3",
       "email": "m.faella@gmail.com",
       "password_hash": "scrypt:32768:8:1$hqxH3ra0AjHrx8H2$a128e9d9080cfb034daa96760c68c171233a4143dfb9f6d0f0f139a45461606610eb1ca2c5b02e2c32d9b0e7e0e44dcc9ce15a88d41b9e13cde53365c87c15e3"
+    },
+    {
+      "id": "68739cf5-c132-404a-80e9-3bf396d0ea6f",
+      "_delete": true,
+      "created_at": "2025-12-14T20:18:00",
+      "updated_at": "2025-12-14T20:18:00"
+    },
+    {
+      "id": "20ce274a-0af7-4290-bedc-a752bee7e8a1",
+      "_delete": true,
+      "created_at": "2025-12-14T20:29:51",
+      "updated_at": "2025-12-14T20:29:51"
+    },
+    {
+      "id": "4924d6a9-9f2d-4d50-ad2b-a45ddc349bf6",
+      "_delete": true,
+      "created_at": "2025-12-14T20:45:01",
+      "updated_at": "2025-12-14T20:45:01"
+    },
+    {
+      "first_name": "Andrea",
+      "last_name": "Cossu",
+      "created_at": "2025-12-14T20:54:11",
+      "updated_at": "2025-12-14T20:54:11",
+      "id": "05f20f79-1d6d-41be-be8e-f68dd140cf1c",
+      "email": "a.cussu@gmail.com",
+      "password_hash": "scrypt:32768:8:1$CxtIPkh5j4WBbL6W$ca6a5e8ae80b39354c3f27738ff01370deb1e585d7a1edfe9654776bd8fc14d55420cfab10081ad7afbc3d55e29b571da78ceaabb096343f722169b276832fca"
+    },
+    {
+      "first_name": "Andrea",
+      "last_name": "Cossu",
+      "created_at": "2025-12-14T21:15:14",
+      "updated_at": "2025-12-14T21:15:14",
+      "id": "062dbd4a-ae5f-416d-b093-472193e676ba",
+      "email": "a.cossu@gmail.com",
+      "password_hash": "scrypt:32768:8:1$vUWVrTatwfKtigQ4$5f469eb690d0239f569778d0ae5e5b394f8925a1f5f21b28062a680518bb15af4fb96f2de71688275989f518ce1feb5d4df07473accca8a1e973d6f6520ea399"
     }
   ],
   "reminder": [
@@ -1537,31 +1934,6 @@
         "Watering: Water deeply 2-3 times per week.",
         "Soil: Use regular indoor potting soil with good drainage."
       ],
-      "created_at": "2025-12-14T19:02:13",
-      "id": "5cf04a7b-c2ea-453a-bb1c-9d33f2d8b4f0",
-      "updated_at": "2025-12-14T19:02:13",
-      "size": "medium",
-      "light_level": 5,
-      "climate": "Temperate",
-      "common_name": "Rose",
-      "use": "Garden plant, Cut flowers, Ornamental"
-    },
-    {
-      "difficulty": 3,
-      "category": "Flowering shrub",
-      "max_temp_c": 28,
-      "pests": null,
-      "family_id": "b9cbfcc6-ce18-47cd-ac15-3535712d8c45",
-      "min_temp_c": 5,
-      "origin": "Asia",
-      "water_level": 3,
-      "scientific_name": "Rosa lucieae",
-      "tips": [
-        "Ideal light: 6+ hours of direct sunlight per day.",
-        "Tolerated light: Full sun preferred.",
-        "Watering: Water deeply 2-3 times per week.",
-        "Soil: Use regular indoor potting soil with good drainage."
-      ],
       "created_at": "2025-12-14T19:06:49",
       "id": "39b2e1c9-469f-45cd-8d47-4a071de1f8ed",
       "updated_at": "2025-12-14T19:06:49",
@@ -1645,6 +2017,26 @@
       "climate": "Temperate",
       "common_name": "Gerbera Daisy",
       "use": "Cut flower, Ornamental"
+    }
+  ],
+  "watering_plan": [
+    {
+      "id": "4c13720b-a736-4c1e-9696-89ca6f90b213",
+      "_delete": true
+    },
+    {
+      "id": "cfd09bcf-b4e6-4f5d-9070-96f0481335db",
+      "_delete": true
+    }
+  ],
+  "watering_log": [
+    {
+      "id": "51515278-1920-41e5-9adf-b1a364079973",
+      "_delete": true
+    },
+    {
+      "id": "ee39094d-d611-4fd0-a1c2-cd9ed8a9c195",
+      "_delete": true
     }
   ]
 }
