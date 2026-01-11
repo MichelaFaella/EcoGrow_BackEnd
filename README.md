@@ -1,4 +1,16 @@
-# 🌿 EcoGrow Backend
+# EcoGrow Backend
+
+<p align = "center">
+  <img src = "https://upload.wikimedia.org/wikipedia/it/e/e2/Stemma_unipi.svg" width="256" height="256">
+</p>
+
+<p align="center">
+  EcoGrow is an AI-powered smart application for plant identification and care, <br>
+    developed for the Smart Applications – Artificial Intelligence at University of Pisa.
+</p>
+
+
+---
 
 This directory contains the **backend implementation** of the *EcoGrow Application*, built in **Python (Flask)**.  
 It provides RESTful APIs for the Flutter frontend, handles plant data, image analysis, disease recognition (AI model), and reminders.
